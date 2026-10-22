@@ -352,6 +352,80 @@ def _rebuild(kind, start, segs):
     return out
 
 
+def flatten_flare(value, ratio=1.0, stroke_width=82.0,
+                  max_cap_ratio=1.6, min_edge_ratio=1.5, probe=1.0,
+                  flare_threshold=0.94):
+    """去喇叭口：把笔画端部的「喇叭状张开」收成与笔画主体等宽。
+
+    喇叭口 = 端面比后方主体**更宽**（传统木刻刀痕遗留）。
+    做法：沿两条长边向内探测，量出主体宽度 W；
+    若端面长度 L > W（判定为喇叭口），把端面的两个端点向中点收拢到 W。
+
+    ratio = 1.0 收成完全等宽；0.5 只收一半；0 = 不处理。
+    只移动端面两个端点，节点数不变 → VF 安全。
+    """
+    if ratio <= 0:
+        return value
+    contours = _split_contours(value)
+    out = []
+    for kind, start, segs in contours:
+        ops = [op for op, _ in segs]
+        n = len(segs)
+        if n < 3 or all(o != "lineTo" for o in ops):
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        P = [start] + [args[-1] for _, args in segs]
+        m = n + 1
+        eop = [ops[k] if k < n else "lineTo" for k in range(m)]
+        elen = [math.hypot(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
+                for k in range(m)]
+
+        moved = {}
+        for k in range(m):
+            if eop[k] != "lineTo" or not (1e-6 < elen[k] <= stroke_width * max_cap_ratio):
+                continue
+            before = (k - 1) % m
+            after = (k + 1) % m
+            if elen[before] < elen[k] * min_edge_ratio or elen[after] < elen[k] * min_edge_ratio:
+                continue
+            A1 = P[k]                    # 端面起点
+            B0 = P[(k + 1) % m]          # 端面终点
+            A0 = P[(k - 1) % m]          # 长边另一端
+            B1 = P[(k + 2) % m]
+            L = elen[k]
+            d = max(1.0, L * probe)
+            tA = min(1.0, d / elen[before])
+            tB = min(1.0, d / elen[after])
+            Pa = (A1[0] + (A0[0] - A1[0]) * tA, A1[1] + (A0[1] - A1[1]) * tA)
+            Pb = (B0[0] + (B1[0] - B0[0]) * tB, B0[1] + (B1[1] - B0[1]) * tB)
+            W = math.hypot(Pa[0] - Pb[0], Pa[1] - Pb[1])
+            if W <= 1e-6 or L <= W * flare_threshold:
+                continue                      # 不是喇叭口
+            # 把端面收到 W（按 ratio 比例）
+            target = L + (W - L) * ratio
+            if target >= L:
+                continue
+            mx, my = (A1[0] + B0[0]) / 2, (A1[1] + B0[1]) / 2
+            ux, uy = (B0[0] - A1[0]) / L, (B0[1] - A1[1]) / L
+            moved[k] = (mx - ux * target / 2, my - uy * target / 2)
+            moved[(k + 1) % m] = (mx + ux * target / 2, my + uy * target / 2)
+
+        if not moved:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+        newP = [moved.get(k, P[k]) for k in range(m)]
+        new_segs = []
+        for k, (op, args) in enumerate(segs):
+            idx = k + 1
+            if idx in moved:
+                new_segs.append((op, (newP[idx],)))
+            else:
+                new_segs.append((op, args))
+        out.extend(_rebuild(kind, newP[0], new_segs))
+    return out
+
+
 def apply_all(value, params):
     """按固定顺序应用算子。顺序有讲究：先结构、后重心、最后笔画。
 
@@ -364,6 +438,8 @@ def apply_all(value, params):
         v = center_spread(v, **params["spread"])
     if "gravity" in params:
         v = gravity_warp(v, **params["gravity"])
+    if "flare" in params:
+        v = flatten_flare(v, **params["flare"])
     if "soften" in params:
         v = soften(v, **params["soften"])
     if "stroke" in params:
