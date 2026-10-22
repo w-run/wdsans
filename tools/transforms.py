@@ -104,251 +104,82 @@ def center_spread(value, factor=1.0, cx=500.0, cy=460.0):
     return map_points(value, fn)
 
 
-def stroke_offset(value, delta=0.0, deadzone=0.12):
-    """笔画加粗/减细：沿节点法线方向位移。
+def stroke_offset(value, delta=0.0):
+    """笔画加粗/减细：沿每个节点的法线方向整体位移。
 
-    delta 单位为设计单位（1000 em）。deadzone 用于抑制转折点的过度外扩。
+    delta > 0 加粗，< 0 减细（单位：设计单位 / 1000 em）。
+
+    ⚠️ 实现要点：
+    - 按**段**处理，一段上的控制点共享同一法线基准，避免重复输出算子
+    - 按轮廓绕向统一法线方向，保证 delta 的正负语义一致
+    - 只移动已有节点，节点数不变 → VF 安全
     """
-    if abs(delta) < 1e-6:
+    if abs(delta) < 1e-9:
         return value
 
-    out = []
-    contour = []
-
-    def flush():
-        if len(contour) >= 3:
-            n = len(contour)
-            for i, (op, args, idx) in enumerate(contour):
-                px, py = args[idx]
-                # 用相邻点的差分方向估算外法线
-                prev = contour[(i - 1) % n][1][contour[(i - 1) % n][2]]
-                nxt = contour[(i + 1) % n][1][contour[(i + 1) % n][2]]
-                tx, ty = nxt[0] - prev[0], nxt[1] - prev[1]
-                ln = math.hypot(tx, ty) or 1.0
-                nx, ny = ty / ln, -tx / ln
-                new = (px + nx * delta, py + ny * delta)
-                contour[i] = (op, tuple(new if j == idx else p for j, p in enumerate(args)), idx)
-
-    for op, args in value:
-        if op == "closePath":
-            flush()
-            out.extend([(o, a) for o, a, _ in contour])
-            contour = []
-            out.append((op, args))
-            continue
-        if not args:
-            out.append((op, args)); continue
-        for idx in range(len(args)):
-            contour.append((op, args, idx))
-    if contour:
-        flush()
-        out.extend([(o, a) for o, a, _ in contour])
-    return out
-
-
-# ---------------------------------------------------------------- 组合
-
-PIPELINE = {
-    # 名字: (函数, 参数)
-    "face": face_scale,
-    "gravity": gravity_warp,
-    "spread": center_spread,
-    "stroke": stroke_offset,
-}
-
-
-def soften(value, tension=1.0):
-    """笔画软硬：调整曲线控制点的「张力」（= 控制点离 on 点的距离比例）。
-
-    tension = 1.0 保持原样；< 1 曲线变直变硬；> 1 曲线变饱满变软。
-    只移动已有控制点，不增删节点 —— VF 安全。
-
-    这是与旧版 `softness: 0.85` 对应的算子，但语义是**乘数**而不是收缩量：
-    旧版 0.85 ≈ 本算子的 tension=0.85。
-    """
-    if abs(tension - 1.0) < 1e-9:
-        return value
-
-    out = []
-    last_on = None  # 上一个闭合轮廓的当前 on 点
-    i = 0
-    n = len(value)
-    while i < n:
-        op, args = value[i]
-        if op in ("moveTo", "lineTo"):
-            last_on = args[0]
-            out.append((op, args))
-            i += 1
-        elif op == "curveTo":
-            p1, p2, p3 = args
-            p0 = last_on if last_on is not None else (0.0, 0.0)
-            n1 = (p0[0] + (p1[0] - p0[0]) * tension,
-                  p0[1] + (p1[1] - p0[1]) * tension)
-            n2 = (p3[0] + (p2[0] - p3[0]) * tension,
-                  p3[1] + (p2[1] - p3[1]) * tension)
-            out.append((op, (n1, n2, p3)))
-            last_on = p3
-            i += 1
-        else:
-            out.append((op, args))
-            i += 1
-    return out
-
-
-def cap_angle(value, angle_hv=0.0, angle_diag=4.0, stroke_width=82.0,
-              max_cap_ratio=1.6, min_edge_ratio=1.6, collinear_dot=0.985,
-              max_move_ratio=1.2):
-    """端面处理：把笔画端面收成一条直线，并按笔画方向给不同倾斜角。
-
-    angle_hv   : 横画 / 竖画端面的倾斜角（度），**默认 0 = 严格垂直**
-    angle_diag : 斜笔画（撇捺点）端面的倾斜角（度）
-
-    检测方式：端面 = 一段**连续短边**（可能由多段拼成），两端连着两条
-    **近似反向平行的长边**。转角处前后边互相垂直，不会被误判。
-
-    关键：整段端面上的**所有节点**一起投影到目标直线，
-    否则端面中间的点不动，会形成「凹陷」。
-    """
     contours = _split_contours(value)
     out = []
     for kind, start, segs in contours:
-        ops = [op for op, _ in segs]
         n = len(segs)
-        if n < 3 or all(o != "lineTo" for o in ops):
+        if n < 2:
             out.extend(_rebuild(kind, start, segs))
             continue
 
         P = [start] + [args[-1] for _, args in segs]
-        m = n + 1
-        eop = [ops[k] if k < n else "lineTo" for k in range(m)]   # 闭合边视为直线
-        elen = [math.hypot(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
-                for k in range(m)]
-        edir = [_norm(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
-                for k in range(m)]
-
-        def is_short(k):
-            return eop[k] == "lineTo" and 1e-6 < elen[k] <= stroke_width * max_cap_ratio
-
-        moved = {}
-        visited = set()
-        for k0 in range(m):
-            if k0 in visited or not is_short(k0):
-                continue
-            # 向后扩展：连续短边且共线
-            run = [k0]
-            k = k0
-            while True:
-                nk = (k + 1) % m
-                if nk == k0 or nk in run or not is_short(nk):
-                    break
-                cross = abs(edir[k][0] * edir[nk][1] - edir[k][1] * edir[nk][0])
-                if cross > (1 - collinear_dot) ** 0.5 * 3:
-                    break
-                run.append(nk); k = nk
-            if len(run) < 1:
-                continue
-            # 首尾两条相邻长边
-            before = (run[0] - 1) % m
-            after = (run[-1] + 1) % m
-            if before in run or after in run:
-                continue
-            # 相邻长边允许是曲线段：用弦长与弦方向近似
-            L = sum(elen[i] for i in run)
-            if L > stroke_width * max_cap_ratio:
-                continue
-            if min(elen[before], elen[after]) < L * min_edge_ratio:
-                continue
-            db, da = edir[before], edir[after]
-            if db[0] * da[0] + db[1] * da[1] > -0.85:      # 需近似反向
-                continue
-
-            # 笔画方向（规范化：统一指向上方/右方，保证端面倾斜方向一致）
-            sdx, sdy = db
-            if sdy < 0 or (abs(sdy) < 1e-9 and sdx < 0):
-                sdx, sdy = -sdx, -sdy
-            if abs(sdy) <= 0.30 * abs(sdx):
-                ang = angle_hv
-            elif abs(sdx) <= 0.30 * abs(sdy):
-                ang = angle_hv
-            else:
-                ang = angle_diag
-
-            a = P[run[0]]
-            b = P[(run[-1] + 1) % m]
-            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
-            nx, ny = -sdy, sdx
-            if ang:
-                th = math.radians(ang)
-                nx, ny = nx * math.cos(th) - ny * math.sin(th), \
-                         nx * math.sin(th) + ny * math.cos(th)
-
-            # 收集端面上所有点（含 run 内部的顶点）
-            idxs = [run[0]] + [(i + 1) % m for i in run]
-            ok = True
-            for j in idxs:
-                pt = P[j]
-                t = (pt[0] - mx) * nx + (pt[1] - my) * ny
-                q = (mx + nx * t, my + ny * t)
-                if math.hypot(q[0] - pt[0], q[1] - pt[1]) > stroke_width * max_move_ratio:
-                    ok = False; break
-                moved[j] = q
-            if not ok:
-                for j in idxs:
-                    moved.pop(j, None)
-                continue
-            visited.update(run)
-
-        if not moved:
+        m = len(P)
+        if m > 1 and math.hypot(P[0][0] - P[-1][0], P[0][1] - P[-1][1]) < 1e-6:
+            P = P[:-1]
+            m = len(P)
+        if m < 3:
             out.extend(_rebuild(kind, start, segs))
             continue
 
-        newP = [moved.get(k, P[k]) for k in range(m)]
+        # 绕向：有向面积
+        area = 0.0
+        for i in range(m):
+            x1, y1 = P[i]; x2, y2 = P[(i + 1) % m]
+            area += x1 * y2 - x2 * y1
+        sign = 1.0 if area < 0 else -1.0      # 顺时针轮廓：外法线取 +90°
+
+        # 每个顶点的法线 = 相邻两边法线的平均
+        normals = []
+        for i in range(m):
+            a = P[(i - 1) % m]; b = P[i]; c = P[(i + 1) % m]
+            nx1, ny1 = _norm(-(b[1] - a[1]), b[0] - a[0])
+            nx2, ny2 = _norm(-(c[1] - b[1]), c[0] - b[0])
+            nx, ny = nx1 + nx2, ny1 + ny2
+            ln = math.hypot(nx, ny)
+            if ln < 1e-6:
+                nx, ny = nx1, ny1
+            else:
+                nx, ny = nx / ln, ny / ln
+            # 转角处沿角平分线位移，需按 1/cos(半角) 放大，才能保证面位移等于 delta
+            dot = max(-1.0, min(1.0, nx1 * nx2 + ny1 * ny2))
+            cos_half = math.sqrt(max(1e-6, (1 + dot) / 2))
+            scale = 1.0 / max(0.30, cos_half)
+            normals.append((nx * sign * scale, ny * sign * scale))
+
+        newP = [(P[i][0] + normals[i][0] * delta,
+                 P[i][1] + normals[i][1] * delta) for i in range(m)]
+
         new_segs = []
         for k, (op, args) in enumerate(segs):
             idx = k + 1
-            if idx in moved:
-                if op == "lineTo":
-                    new_segs.append((op, (newP[idx],)))
-                else:
-                    new_segs.append((op, tuple(args[:-1]) + (newP[idx],)))
+            if op == "lineTo":
+                new_segs.append((op, (newP[idx % m],)))
             else:
-                new_segs.append((op, args))
+                # 曲线：控制点按自身邻近法线位移（用段起点与终点的法线插值）
+                if len(args) == 3:
+                    p0 = newP[k % m]; p3 = newP[idx % m]
+                    n0 = normals[k % m]; n3 = normals[idx % m]
+                    p1 = (args[0][0] + (n0[0] * 0.67 + n3[0] * 0.33) * delta,
+                          args[0][1] + (n0[1] * 0.67 + n3[1] * 0.33) * delta)
+                    p2 = (args[1][0] + (n0[0] * 0.33 + n3[0] * 0.67) * delta,
+                          args[1][1] + (n0[1] * 0.33 + n3[1] * 0.67) * delta)
+                    new_segs.append((op, (p1, p2, p3)))
+                else:
+                    new_segs.append((op, args))
         out.extend(_rebuild(kind, newP[0], new_segs))
-    return out
-
-
-def _norm(x, y):
-    ln = math.hypot(x, y) or 1.0
-    return x / ln, y / ln
-
-
-def _split_contours(value):
-    """拆成 [(kind, start, segs)]，kind = 'line'（全直线）或 'curve'。"""
-    out = []
-    cur = None
-    for op, args in value:
-        if op == "moveTo":
-            if cur:
-                out.append(cur)
-            cur = ["line", args[0], []]
-        elif op == "lineTo":
-            cur[2].append((op, args))
-        elif op in ("curveTo", "qCurveTo"):
-            cur[0] = "curve"
-            cur[2].append((op, args))
-        elif op == "closePath":
-            if cur:
-                out.append(cur)
-                cur = None
-    if cur:
-        out.append(cur)
-    return out
-
-
-def _rebuild(kind, start, segs):
-    out = [("moveTo", (start,))]
-    out.extend(segs)
-    out.append(("closePath", ()))
     return out
 
 
@@ -550,6 +381,83 @@ def flatten_flare(value, ratio=1.0, stroke_width=82.0,
                 new_segs.append((op, args))
         out.extend(_rebuild(kind, newP[0], new_segs))
     return out
+
+
+
+
+def soften(value, tension=1.0):
+    """笔画软硬：调整曲线控制点张力（控制点离 on 点的距离比例）。
+
+    tension = 1.0 保持原样；< 1 曲线变直变硬；> 1 曲线变饱满变软。
+    只移动已有控制点，不增删节点 → VF 安全。
+    """
+    if abs(tension - 1.0) < 1e-9:
+        return value
+    out = []
+    last_on = None
+    for op, args in value:
+        if op in ("moveTo", "lineTo"):
+            last_on = args[0]
+            out.append((op, args))
+        elif op == "curveTo":
+            p1, p2, p3 = args
+            p0 = last_on if last_on is not None else (0.0, 0.0)
+            n1 = (p0[0] + (p1[0] - p0[0]) * tension,
+                  p0[1] + (p1[1] - p0[1]) * tension)
+            n2 = (p3[0] + (p2[0] - p3[0]) * tension,
+                  p3[1] + (p2[1] - p3[1]) * tension)
+            out.append((op, (n1, n2, p3)))
+            last_on = p3
+        else:
+            out.append((op, args))
+    return out
+
+
+# ---------------------------------------------------------------- 内部工具
+
+def _norm(x, y):
+    ln = math.hypot(x, y) or 1.0
+    return x / ln, y / ln
+
+
+def _split_contours(value):
+    """拆成 [(kind, start, segs)]，kind = 'line'（全直线）或 'curve'。"""
+    out = []
+    cur = None
+    for op, args in value:
+        if op == "moveTo":
+            if cur:
+                out.append((cur[0], cur[1], cur[2]))
+            cur = ["line", args[0], []]
+        elif op in ("lineTo", "curveTo", "qCurveTo"):
+            if cur is None:
+                continue
+            if op != "lineTo":
+                cur[0] = "curve"
+            cur[2].append((op, args))
+        elif op in ("closePath", "endPath"):
+            if cur:
+                out.append((cur[0], cur[1], cur[2]))
+                cur = None
+    if cur:
+        out.append((cur[0], cur[1], cur[2]))
+    return out
+
+
+def _rebuild(kind, start, segs):
+    out = [("moveTo", (start,))]
+    out.extend(segs)
+    out.append(("closePath", ()))
+    return out
+
+
+def cap_angle(value, **kw):
+    """兼容别名：端面处理统一走 terminal_fix。"""
+    kw.pop("max_cap_ratio", None)
+    kw.pop("min_edge_ratio", None)
+    kw.pop("min_dot", None)
+    kw.pop("collinear_dot", None)
+    return terminal_fix(value, **kw)
 
 
 def apply_all(value, params):
