@@ -38,7 +38,8 @@ def write_paths(font, paths):
     from canonical_cff import replay_to_canonical
 
     is_cff2 = "CFF2" in font
-    table = font["CFF2" if is_cff2 else "CFF"].cff.topDictIndex[0]
+    tag = "CFF2" if is_cff2 else ("CFF " if "CFF " in font else "CFF")
+    table = font[tag].cff.topDictIndex[0]
     cs = table.CharStrings
     for gn, value in paths.items():
         old = cs[gn]

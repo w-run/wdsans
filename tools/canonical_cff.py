@@ -43,11 +43,12 @@ class CanonicalPen:
         raise NotImplementedError("CFF 只支持三次��线")
 
     def closePath(self):
-        # CFF 轮廓隐式闭合；把当前点移回起点以保证下一个子路径的起点正确
-        self._cur = self._start
+        # CFF 轮廓隐式闭合（末点 -> 起点），但解码器的 currentPoint 仍停在**末点**，
+        # 所以这里绝不能用起点覆盖 _cur，否则下一个 rmoveto 的基准会错。
+        pass
 
     def endPath(self):
-        self.closePath()
+        pass
 
     def addComponent(self, glyphName, transformation):
         raise NotImplementedError("CFF2 不支持复合字形")

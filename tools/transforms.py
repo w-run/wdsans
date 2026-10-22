@@ -195,6 +195,123 @@ def soften(value, tension=1.0):
     return out
 
 
+def cap_angle(value, angle=0.0, stroke_width=82.0,
+              max_cap_ratio=1.5, min_edge_ratio=1.6, min_dot=-0.88,
+              max_move_ratio=1.2):
+    """端面处理：把笔画端面收成一条直线，并可整体倾斜 angle 度。
+
+    「笔末平直化」与「端面斜度」的合并实现：
+      angle = 0  → 垂直于笔画方向平切
+      angle > 0  → 端面向内倾斜（同类笔画方向统一）
+
+    检测依据（纯几何，无需人工标注）：
+      端面 = 一条**短线**，其前后两条**长线近似反向平行**（同一条笔画的两侧）。
+      转角处前后边互相垂直，不会被误判。
+
+    只移动这条短线的两个端点，节点数不变 → VF 安全。
+    """
+    contours = _split_contours(value)
+    out = []
+    for kind, start, segs in contours:
+        ops = [op for op, _ in segs]
+        n = len(segs)
+        if n < 3 or all(o != "lineTo" for o in ops):
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        # P[0]=起点, P[k]=第 k 段的终点；闭合边为 P[n] -> P[0]
+        P = [start] + [args[-1] for _, args in segs]
+        m = n + 1
+        moved = {}
+        for i in range(m):                      # i = 边序号（含隐含闭合边）
+            if i == n:
+                prev_op, next_op = ops[n - 1], ops[0]
+            else:
+                prev_op = ops[i - 1] if i > 0 else ops[n - 1]
+                next_op = ops[i + 1] if i + 1 < n else ops[0]
+            if prev_op != "lineTo" or next_op != "lineTo":
+                continue
+            a, b = P[i], P[(i + 1) % m]
+            cap = math.hypot(b[0] - a[0], b[1] - a[1])
+            if cap < 1e-6 or cap > stroke_width * max_cap_ratio:
+                continue
+            pa = P[(i - 1) % m]
+            nb = P[(i + 2) % m]
+            l1 = math.hypot(a[0] - pa[0], a[1] - pa[1])
+            l2 = math.hypot(nb[0] - b[0], nb[1] - b[1])
+            if min(l1, l2) < cap * min_edge_ratio:
+                continue
+            d1 = _norm(a[0] - pa[0], a[1] - pa[1])
+            d2 = _norm(nb[0] - b[0], nb[1] - b[1])
+            if d1[0] * d2[0] + d1[1] * d2[1] > min_dot:
+                continue
+            nx, ny = -d1[1], d1[0]
+            if angle:
+                th = math.radians(angle)
+                nx, ny = nx * math.cos(th) - ny * math.sin(th), \
+                         nx * math.sin(th) + ny * math.cos(th)
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            for j, p in ((i, a), ((i + 1) % m, b)):
+                t = (p[0] - mx) * nx + (p[1] - my) * ny
+                q = (mx + nx * t, my + ny * t)
+                if math.hypot(q[0] - p[0], q[1] - p[1]) > stroke_width * max_move_ratio:
+                    continue                     # 安全钳：位移过大直接放弃
+                moved[j] = q
+
+        if not moved:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        newP = [moved.get(k, P[k]) for k in range(m)]
+        new_segs = []
+        for k, (op, args) in enumerate(segs):
+            idx = k + 1
+            if idx in moved:
+                if op == "lineTo":
+                    new_segs.append((op, (newP[idx],)))
+                else:
+                    new_segs.append((op, tuple(args[:-1]) + (newP[idx],)))
+            else:
+                new_segs.append((op, args))
+        out.extend(_rebuild(kind, newP[0], new_segs))
+    return out
+
+
+def _norm(x, y):
+    ln = math.hypot(x, y) or 1.0
+    return x / ln, y / ln
+
+
+def _split_contours(value):
+    """拆成 [(kind, start, segs)]，kind = 'line'（全直线）或 'curve'。"""
+    out = []
+    cur = None
+    for op, args in value:
+        if op == "moveTo":
+            if cur:
+                out.append(cur)
+            cur = ["line", args[0], []]
+        elif op == "lineTo":
+            cur[2].append((op, args))
+        elif op in ("curveTo", "qCurveTo"):
+            cur[0] = "curve"
+            cur[2].append((op, args))
+        elif op == "closePath":
+            if cur:
+                out.append(cur)
+                cur = None
+    if cur:
+        out.append(cur)
+    return out
+
+
+def _rebuild(kind, start, segs):
+    out = [("moveTo", (start,))]
+    out.extend(segs)
+    out.append(("closePath", ()))
+    return out
+
+
 def apply_all(value, params):
     """按固定顺序应用算子。顺序有讲究：先结构、后重心、最后笔画。
 
