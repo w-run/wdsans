@@ -195,20 +195,19 @@ def soften(value, tension=1.0):
     return out
 
 
-def cap_angle(value, angle=0.0, stroke_width=82.0,
-              max_cap_ratio=1.5, min_edge_ratio=1.6, min_dot=-0.88,
+def cap_angle(value, angle_hv=0.0, angle_diag=4.0, stroke_width=82.0,
+              max_cap_ratio=1.6, min_edge_ratio=1.6, collinear_dot=0.985,
               max_move_ratio=1.2):
-    """端面处理：把笔画端面收成一条直线，并可整体倾斜 angle 度。
+    """端面处理：把笔画端面收成一条直线，并按笔画方向给不同倾斜角。
 
-    「笔末平直化」与「端面斜度」的合并实现：
-      angle = 0  → 垂直于笔画方向平切
-      angle > 0  → 端面向内倾斜（同类笔画方向统一）
+    angle_hv   : 横画 / 竖画端面的倾斜角（度），**默认 0 = 严格垂直**
+    angle_diag : 斜笔画（撇捺点）端面的倾斜角（度）
 
-    检测依据（纯几何，无需人工标注）：
-      端面 = 一条**短线**，其前后两条**长线近似反向平行**（同一条笔画的两侧）。
-      转角处前后边互相垂直，不会被误判。
+    检测方式：端面 = 一段**连续短边**（可能由多段拼成），两端连着两条
+    **近似反向平行的长边**。转角处前后边互相垂直，不会被误判。
 
-    只移动这条短线的两个端点，节点数不变 → VF 安全。
+    关键：整段端面上的**所有节点**一起投影到目标直线，
+    否则端面中间的点不动，会形成「凹陷」。
     """
     contours = _split_contours(value)
     out = []
@@ -219,44 +218,85 @@ def cap_angle(value, angle=0.0, stroke_width=82.0,
             out.extend(_rebuild(kind, start, segs))
             continue
 
-        # P[0]=起点, P[k]=第 k 段的终点；闭合边为 P[n] -> P[0]
         P = [start] + [args[-1] for _, args in segs]
         m = n + 1
+        eop = [ops[k] if k < n else "lineTo" for k in range(m)]   # 闭合边视为直线
+        elen = [math.hypot(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
+                for k in range(m)]
+        edir = [_norm(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
+                for k in range(m)]
+
+        def is_short(k):
+            return eop[k] == "lineTo" and 1e-6 < elen[k] <= stroke_width * max_cap_ratio
+
         moved = {}
-        for i in range(m):                      # i = 边序号（含隐含闭合边）
-            if i == n:
-                prev_op, next_op = ops[n - 1], ops[0]
+        visited = set()
+        for k0 in range(m):
+            if k0 in visited or not is_short(k0):
+                continue
+            # 向后扩展：连续短边且共线
+            run = [k0]
+            k = k0
+            while True:
+                nk = (k + 1) % m
+                if nk == k0 or nk in run or not is_short(nk):
+                    break
+                cross = abs(edir[k][0] * edir[nk][1] - edir[k][1] * edir[nk][0])
+                if cross > (1 - collinear_dot) ** 0.5 * 3:
+                    break
+                run.append(nk); k = nk
+            if len(run) < 1:
+                continue
+            # 首尾两条相邻长边
+            before = (run[0] - 1) % m
+            after = (run[-1] + 1) % m
+            if before in run or after in run:
+                continue
+            # 相邻长边允许是曲线段：用弦长与弦方向近似
+            L = sum(elen[i] for i in run)
+            if L > stroke_width * max_cap_ratio:
+                continue
+            if min(elen[before], elen[after]) < L * min_edge_ratio:
+                continue
+            db, da = edir[before], edir[after]
+            if db[0] * da[0] + db[1] * da[1] > -0.85:      # 需近似反向
+                continue
+
+            # 笔画方向（规范化：统一指向上方/右方，保证端面倾斜方向一致）
+            sdx, sdy = db
+            if sdy < 0 or (abs(sdy) < 1e-9 and sdx < 0):
+                sdx, sdy = -sdx, -sdy
+            if abs(sdy) <= 0.30 * abs(sdx):
+                ang = angle_hv
+            elif abs(sdx) <= 0.30 * abs(sdy):
+                ang = angle_hv
             else:
-                prev_op = ops[i - 1] if i > 0 else ops[n - 1]
-                next_op = ops[i + 1] if i + 1 < n else ops[0]
-            if prev_op != "lineTo" or next_op != "lineTo":
-                continue
-            a, b = P[i], P[(i + 1) % m]
-            cap = math.hypot(b[0] - a[0], b[1] - a[1])
-            if cap < 1e-6 or cap > stroke_width * max_cap_ratio:
-                continue
-            pa = P[(i - 1) % m]
-            nb = P[(i + 2) % m]
-            l1 = math.hypot(a[0] - pa[0], a[1] - pa[1])
-            l2 = math.hypot(nb[0] - b[0], nb[1] - b[1])
-            if min(l1, l2) < cap * min_edge_ratio:
-                continue
-            d1 = _norm(a[0] - pa[0], a[1] - pa[1])
-            d2 = _norm(nb[0] - b[0], nb[1] - b[1])
-            if d1[0] * d2[0] + d1[1] * d2[1] > min_dot:
-                continue
-            nx, ny = -d1[1], d1[0]
-            if angle:
-                th = math.radians(angle)
+                ang = angle_diag
+
+            a = P[run[0]]
+            b = P[(run[-1] + 1) % m]
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            nx, ny = -sdy, sdx
+            if ang:
+                th = math.radians(ang)
                 nx, ny = nx * math.cos(th) - ny * math.sin(th), \
                          nx * math.sin(th) + ny * math.cos(th)
-            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
-            for j, p in ((i, a), ((i + 1) % m, b)):
-                t = (p[0] - mx) * nx + (p[1] - my) * ny
+
+            # 收集端面上所有点（含 run 内部的顶点）
+            idxs = [run[0]] + [(i + 1) % m for i in run]
+            ok = True
+            for j in idxs:
+                pt = P[j]
+                t = (pt[0] - mx) * nx + (pt[1] - my) * ny
                 q = (mx + nx * t, my + ny * t)
-                if math.hypot(q[0] - p[0], q[1] - p[1]) > stroke_width * max_move_ratio:
-                    continue                     # 安全钳：位移过大直接放弃
+                if math.hypot(q[0] - pt[0], q[1] - pt[1]) > stroke_width * max_move_ratio:
+                    ok = False; break
                 moved[j] = q
+            if not ok:
+                for j in idxs:
+                    moved.pop(j, None)
+                continue
+            visited.update(run)
 
         if not moved:
             out.extend(_rebuild(kind, start, segs))
