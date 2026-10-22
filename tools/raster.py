@@ -8,7 +8,10 @@ from PIL import Image
 
 
 def flatten(value, steps=10):
-    """把 (op, args) 记录展平成闭合折线列表。"""
+    """把 (op, args) 记录展平成闭合折线列表。
+
+    支持三次曲线（curveTo，CFF）与二次曲线（qCurveTo，TrueType，含隐含 on 点）。
+    """
     contours = []
     cur = []
 
@@ -17,6 +20,12 @@ def flatten(value, steps=10):
         if len(cur) > 2:
             contours.append(np.array(cur, dtype=float))
         cur = []
+
+    def quad(p0, p1, p2):
+        p0 = np.array(p0, float); p1 = np.array(p1, float); p2 = np.array(p2, float)
+        for i in range(1, steps + 1):
+            t = i / steps; mt = 1 - t
+            cur.append(tuple(mt * mt * p0 + 2 * mt * t * p1 + t * t * p2))
 
     for op, args in value:
         if op == "moveTo":
@@ -33,6 +42,31 @@ def flatten(value, steps=10):
                 pt = (mt**3 * p0 + 3 * mt**2 * t * p1
                       + 3 * mt * t**2 * p2 + t**3 * p3)
                 cur.append(tuple(pt))
+        elif op == "qCurveTo":
+            # TrueType：最后一点是 on，中间是控制点（可能有多个 → 隐含 on 点）
+            pts = [np.array(p, float) for p in args]
+            if pts[-1] is None:  # 全 off 的闭合二次曲线
+                pts = pts[:-1]
+                start = np.array(cur[-1], float)
+                mids = []
+                for i in range(len(pts)):
+                    nxt = pts[(i + 1) % len(pts)]
+                    mids.append((pts[i] + nxt) / 2)
+                for i, ctrl in enumerate(pts):
+                    p0 = start if i == 0 else mids[i - 1]
+                    p2 = mids[i]
+                    quad(p0, ctrl, p2)
+                continue
+            start = np.array(cur[-1], float) if cur else pts[0]
+            prev = start
+            for i in range(len(pts) - 1):
+                ctrl = pts[i]
+                if i < len(pts) - 2:
+                    nxt = (ctrl + pts[i + 1]) / 2
+                else:
+                    nxt = pts[-1]
+                quad(prev, ctrl, nxt)
+                prev = nxt
         elif op in ("closePath", "endPath"):
             flush()
     flush()
