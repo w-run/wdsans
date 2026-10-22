@@ -352,6 +352,132 @@ def _rebuild(kind, start, segs):
     return out
 
 
+def terminal_fix(value, angle_hv=0.0, angle_diag=4.0, stroke_width=82.0,
+                 width_norm=1.0, probe_frac=0.35, max_face_ratio=1.8,
+                 min_edge_ratio=1.5, max_move_ratio=1.5):
+    """端面修整：一次解决三件事。
+
+      1) 平直化 —— 端面可能是微凹的弧，压成一条直线
+      2) 等宽   —— 端面比笔画主体宽（越往末端越粗）时，收回到主体宽度
+      3) 斜度   —— 横竖 0°、斜笔 angle_diag
+
+    与 cap_angle 的区别：支持**曲线端面**，并且做宽度归一。
+    只移动端面上的点（数量不变）→ VF 安全。
+    """
+    contours = _split_contours(value)
+    out = []
+    for kind, start, segs in contours:
+        n = len(segs)
+        if n < 3:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        P = [start] + [args[-1] for _, args in segs]
+        m = n + 1
+        eop = [segs[k][0] if k < n else "lineTo" for k in range(m)]
+        elen = [math.hypot(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
+                for k in range(m)]
+
+        moved = {}
+        done = set()
+        for k in range(m):
+            if k in done:
+                continue
+            is_line = eop[k] == "lineTo"
+            if not (1e-6 < elen[k] <= stroke_width * max_face_ratio):
+                continue
+            # 端面的前后两段必须是长段（可曲线）
+            before = (k - 1) % m
+            after = (k + 1) % m
+            if before == k or after == k:
+                continue
+            if elen[before] < max(elen[k], stroke_width) * min_edge_ratio:
+                continue
+            if elen[after] < max(elen[k], stroke_width) * min_edge_ratio:
+                continue
+
+            A1 = P[k]; B0 = P[(k + 1) % m]
+            A0 = P[before]; B1 = P[(k + 2) % m]
+
+            # 笔画方向 = 两条长边方向的平均（取反向一致的那个）
+            d1 = _norm(A1[0] - A0[0], A1[1] - A0[1])
+            d2 = _norm(B1[0] - B0[0], B1[1] - B0[1])
+            if d1[0] * d2[0] + d1[1] * d2[1] > -0.7:
+                continue                      # 不是端面（可能是转角）
+            sd = _norm(d1[0] - d2[0], d1[1] - d2[1])
+            if sd[1] < 0 or (abs(sd[1]) < 1e-9 and sd[0] < 0):
+                sd = (-sd[0], -sd[1])
+
+            # 主体宽度：沿两条长边各走 probe_frac，量两点距离
+            t = probe_frac
+            Pa = (A1[0] + (A0[0] - A1[0]) * t, A1[1] + (A0[1] - A1[1]) * t)
+            Pb = (B0[0] + (B1[0] - B0[0]) * t, B0[1] + (B1[1] - B0[1]) * t)
+            W = math.hypot(Pa[0] - Pb[0], Pa[1] - Pb[1])
+            L = math.hypot(B0[0] - A1[0], B0[1] - A1[1])
+            if W < 1e-6:
+                continue
+
+            # 目标宽度
+            target_W = W + (min(L, W) - W) * width_norm
+            if width_norm <= 0:
+                target_W = L
+
+            # 倾斜角
+            if abs(sd[1]) >= 0.95:
+                ang = angle_hv                 # 竖画
+            elif abs(sd[0]) >= 0.95:
+                ang = angle_hv                 # 横画
+            else:
+                ang = angle_diag               # 斜笔
+            nx, ny = -sd[1], sd[0]
+            if ang:
+                th = math.radians(ang)
+                nx, ny = nx * math.cos(th) - ny * math.sin(th), \
+                         nx * math.sin(th) + ny * math.cos(th)
+
+            mx, my = (A1[0] + B0[0]) / 2, (A1[1] + B0[1]) / 2
+            # 端面上的所有点（含曲线控制点）投影到目标直线
+            face_idx = [k]
+            j = (k + 1) % m
+            while j != (k + 1) % m or len(face_idx) == 1:
+                face_idx.append(j)
+                if j == (k + 1) % m:
+                    break
+                j = (j + 1) % m
+                if j == k:
+                    break
+            ok = True
+            tmp = {}
+            for idx in face_idx:
+                pt = P[idx]
+                proj = (pt[0] - mx) * nx + (pt[1] - my) * ny
+                proj = max(-target_W / 2, min(target_W / 2, proj))
+                q = (mx + nx * proj, my + ny * proj)
+                if math.hypot(q[0] - pt[0], q[1] - pt[1]) > stroke_width * max_move_ratio:
+                    ok = False; break
+                tmp[idx] = q
+            if ok and tmp:
+                moved.update(tmp)
+                done.update([k, (k + 1) % m])
+
+        if not moved:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+        newP = [moved.get(i, P[i]) for i in range(m)]
+        new_segs = []
+        for k, (op, args) in enumerate(segs):
+            idx = k + 1
+            if idx in moved:
+                if op == "lineTo":
+                    new_segs.append((op, (newP[idx],)))
+                else:
+                    new_segs.append((op, tuple(args[:-1]) + (newP[idx],)))
+            else:
+                new_segs.append((op, args))
+        out.extend(_rebuild(kind, newP[0], new_segs))
+    return out
+
+
 def flatten_flare(value, ratio=1.0, stroke_width=82.0,
                   max_cap_ratio=1.6, min_edge_ratio=1.5, probe=1.0,
                   flare_threshold=0.94):
@@ -438,6 +564,8 @@ def apply_all(value, params):
         v = center_spread(v, **params["spread"])
     if "gravity" in params:
         v = gravity_warp(v, **params["gravity"])
+    if "terminal" in params:
+        v = terminal_fix(v, **params["terminal"])
     if "flare" in params:
         v = flatten_flare(v, **params["flare"])
     if "soften" in params:
