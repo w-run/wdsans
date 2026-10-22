@@ -1,0 +1,10 @@
+{
+  "name": "variant-A 贴 OPPO 折中版",
+  "note": "用户 2026-10-22 确认：前者（贴 OPPO），折中取值",
+  "wght": 400,
+  "pipeline": ["soften", "terminal", "stroke"],
+  "soften":   { "tension": 0.85 },
+  "terminal": { "angle_hv": 0, "angle_diag": 4, "width_norm": 0.8, "probe_frac": 0.45 },
+  "stroke":   { "delta": -8 },
+  "验证": "v1=只收端面, v2=v1+减细8单位；v2 灰度最接近 OPPO"
+}
