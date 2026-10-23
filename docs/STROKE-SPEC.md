@@ -155,12 +155,13 @@ OPPO「酎」「哉」对比图的说明：
 
 | # | 算子 | 依据 | 状态 |
 |---|---|---|---|
-| 1 | `flatten_flare` 去喇叭口 | OPPO/鸿蒙官方都点名 | ❌ |
-| 2 | `feet_removal` 去出脚（收拢式） | OPPO「酎/哉」图 | ❌ |
-| 3 | `corner_radius` 折角微圆 | OPPO「折角利落」 | ❌ |
-| 4 | `hook_tension` 四类钩 | OPPO 九类笔画图 | ❌ |
-| 5 | `cap_angle` 端面斜度 | 横竖 0°、斜笔 4° | ✅ 已实现 |
+| 1 | `flatten_flare` 去喇叭口 | 实测不存在，阈值收紧后保留 | ✅ 完成 |
+| 2 | `corner_radius` 折角微圆 | OPPO「折角利落」 | ❌ 待做 |
+| 5 | `terminal_fix` 端面平直+等宽+角度 | 横竖 0°、斜笔 4° | ✅ 已实现 |
 | 6 | `soften` 曲率 | 用户确认 0.85 | ✅ 已实现 |
+| 7 | `dot_normalize` 点等宽 | 思源楔形→OPPO 等宽棒 | ✅ 已实现 |
+| 8 | `hook_tension` 竖钩收紧 | 0.20（0.35 略过） | ✅ 已实现 |
+| 9 | `feet_removal` 去出脚 | 口/日/田/国 | ✅ 已实现 |
 
 ---
 

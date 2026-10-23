@@ -462,6 +462,88 @@ def cap_angle(value, **kw):
 
 
 
+
+def feet_removal(value, stroke_width=82.0, max_foot_ratio=1.6,
+                  min_neighbor_ratio=1.5, ratio=1.0):
+    """去出脚：把方框部件竖画顶端/底端伸出的小方突收回。
+
+    出脚 = 竖画端部比相邻横画多伸出一小段，形成台阶。
+    检测：一条**短水平边**，前后两条边都是**竖直**的，且方向相反
+    （即这条短边是竖画末端的端面，而不是横画的一部分）。
+    做法：把这条短边的 y 移到同一轮廓里最近的**长水平边**所在的 y，
+    台阶自然消失，竖画与横画齐平。
+
+    只移动两个端点，点数不变 → VF 安全。
+    """
+    if ratio <= 0:
+        return value
+    contours = _split_contours(value)
+    out = []
+    for kind, start, segs in contours:
+        n = len(segs)
+        if n < 4:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+        P = [start] + [args[-1] for _, args in segs]
+        m = len(P)
+        if m > 1 and math.hypot(P[0][0] - P[-1][0], P[0][1] - P[-1][1]) < 1.0:
+            P = P[:-1]; m -= 1
+        if m < 4:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        elen = [math.hypot(P[(i + 1) % m][0] - P[i][0], P[(i + 1) % m][1] - P[i][1])
+                for i in range(m)]
+        # 长水平边的 y 集合（横画的下/上边缘）
+        long_h = []
+        for i in range(m):
+            a, b = P[i], P[(i + 1) % m]
+            if abs(a[1] - b[1]) < 1.0 and elen[i] > stroke_width * 3:
+                long_h.append(a[1])
+
+        moved = {}
+        for i in range(m):
+            a, b = P[i], P[(i + 1) % m]
+            # 短水平边
+            if abs(a[1] - b[1]) > 1.0 or not (1e-6 < elen[i] <= stroke_width * max_foot_ratio):
+                continue
+            prev = P[(i - 1) % m]      # 长竖画的另一端
+            mid = P[(i + 2) % m]       # 台阶上端
+            after = P[(i + 3) % m]
+            # 前一条边：竖画（长短都行）
+            if abs(a[0] - prev[0]) > stroke_width * 0.35:
+                continue
+            # 后一条边：竖画、方向相反（形成台阶）
+            if abs(mid[0] - b[0]) > stroke_width * 0.35:
+                continue
+            if (a[1] - prev[1]) * (mid[1] - b[1]) >= 0:
+                continue
+            y = a[1]
+            cands = [h for h in long_h if abs(h - y) > 1.0]
+            if not cands:
+                continue
+            target = min(cands, key=lambda h: abs(h - y))
+            if abs(target - y) < 1.0 or abs(target - y) > stroke_width * 2.5:
+                continue
+            ny = y + (target - y) * ratio
+            moved[i] = (a[0], ny)
+            moved[(i + 1) % m] = (b[0], ny)
+
+        if not moved:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+        newP = [moved.get(k, P[k]) for k in range(m)]
+        new_segs = []
+        for k, (op, args) in enumerate(segs):
+            idx = k + 1
+            if idx in moved:
+                new_segs.append((op, (newP[idx],)))
+            else:
+                new_segs.append((op, args))
+        out.extend(_rebuild(kind, newP[0], new_segs))
+    return out
+
+
 def hook_tension(value, strength=0.35, min_turn=45.0, max_chord_ratio=2.2,
                  stroke_width=82.0):
     """钩/转角张力：把转角处的圆弧收紧或放松。
@@ -669,6 +751,8 @@ def apply_all(value, params):
         v = center_spread(v, **params["spread"])
     if "gravity" in params:
         v = gravity_warp(v, **params["gravity"])
+    if "feet" in params:
+        v = feet_removal(v, **params["feet"])
     if "hook" in params:
         v = hook_tension(v, **params["hook"])
     if "dot" in params:
