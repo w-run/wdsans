@@ -29,6 +29,8 @@ X_EM_MIN, X_EM_MAX = -12.0, 1012.0
 Y_EM_MIN, Y_EM_MAX = -124.0, 900.0
 GRID = 16
 CELL = SIZE / GRID          # 64 px
+HEX = "0123456789abcdef"
+HEX = "0123456789abcdef"   # 格位 = 十六进制：列在前，行在后（与 glyph_view 一致）
 
 
 def px(x, y):
@@ -136,7 +138,8 @@ def build_svg(contours, path_d, grid=True, refs=True, points=False, title=""):
         for ri in range(GRID):
             for ci in range(GRID):
                 out.append(f'<text x="{ci*CELL+3:.0f}" y="{ri*CELL+14:.0f}" '
-                           f'font-size="12">{chr(ord("a")+ci)}{ri+1}</text>')
+                           f'font-size="12" fill="#b8b8b8">'
+                           f'{HEX[ci]}{HEX[ri]}</text>')
         out.append("</g>")
 
     if refs:
