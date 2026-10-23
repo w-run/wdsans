@@ -57,11 +57,16 @@ def cell_box(name):
 
 def region_from_crop(spec):
     """'d2-f3' -> (x0, y0, x1, y1)"""
-    a, b = spec.split("-")
+    if "-" in spec:
+        a, b = spec.split("-")
+    else:
+        a = b = spec
     ax, ay = cell_box(a)
     bx, by = cell_box(b)
     x0, x1 = sorted((ax, bx + CELL))
-    ytop, ybot = sorted((ay, by), reverse=True)
+    # y 轴向下：ay/by 是格子**顶边**，所以底边要再减一个 CELL
+    ytop = max(ay, by)
+    ybot = min(ay, by) - CELL
     return x0, ytop, x1, ybot
 
 

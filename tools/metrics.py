@@ -131,6 +131,15 @@ def _bez(p0, p1, p2, p3, t):
             a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1])
 
 
+def perimeter(contours):
+    """展平后轮廓周长。配合面积可估平均笔宽 w ≈ 2A/P（细长笔画近似）。"""
+    P = 0.0
+    for pts in contours:
+        for i in range(len(pts) - 1):
+            P += math.dist(pts[i], pts[i + 1])
+    return P
+
+
 def signed_area(pts):
     s = 0.0
     for i in range(len(pts) - 1):
@@ -214,6 +223,7 @@ def measure_glyph(font, gs, gname, cmap_rev):
     if not cs:
         return None
     area, cx, cy = moments(cs)
+    per = perimeter(cs)
     pts = [p for c in cs for p in c]
     xMin = min(p[0] for p in pts); xMax = max(p[0] for p in pts)
     yMin = min(p[1] for p in pts); yMax = max(p[1] for p in pts)
@@ -228,11 +238,18 @@ def measure_glyph(font, gs, gname, cmap_rev):
         for f in (0.25, 0.5, 0.75):
             vw += runs_at(cs, xMin + (xMax - xMin) * f, "v")
 
+    hw_med = sorted(hw)[len(hw) // 2] if hw else 0.0
+    vw_med = sorted(vw)[len(vw) // 2] if vw else 0.0
+
     return {
         "g": gname, "ch": cmap_rev.get(gname, ""),
+        "hw_med": hw_med, "vw_med": vw_med,
+        "hv": hw_med / vw_med if vw_med > 5 else 0.0,
         "w": xMax - xMin, "h": yMax - yMin,
         "xMin": xMin, "xMax": xMax, "yMin": yMin, "yMax": yMax,
         "ink": area / (UPM * UPM),
+        "per": per,
+        "mwidth": 2.0 * area / per if per > 0 else 0.0,
         "cx": cx, "cy": cy,
         "nodes": pen.nnodes, "ncont": len(cs),
         "curve": pen.ncurve / max(1, pen.ncurve + pen.nline),
@@ -319,6 +336,9 @@ def aggregate(meta, rows):
         "nodes": stat(nodes),
         "node_density": stat([d * 10 for d in dens]),  # 每万单位²墨面积的节点数
         "curve": stat(curve),
+        "per": stat([r["per"] for r in rows]),
+        "mwidth": stat([r["mwidth"] for r in rows]),
+        "hv": stat([r["hv"] for r in rows if r["hv"] > 0]),
         "face": stat([r["face"] for r in rows]),
         "white": stat([r["white"] for r in rows]),
         "mL": stat([r["mL"] for r in rows]),
