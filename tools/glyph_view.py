@@ -30,11 +30,10 @@ import sys
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 
-# ---- 固定画框 ----
-X0, X1 = -20.0, 1020.0
-Y_TOP, Y_BOT = 900.0, -140.0
-GRID = 16
-CELL = (X1 - X0) / GRID          # 130
+# ---- 固定画框：唯一来源是 frame.py ----
+from frame import (X0, X1, Y_TOP, Y_BOT, GRID, CELL,      # noqa: E402,F401
+                   cell_name, cell_box, region_from_crop,
+                   region_from_box)
 
 
 def glyph_svg_path(font, glyph_name):
@@ -42,43 +41,6 @@ def glyph_svg_path(font, glyph_name):
     pen = SVGPathPen(gs)
     gs[glyph_name].draw(pen)
     return pen.getCommands()
-
-
-HEX = "0123456789abcdef"
-
-
-def cell_name(col, row):
-    """格位 = 两位十六进制：列在前、行在后。0-f 对 0-f。"""
-    return f"{HEX[col]}{HEX[row]}"
-
-
-def cell_box(name):
-    """'3a' -> 该格的左上角 em 坐标 (x, y_top)。"""
-    name = name.strip().lower()
-    if len(name) != 2 or name[0] not in HEX or name[1] not in HEX:
-        raise SystemExit(f"格位写法应为两位十六进制（如 3a / 0f），收到: {name}")
-    ci = HEX.index(name[0])
-    ri = HEX.index(name[1])
-    return X0 + ci * CELL, Y_TOP - ri * CELL
-
-
-def region_from_crop(spec):
-    """'3a-9d' -> 起点格到终点格围成的矩形 (x0, ytop, x1, ybot)。
-
-    单格写法 '3a' 等价于 '3a-3a'。
-    """
-    spec = spec.strip().lower()
-    if "-" in spec:
-        a, b = spec.split("-", 1)
-    else:
-        a = b = spec
-    ax, ay = cell_box(a)
-    bx, by = cell_box(b)
-    x0 = min(ax, bx)
-    x1 = max(ax, bx) + CELL
-    ytop = max(ay, by)
-    ybot = min(ay, by) - CELL
-    return x0, ytop, x1, ybot
 
 
 def build_svg(path_d, box, draw_grid, grid_labels=True, stroke=1.0):
@@ -144,7 +106,8 @@ def main():
     ap.add_argument("--crop", default=None, help="如 d2-f3：只看这个矩形区域")
     ap.add_argument("--box", default=None,
                     help="直接用 em 坐标裁剪：x0,y0,x1,y1（如 100,-80,250,60）")
-    ap.add_argument("--size", type=int, default=1024, help="PNG 边长（默认 1024）")
+    ap.add_argument("--size", type=int, default=1040,
+                    help="PNG 边长（默认 1040 = 画框尺寸，此时 1 单位 = 1 像素）")
     ap.add_argument("--svg", action="store_true", help="输出 SVG 而不是 PNG")
     a = ap.parse_args()
 
@@ -156,11 +119,7 @@ def main():
     path_d = glyph_svg_path(font, gname)
 
     if a.box:
-        vals = [float(v) for v in a.box.split(",")]
-        if len(vals) != 4:
-            raise SystemExit("--box 需要 4 个数：x0,y0,x1,y1")
-        bx0, by0, bx1, by1 = vals
-        box = (min(bx0, bx1), max(by0, by1), max(bx0, bx1), min(by0, by1))
+        box = region_from_box(a.box)
     elif a.crop:
         box = region_from_crop(a.crop)
     else:
