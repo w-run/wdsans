@@ -372,13 +372,8 @@ def flatten_flare(value, ratio=1.0, stroke_width=82.0,
             out.extend(_rebuild(kind, start, segs))
             continue
         newP = [moved.get(k, P[k]) for k in range(m)]
-        new_segs = []
-        for k, (op, args) in enumerate(segs):
-            idx = k + 1
-            if idx in moved:
-                new_segs.append((op, (newP[idx],)))
-            else:
-                new_segs.append((op, args))
+        new_segs = [_with_endpoint(op, args, newP[k + 1]) if (k + 1) in moved
+                    else (op, args) for k, (op, args) in enumerate(segs)]
         out.extend(_rebuild(kind, newP[0], new_segs))
     return out
 
@@ -411,6 +406,14 @@ def soften(value, tension=1.0):
         else:
             out.append((op, args))
     return out
+
+
+
+def _with_endpoint(op, args, pt):
+    """替换一段的终点，保留曲线的控制点（否则会写出非法 charstring）。"""
+    if op == "lineTo" or len(args) <= 1:
+        return (op, (pt,))
+    return (op, tuple(args[:-1]) + (pt,))
 
 
 # ---------------------------------------------------------------- 内部工具
@@ -519,11 +522,16 @@ def feet_removal(value, stroke_width=82.0, max_foot_ratio=1.6,
             if (a[1] - prev[1]) * (mid[1] - b[1]) >= 0:
                 continue
             y = a[1]
+            # 台阶必须位于轮廓的**纵向极值**处（真正的端部），否则可能误伤内部结构
+            ymin = min(q[1] for q in P); ymax = max(q[1] for q in P)
+            if abs(y - ymin) > stroke_width * 0.5 and abs(y - ymax) > stroke_width * 0.5:
+                continue
             cands = [h for h in long_h if abs(h - y) > 1.0]
             if not cands:
                 continue
             target = min(cands, key=lambda h: abs(h - y))
-            if abs(target - y) < 1.0 or abs(target - y) > stroke_width * 2.5:
+            # 台阶高度不会超过一个笔宽
+            if abs(target - y) < 1.0 or abs(target - y) > stroke_width * 1.3:
                 continue
             ny = y + (target - y) * ratio
             moved[i] = (a[0], ny)
@@ -533,13 +541,8 @@ def feet_removal(value, stroke_width=82.0, max_foot_ratio=1.6,
             out.extend(_rebuild(kind, start, segs))
             continue
         newP = [moved.get(k, P[k]) for k in range(m)]
-        new_segs = []
-        for k, (op, args) in enumerate(segs):
-            idx = k + 1
-            if idx in moved:
-                new_segs.append((op, (newP[idx],)))
-            else:
-                new_segs.append((op, args))
+        new_segs = [_with_endpoint(op, args, newP[k + 1]) if (k + 1) in moved
+                    else (op, args) for k, (op, args) in enumerate(segs)]
         out.extend(_rebuild(kind, newP[0], new_segs))
     return out
 
@@ -651,7 +654,8 @@ def dot_normalize(value, stroke_width=82.0, max_dim_ratio=2.6, ratio=1.0,
         if min(l0, l1) < 1e-6:
             out.extend(_rebuild(kind, start, segs))
             continue
-        target = l0 + (((l0 + l1) / 2) - l0) * ratio
+        # 只收不放：取较短的一端作为目标，避免把字形撑大
+        target = l0 + ((min(l0, l1)) - l0) * ratio
 
         newP = list(P)
         new_segs = [(op, args) for op, args in segs]
@@ -676,7 +680,7 @@ def dot_normalize(value, stroke_width=82.0, max_dim_ratio=2.6, ratio=1.0,
                     return (na[0] + ux * t, na[1] + uy * t)
                 new_segs[seg_idx] = (op, (proj(p1), proj(p2), nb))
             else:
-                new_segs[seg_idx] = (op, (nb,))
+                new_segs[seg_idx] = _with_endpoint(op, args, nb)
 
         # 其余段端点同步
         for k in range(4):
@@ -685,10 +689,18 @@ def dot_normalize(value, stroke_width=82.0, max_dim_ratio=2.6, ratio=1.0,
             if op == "curveTo" and len(args) == 3:
                 new_segs[k] = (op, (args[0], args[1], newP[ni]))
             else:
-                new_segs[k] = (op, (newP[ni],))
+                new_segs[k] = _with_endpoint(op, new_segs[k][1], newP[ni])
 
         out.extend(_rebuild(kind, newP[0], new_segs))
     return out
+
+
+
+def _with_endpoint(op, args, pt):
+    """替换一段的终点，保留曲线的控制点（否则会写出非法 charstring）。"""
+    if op == "lineTo" or len(args) <= 1:
+        return (op, (pt,))
+    return (op, tuple(args[:-1]) + (pt,))
 
 
 # ---------------------------------------------------------------- 内部工具

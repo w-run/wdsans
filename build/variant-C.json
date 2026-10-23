@@ -1,0 +1,11 @@
+{
+  "name": "variant-C",
+  "base_master": "Source Han Sans SC Normal (wght 350)",
+  "pipeline": ["soften", "dot", "feet", "hook", "terminal"],
+  "soften":   { "tension": 0.85 },
+  "dot":      { "stroke_width": 73 },
+  "feet":     { "stroke_width": 73, "ratio": 0.30 },
+  "hook":     { "strength": 0.20, "stroke_width": 73 },
+  "terminal": { "angle_hv": 0, "angle_diag": 4, "width_norm": 0.8, "probe_frac": 0.45, "stroke_width": 73 },
+  "audit": "1500 字形，无轮廓数/绕向/退化异常；126 字形尺寸变化 ≤ 15 单位（端面 4 度斜切所致）"
+}
