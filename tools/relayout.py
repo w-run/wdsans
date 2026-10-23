@@ -50,15 +50,19 @@ def dedup(pts):
 
 
 def drop_bar(cs, delta, tol=2.0):
-    """外轮廓底边 + 每个洞的底边，同时下移 delta。"""
+    """只动**外框**和**框内那块洞**的底边，内芯（如玉的横画、点）一概不碰。
+
+    之前对每条轮廓按自己的最低点移动，导致 国 里的 玉 底横和点被一起下移 —— 错。
+    """
+    order = sorted(range(len(cs)), key=lambda i: -abs(signed_area(cs[i])))
+    move = set(order[:2])          # 0 = 外框，1 = 框内的洞
     out = []
-    for c in cs:
-        ys = [p[1] for p in c]
-        ymin = min(ys)
-        nc = []
-        for (x, y) in c:
-            # 只动各轮廓自己的"底边"：距该轮廓最低点 tol 以内
-            nc.append((x, y - delta) if y <= ymin + tol else (x, y))
+    for i, c in enumerate(cs):
+        if i not in move:
+            out.append(list(c))
+            continue
+        ymin = min(p[1] for p in c)
+        nc = [(x, y - delta) if y <= ymin + tol else (x, y) for (x, y) in c]
         out.append(dedup(nc))
     return out
 
@@ -105,6 +109,8 @@ def main():
     ap.add_argument("--drop", type=float, default=55.0, help="底横下移量")
     ap.add_argument("--target-h", type=float, default=None,
                     help="目标总高；给了就按它反推下移量，忽略 --drop")
+    ap.add_argument("--target-pct", type=float, default=96.0,
+                    help="目标高度占原高的百分比（默认 96）")
     ap.add_argument("--out", required=True)
     ap.add_argument("--size", type=int, default=520)
     a = ap.parse_args()
@@ -127,10 +133,19 @@ def main():
     _, y0b, _, y1b = bbox(cs1)
     h1 = y1b - y0b
 
+    # 守卫：这不是"底横托底"的包围结构（门、同 这类半包围），不许动
+    shrink = (h0 - h1) / h0
+    if shrink > 0.15:
+        print(f"跳过 {a.glyph}: 去出脚后缩水 {shrink*100:.1f}% > 15%，"
+              f"说明底部不是一条横画（半包围结构不适用）")
+        render(cs, a.out, a.size)
+        return
+
     if a.target_h:
         delta = max(0.0, a.target_h - h1)
     else:
-        delta = a.drop
+        target = h0 * a.target_pct / 100.0
+        delta = max(0.0, target - h1)
     cs2 = drop_bar(cs1, delta)
     _, y0c, _, y1c = bbox(cs2)
     h2 = y1c - y0c
