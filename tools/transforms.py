@@ -461,6 +461,65 @@ def cap_angle(value, **kw):
 
 
 
+
+def hook_tension(value, strength=0.35, min_turn=45.0, max_chord_ratio=2.2,
+                 stroke_width=82.0):
+    """钩/转角张力：把转角处的圆弧收紧或放松。
+
+    strength > 0 收紧（转角半径变小、更利落）→ 用于竖钩、横折钩
+    strength < 0 放松（转角更圆、更饱满）  → 用于竖弯钩
+
+    检测：一段**短弦 + 大转角**的曲线（弦长 < max_chord_ratio × 笔宽，
+    两端切线夹角 > min_turn 度）。这类曲线就是转角处的圆弧。
+
+    做法：把两个控制点沿法向朝弦（或背离弦）移动，半径随之变化。
+    只移动控制点，点数不变 → VF 安全。
+    """
+    if abs(strength) < 1e-9:
+        return value
+
+    out = []
+    last_on = None
+    for op, args in value:
+        if op in ("moveTo", "lineTo"):
+            last_on = args[0]
+            out.append((op, args))
+            continue
+        if op != "curveTo" or len(args) != 3 or last_on is None:
+            out.append((op, args))
+            last_on = args[-1] if args else last_on
+            continue
+
+        p0 = last_on
+        p1, p2, p3 = args
+        cx, cy = p3[0] - p0[0], p3[1] - p0[1]
+        L = math.hypot(cx, cy)
+        if L < 1e-6 or L > stroke_width * max_chord_ratio:
+            out.append((op, args)); last_on = p3; continue
+
+        # 两端切线夹角
+        t0 = _norm(p1[0] - p0[0], p1[1] - p0[1])
+        t1 = _norm(p3[0] - p2[0], p3[1] - p2[1])
+        dot = max(-1.0, min(1.0, t0[0] * t1[0] + t0[1] * t1[1]))
+        turn = math.degrees(math.acos(dot))
+        if turn < min_turn:
+            out.append((op, args)); last_on = p3; continue
+
+        ux, uy = cx / L, cy / L
+        nx, ny = -uy, ux
+
+        def retarget(p):
+            # 分解为「沿弦」+「离弦高度」
+            t = (p[0] - p0[0]) * ux + (p[1] - p0[1]) * uy
+            h = (p[0] - p0[0]) * nx + (p[1] - p0[1]) * ny
+            h2 = h * (1.0 - strength)      # 收紧 = 高度变小
+            return (p0[0] + ux * t + nx * h2, p0[1] + uy * t + ny * h2)
+
+        out.append((op, (retarget(p1), retarget(p2), p3)))
+        last_on = p3
+    return out
+
+
 def dot_normalize(value, stroke_width=82.0, max_dim_ratio=2.6, ratio=1.0,
                   flatten_faces=True):
     """点等宽：把楔形点改成等宽棒，并把弧形的端面压平。
@@ -610,6 +669,8 @@ def apply_all(value, params):
         v = center_spread(v, **params["spread"])
     if "gravity" in params:
         v = gravity_warp(v, **params["gravity"])
+    if "hook" in params:
+        v = hook_tension(v, **params["hook"])
     if "dot" in params:
         v = dot_normalize(v, **params["dot"])
     if "terminal" in params:
