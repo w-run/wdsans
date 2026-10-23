@@ -18,7 +18,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from glyph_view import (X0, X1, Y_TOP, Y_BOT, GRID, CELL,
+from glyph_view import (X0, X1, Y_TOP, Y_BOT, GRID, CELL, cell_name,
                         glyph_svg_path, build_svg, region_from_crop, _label_cells)
 
 from fontTools.ttLib import TTFont
@@ -68,7 +68,7 @@ def cell_index(png_path, box):
             frac = float(a[r0:r1, c0:c1].mean()) if r1 > r0 and c1 > c0 else 0.0
             col = ci0 + ci; row = ri0 + ri
             if 0 <= col < GRID and 0 <= row < GRID:
-                line.append(f"{chr(ord('a') + col)}{row + 1}={frac:.2f}")
+                line.append(f"{cell_name(col, row)}={frac:.2f}")
         rows.append("  ".join(line))
     return "\n".join(rows)
 
