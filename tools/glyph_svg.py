@@ -140,19 +140,25 @@ def build_svg(contours, path_d, grid=True, refs=True, points=False, title=""):
         out.append("</g>")
 
     if refs:
-        out.append('<g stroke-width="1" font-family="monospace" font-size="14">')
-        # 基线 y=0 → 900
-        out.append(f'<line x1="0" y1="900" x2="1024" y2="900" stroke="#ff8888"/>')
-        out.append('<text x="2" y="894" fill="#ff8888">baseline 0</text>')
-        # em 顶 y=880 → 20 ；字面参考 800/-120
-        for yy, lab, col in ((880, "asc 880", "#88aaff"),
-                             (800, "800", "#cccccc"),
-                             (0, "0", "#cccccc"),
-                             (-120, "desc -120", "#88aaff")):
+        out.append('<g stroke-width="1">')
+        for yy, lab, col, dash in ((880, "asc 880", "#88aaff", ' stroke-dasharray="6 4"'),
+                                   (800, "800", "#dddddd", ' stroke-dasharray="3 5"'),
+                                   (0, "baseline 0", "#ff8888", ""),
+                                   (-120, "desc -120", "#88aaff", ' stroke-dasharray="6 4"')):
             py = Y_EM_MAX - yy
             out.append(f'<line x1="0" y1="{py:.1f}" x2="1024" y2="{py:.1f}" '
-                       f'stroke="{col}" stroke-dasharray="6 4"/>')
-            out.append(f'<text x="900" y="{py-4:.1f}" fill="{col}">{lab}</text>')
+                       f'stroke="{col}"{dash}/>')
+        # 标签统一靠右、带白描边，避免压住字形
+        out.append('<g font-family="monospace" font-size="15" text-anchor="end" '
+                   'stroke="#ffffff" stroke-width="4" paint-order="stroke">')
+        for yy, lab, col in ((880, "asc 880", "#88aaff"),
+                             (800, "800", "#cccccc"),
+                             (0, "baseline 0", "#ff8888"),
+                             (-120, "desc -120", "#88aaff")):
+            py = Y_EM_MAX - yy
+            out.append(f'<text x="1018" y="{py-6:.1f}" fill="{col}" '
+                       f'stroke="#ffffff">{lab}</text>')
+        out.append("</g>")
         out.append("</g>")
 
     # 字形（SVG 的 y 轴向下，这里直接用已转换的坐标重建，避免二次翻转错误）

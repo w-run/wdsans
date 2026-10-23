@@ -173,7 +173,7 @@ Mona Sans VF 在**源层**改度量（`.glyphspackage` + `build.ninja`），重�
 - 标点挤压、竖排、反白
 - 与**鸿蒙 Sans / OPPO Sans / 思源黑**并排同尺寸对照
 
-工具：`tools/specimen_html.py`（自动子集化为 woff2，出 HTML）。
+工具：`tools/hb_render.py --glyph "一段文字" --size 14`（hb-view 直读字体，不经过浏览器，不会回退系统字体）。
 
 <details>
 <summary>历史教训（2026-10-22）</summary>
