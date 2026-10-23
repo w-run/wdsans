@@ -1,7 +1,7 @@
 # 工具链
 
 > 目标：**先保证预览可信，再谈改字**。
-> v2.0 · 2026-10-23 · 已清除全部废弃脚本，只保留 7 个
+> v2.1 · 2026-10-23 · 9 个工具：看图 3 / 测算 2 / 对照 1 / 改造 3
 
 ---
 
@@ -145,6 +145,37 @@ python3 tools/glyph_svg.py --font ref/shs/shs-350.otf --glyph 永 \
 
 设计坐标 / 像素坐标 / 节点类型。**测算角度、弧度、笔画宽度用这份数据**，
 纯文本，不依赖任何渲染环境。
+
+### 5. `metrics.py` — 几何测量（数字化）
+
+从轮廓直接算指标，不经光栅化。**所有"哪家更粗/更挤/更圆"的判断都该先跑它**。
+
+```bash
+python3 tools/metrics.py --fonts "shs=ref/shs/shs-400.otf,ops=ref/ops/ops-400.ttf" \
+    --charset common --json /tmp/m.json --detail /tmp/md.json
+```
+
+输出：墨面积、竖/横笔画实测宽度、字面率、留白率、曲线占比、节点数、重心偏移。
+`--charset probe` 只跑 15 个探针字（快），`common` 跑 431 字（准）。
+
+### 6. `sheet.py` — 多字体对照图（视觉化）
+
+一张 SVG 里排多格，**共用一套连续网格**，列与列直接可比。
+
+```bash
+# 4 家 × 6 字对照表
+python3 tools/sheet.py --glyphs 口永国大木小 \
+  --fonts "SHS=ref/shs/shs-400.otf,OPPO=ref/ops/ops-400.ttf" \
+  --out /tmp/s.svg --png --scale 0.34
+
+# 叠图：所有字体画在同一格，看差异落在哪
+python3 tools/sheet.py --glyphs 口 --overlay \
+  --fonts "..." --out /tmp/ov.svg --png
+```
+
+- `--overlay` 默认画**轮廓线**（看得清边缘差），`--solid` 改半透明实心（看整体重量）
+- `--crop d2-f3` 统一放大某一块
+- **标签只能用拉丁字符**（SHS/HOS/OPPO/WDO）；中文标签会显示成空框
 
 ---
 
