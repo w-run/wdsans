@@ -1,0 +1,7 @@
+# 参照字体体积大（约 300MB），不进 git，用 ref/fetch.sh 重新获取
+ref/*/*.otf
+ref/*/*.ttf
+build/*.otf
+build/*.ttf
+*.pyc
+__pycache__/
