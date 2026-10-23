@@ -2,7 +2,7 @@
 
 设计目标：**打开就能量**。
 - 画布 1024×1024，em 坐标与像素 1:1（1 设计单位 = 1 px）
-- 可选叠加：8×8 网格、基线/字面参考线、轮廓节点与编号
+- 可选叠加：16×16 网格、基线/字面参考线、轮廓节点与编号
 - 同时可导出节点坐标文本，做纯数值测算
 
 坐标映射（画布左上角为原点）：
@@ -27,8 +27,8 @@ from fontTools.pens.basePen import BasePen
 SIZE = 1024
 X_EM_MIN, X_EM_MAX = -12.0, 1012.0
 Y_EM_MIN, Y_EM_MAX = -124.0, 900.0
-GRID = 8
-CELL = SIZE / GRID          # 128 px
+GRID = 16
+CELL = SIZE / GRID          # 64 px
 
 
 def px(x, y):
@@ -135,8 +135,8 @@ def build_svg(contours, path_d, grid=True, refs=True, points=False, title=""):
         out.append('<g font-family="monospace" font-size="16" fill="#bbbbbb">')
         for ri in range(GRID):
             for ci in range(GRID):
-                out.append(f'<text x="{ci*CELL+4:.0f}" y="{ri*CELL+18:.0f}">'
-                           f'{chr(ord("a")+ci)}{ri+1}</text>')
+                out.append(f'<text x="{ci*CELL+3:.0f}" y="{ri*CELL+14:.0f}" '
+                           f'font-size="12">{chr(ord("a")+ci)}{ri+1}</text>')
         out.append("</g>")
 
     if refs:

@@ -8,7 +8,9 @@
 固定画框（em 坐标，1000 upm）：
     x ∈ [-20, 1020]   y ∈ [900, -140]
     → 1040 × 1040 的正方形，基线 y=0 距顶部 900
-    → 8×8 网格，每格 130 单位，列 a–h（左到右），行 1–8（上到下）
+    → 16×16 网格，每格 65 单位
+    → 列 0–f（左到右），行 0–f（上到下），**格位就是十六进制坐标**
+    → 区块写法：单格 "3a"；矩形 "3a-9d"（起点格 → 终点格）
 
 用法：
     # 整字 + 网格
@@ -31,7 +33,7 @@ from fontTools.pens.svgPathPen import SVGPathPen
 # ---- 固定画框 ----
 X0, X1 = -20.0, 1020.0
 Y_TOP, Y_BOT = 900.0, -140.0
-GRID = 8
+GRID = 16
 CELL = (X1 - X0) / GRID          # 130
 
 
@@ -42,29 +44,38 @@ def glyph_svg_path(font, glyph_name):
     return pen.getCommands()
 
 
+HEX = "0123456789abcdef"
+
+
+def cell_name(col, row):
+    """格位 = 两位十六进制：列在前、行在后。0-f 对 0-f。"""
+    return f"{HEX[col]}{HEX[row]}"
+
+
 def cell_box(name):
-    """把 'd2' 转成 (x, y) 的 em 坐标矩形。"""
-    col = name[0].lower()
-    row = int(name[1:])
-    ci = ord(col) - ord("a")
-    ri = row - 1
-    if not (0 <= ci < GRID and 0 <= ri < GRID):
-        raise SystemExit(f"格子编号越界: {name}")
-    x = X0 + ci * CELL
-    y = Y_TOP - ri * CELL
-    return x, y
+    """'3a' -> 该格的左上角 em 坐标 (x, y_top)。"""
+    name = name.strip().lower()
+    if len(name) != 2 or name[0] not in HEX or name[1] not in HEX:
+        raise SystemExit(f"格位写法应为两位十六进制（如 3a / 0f），收到: {name}")
+    ci = HEX.index(name[0])
+    ri = HEX.index(name[1])
+    return X0 + ci * CELL, Y_TOP - ri * CELL
 
 
 def region_from_crop(spec):
-    """'d2-f3' -> (x0, y0, x1, y1)"""
+    """'3a-9d' -> 起点格到终点格围成的矩形 (x0, ytop, x1, ybot)。
+
+    单格写法 '3a' 等价于 '3a-3a'。
+    """
+    spec = spec.strip().lower()
     if "-" in spec:
-        a, b = spec.split("-")
+        a, b = spec.split("-", 1)
     else:
         a = b = spec
     ax, ay = cell_box(a)
     bx, by = cell_box(b)
-    x0, x1 = sorted((ax, bx + CELL))
-    # y 轴向下：ay/by 是格子**顶边**，所以底边要再减一个 CELL
+    x0 = min(ax, bx)
+    x1 = max(ax, bx) + CELL
     ytop = max(ay, by)
     ybot = min(ay, by) - CELL
     return x0, ytop, x1, ybot
@@ -120,7 +131,7 @@ def _label_cells(png_path, box, w_px, h_px):
             py = int((ytop - cy) * sy) + 2
             if px > w_px - 18 or py > h_px - 10:
                 continue
-            d.text((px, py), f"{chr(ord('a') + col)}{row + 1}", fill=190)
+            d.text((px, py), cell_name(col, row), fill=185)
     im.save(png_path)
 
 
@@ -131,6 +142,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--grid", action="store_true", help="叠加 8×8 网格与编号")
     ap.add_argument("--crop", default=None, help="如 d2-f3：只看这个矩形区域")
+    ap.add_argument("--box", default=None,
+                    help="直接用 em 坐标裁剪：x0,y0,x1,y1（如 100,-80,250,60）")
     ap.add_argument("--size", type=int, default=1024, help="PNG 边长（默认 1024）")
     ap.add_argument("--svg", action="store_true", help="输出 SVG 而不是 PNG")
     a = ap.parse_args()
@@ -142,7 +155,16 @@ def main():
         raise SystemExit(f"字体里没有字符 {a.glyph!r}（U+{ord(a.glyph):04X}）")
     path_d = glyph_svg_path(font, gname)
 
-    box = region_from_crop(a.crop) if a.crop else (X0, Y_TOP, X1, Y_BOT)
+    if a.box:
+        vals = [float(v) for v in a.box.split(",")]
+        if len(vals) != 4:
+            raise SystemExit("--box 需要 4 个数：x0,y0,x1,y1")
+        bx0, by0, bx1, by1 = vals
+        box = (min(bx0, bx1), max(by0, by1), max(bx0, bx1), min(by0, by1))
+    elif a.crop:
+        box = region_from_crop(a.crop)
+    else:
+        box = (X0, Y_TOP, X1, Y_BOT)
     svg = build_svg(path_d, box, draw_grid=a.grid)
 
     if a.svg:

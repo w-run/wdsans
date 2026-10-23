@@ -1,7 +1,8 @@
 # 工具链
 
 > 目标：**先保证预览可信，再谈改字**。
-> v2.2 · 2026-10-23 · 10 个工具：看图 3 / 测算 3 / 对照 1 / 改造 3
+> v3.0 · 2026-10-23 · 10 个工具：看图 3 / 测算 3 / 对照 1 / 改造 3
+> 网格改为 16×16，格位即十六进制坐标
 
 ---
 
@@ -26,8 +27,9 @@
 em 坐标（1000 upm）
   x ∈ [-20, 1020]      宽 1040
   y ∈ [900, -140]      高 1040
-  → 8×8 网格，每格 130 单位
-  → 列 a–h（左→右），行 1–8（上→下）
+  → 16×16 网格，每格 65 单位
+  → 列 0–f（左→右），行 0–f（上→下）
+  → 格位就是十六进制坐标：单格 `3a`，矩形 `3a-9d`（起点→终点）
 ```
 
 **任何字体、任何字形都用这一套**，所以 `d2` 在所有图里指同一块物理区域。
@@ -39,7 +41,7 @@ em 坐标（1000 upm）
 ```
 x_px = x_em + 12           em x ∈ [-12, 1012]
 y_px = 900 - y_em          em y ∈ [-124, 900]，基线在 y_px = 900
-→ 8×8 网格，每格 128 px
+→ 16×16 网格，每格 64 px
 ```
 
 > 两套画框宽度不同（1040 vs 1024），**格号不能跨工具直接对照**。
@@ -57,7 +59,7 @@ python3 tools/glyph_view.py --font ref/shs/shs-350.otf --glyph 永 --out 永.png
 
 # 只看 d2 到 f3 这一块
 python3 tools/glyph_view.py --font ref/shs/shs-350.otf --glyph 永 \
-    --out 永_d2f3.png --crop d2-f3 --grid
+    --out 永_3a9d.png --crop 3a-9d --grid
 
 # 导出 SVG（预览画框，供浏览器查看）
 python3 tools/glyph_view.py --font ref/shs/shs-350.otf --glyph 永 --out 永.svg --svg
@@ -129,7 +131,7 @@ python3 tools/glyph_svg.py --font ref/shs/shs-350.otf --glyph 永 \
 
 | 元素 | 含义 |
 |---|---|
-| 浅灰网格 + `a1`…`h8` | 8×8 分区，每格 128 px |
+| 浅灰网格 + `00`…`ff` | 16×16 分区，每格 64 px |
 | 红实线 | 基线（y=0） |
 | 蓝虚线 | asc 880 / desc −120 |
 | 灰虚线 | y=800 参考 |
@@ -158,45 +160,33 @@ python3 tools/metrics.py --fonts "shs=ref/shs/shs-400.otf,ops=ref/ops/ops-400.tt
 输出：墨面积、竖/横笔画实测宽度、字面率、留白率、曲线占比、节点数、重心偏移。
 `--charset probe` 只跑 15 个探针字（快），`common` 跑 431 字（准）。
 
-### 6. `sheet.py` — 多字体对照图（视觉化）
+### 6. `montage.py` — 多字体对照（逐格出图 + 拼接）
 
-一张 SVG 里排多格，**共用一套连续网格**，列与列直接可比。
-
-```bash
-# 4 家 × 6 字对照表
-python3 tools/sheet.py --glyphs 口永国大木小 \
-  --fonts "SHS=ref/shs/shs-400.otf,OPPO=ref/ops/ops-400.ttf" \
-  --out /tmp/s.svg --png --scale 0.34
-
-# 叠图：所有字体画在同一格，看差异落在哪
-python3 tools/sheet.py --glyphs 口 --overlay \
-  --fonts "..." --out /tmp/ov.svg --png
-```
-
-- `--overlay` 默认画**轮廓线**（看得清边缘差），`--solid` 改半透明实心（看整体重量）
-- `--crop d2-f3` 统一放大某一块
-- **标签只能用拉丁字符**（SHS/HOS/OPPO/WDO）；中文标签会显示成空框
-
-### 7. `detail.py` — 单笔细节（出脚 / 端面 / 收锋）
-
-整体指标看不出的东西在这里：竖笔有没有出头、端面斜不斜、撇捺收不收锋。
+**每格都是一个独立文件**（由 `glyph_view` 生成），可单独打开核对；
+拼图只负责排布，不参与坐标计算。所以不存在"缩放对不对"的问题：
+格子多大由 `--size` 决定，画布就是格子尺寸的整数倍。
 
 ```bash
-python3 tools/detail.py \
-  --fonts "shs=ref/shs/shs-400.otf,ops=ref/ops/ops-400.ttf" --json /tmp/d.json
+# 四家 × 六字对照表
+python3 tools/montage.py --glyphs 口永国大木小 --size 320 --cols 4 \
+  --fonts "SHS=ref/shs/shs-400.otf,HOS=ref/hos/hos-400.ttf" \
+  --out /tmp/cmp.png
+
+# 只看某一区块（十六进制格位），四家排 2×2
+python3 tools/montage.py --glyphs 日 --crop 3a-9d --size 400 --cols 2 \
+  --fonts "..." --out /tmp/zoom.png
+
+# 叠图：所有字体画在同一格，按色区分
+python3 tools/montage.py --glyphs 口 --overlay --size 460 \
+  --fonts "..." --out /tmp/ov.png
+
+# 保留每格原图，便于逐个核对
+python3 tools/montage.py ... --keep /tmp/cells
 ```
 
-四类探针：
-
-| 探针 | 量什么 | 判读 |
-|---|---|---|
-| `slants` | 单笔端面相对正交的���角 | 0 = 平切 |
-| `overshoot` | 包围结构竖笔比底横低多少 | >0 = 出脚 |
-| `diagonals` | 撇捺起笔/收笔宽、收分比、累计转角 | 收分比 <1.2 说明不收锋 |
-| `corners` | 包围盒角到轮廓的最近距离 → 圆弧半径 | 0 = 尖角 |
-
-> ⚠️ 只能测**单笔**。`三` 这类多笔并排的字会把多条边界混进一次拟合，
-> 所以只对 `一/二/口/日` 跑端面探针。`月` 的钩会污染出脚测量，已排除。
+- `--crop 3a-9d` 按格位截取，**不要用放大来替代裁剪**
+- `--overlay` 画轮廓线（半透明填充 + 描边），重叠处一眼看出粗细差
+- 标签只用拉丁字符（SHS/HOS/OPPO/WDO）；中文会自动借思源渲染
 
 ---
 
