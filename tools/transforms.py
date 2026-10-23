@@ -460,6 +460,144 @@ def cap_angle(value, **kw):
     return terminal_fix(value, **kw)
 
 
+
+def dot_normalize(value, stroke_width=82.0, max_dim_ratio=2.6, ratio=1.0,
+                  flatten_faces=True):
+    """点等宽：把楔形点改成等宽棒，并把弧形的端面压平。
+
+    适用对象：小尺寸的四点闭合轮廓（点 / 短笔），端面可以是曲线。
+    做法：
+      1) 按弦长判断哪两条边是端面（短的）
+      2) 把两个端面的弦长改成相等（取中值）→ 两条长边自然平行 → 等宽
+      3) 端面若是曲线，把控制点投影到弦上 → 端面变平直（消除内凹）
+
+    只移动已有节点，点数不变 → VF 安全。
+    """
+    if ratio <= 0:
+        return value
+    contours = _split_contours(value)
+    out = []
+    for kind, start, segs in contours:
+        if len(segs) != 4:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+        P = [start] + [args[-1] for _, args in segs]
+        if len(P) > 1 and math.hypot(P[0][0] - P[-1][0], P[0][1] - P[-1][1]) < 1.0:
+            P = P[:-1]
+        if len(P) != 4:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        xs = [q[0] for q in P]; ys = [q[1] for q in P]
+        w, h = max(xs) - min(xs), max(ys) - min(ys)
+        # 点/短笔的判据：**短边**不超过笔宽的 max_dim_ratio 倍，长边不超过 6 倍
+        if min(w, h) > stroke_width * max_dim_ratio or max(w, h) > stroke_width * 6.0:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+
+        def dist(a, b):
+            return math.hypot(a[0] - b[0], a[1] - b[1])
+        e = [dist(P[i], P[(i + 1) % 4]) for i in range(4)]
+
+        # 端面 = 弦长之和较小的那一对
+        if e[0] + e[2] <= e[1] + e[3]:
+            faces = [(1, 2), (3, 0)]
+        else:
+            faces = [(0, 1), (2, 3)]
+
+        l0 = dist(P[faces[0][0]], P[faces[0][1]])
+        l1 = dist(P[faces[1][0]], P[faces[1][1]])
+        if min(l0, l1) < 1e-6:
+            out.extend(_rebuild(kind, start, segs))
+            continue
+        target = l0 + (((l0 + l1) / 2) - l0) * ratio
+
+        newP = list(P)
+        new_segs = [(op, args) for op, args in segs]
+        for (i, j), cur in zip(faces, (l0, l1)):
+            a, b = P[i], P[j]
+            if cur < 1e-6:
+                continue
+            mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+            ux, uy = (b[0] - a[0]) / cur, (b[1] - a[1]) / cur
+            na = (mx - ux * target / 2, my - uy * target / 2)
+            nb = (mx + ux * target / 2, my + uy * target / 2)
+            newP[i] = na; newP[j] = nb
+            # 端面对应的那一段：若为曲线，把控制点投影到新弦上
+            seg_idx = i  # 段 i 从 P[i] 到 P[j]
+            op, args = new_segs[seg_idx]
+            if op == "curveTo" and flatten_faces and len(args) == 3:
+                p1, p2 = args[0], args[1]
+                def proj(pt):
+                    vx, vy = pt[0] - na[0], pt[1] - na[1]
+                    t = vx * ux + vy * uy
+                    t = max(0.0, min(target, t))
+                    return (na[0] + ux * t, na[1] + uy * t)
+                new_segs[seg_idx] = (op, (proj(p1), proj(p2), nb))
+            else:
+                new_segs[seg_idx] = (op, (nb,))
+
+        # 其余段端点同步
+        for k in range(4):
+            ni = (k + 1) % 4
+            op, args = new_segs[k]
+            if op == "curveTo" and len(args) == 3:
+                new_segs[k] = (op, (args[0], args[1], newP[ni]))
+            else:
+                new_segs[k] = (op, (newP[ni],))
+
+        out.extend(_rebuild(kind, newP[0], new_segs))
+    return out
+
+
+# ---------------------------------------------------------------- 内部工具
+
+def _norm(x, y):
+    ln = math.hypot(x, y) or 1.0
+    return x / ln, y / ln
+
+
+def _split_contours(value):
+    """拆成 [(kind, start, segs)]，kind = 'line'（全直线）或 'curve'。"""
+    out = []
+    cur = None
+    for op, args in value:
+        if op == "moveTo":
+            if cur:
+                out.append((cur[0], cur[1], cur[2]))
+            cur = ["line", args[0], []]
+        elif op in ("lineTo", "curveTo", "qCurveTo"):
+            if cur is None:
+                continue
+            if op != "lineTo":
+                cur[0] = "curve"
+            cur[2].append((op, args))
+        elif op in ("closePath", "endPath"):
+            if cur:
+                out.append((cur[0], cur[1], cur[2]))
+                cur = None
+    if cur:
+        out.append((cur[0], cur[1], cur[2]))
+    return out
+
+
+def _rebuild(kind, start, segs):
+    out = [("moveTo", (start,))]
+    out.extend(segs)
+    out.append(("closePath", ()))
+    return out
+
+
+def cap_angle(value, **kw):
+    """兼容别名：端面处理统一走 terminal_fix。"""
+    kw.pop("max_cap_ratio", None)
+    kw.pop("min_edge_ratio", None)
+    kw.pop("min_dot", None)
+    kw.pop("collinear_dot", None)
+    return terminal_fix(value, **kw)
+
+
+
 def apply_all(value, params):
     """按固定顺序应用算子。顺序有讲究：先结构、后重心、最后笔画。
 
@@ -472,6 +610,8 @@ def apply_all(value, params):
         v = center_spread(v, **params["spread"])
     if "gravity" in params:
         v = gravity_warp(v, **params["gravity"])
+    if "dot" in params:
+        v = dot_normalize(v, **params["dot"])
     if "terminal" in params:
         v = terminal_fix(v, **params["terminal"])
     if "flare" in params:
