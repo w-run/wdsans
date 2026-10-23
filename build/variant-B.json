@@ -1,0 +1,10 @@
+{
+  "name": "variant-B 全算子组合",
+  "base_master": "Source Han Sans SC Normal (wght 350)",
+  "pipeline": ["soften", "dot", "hook", "terminal"],
+  "soften":   { "tension": 0.85 },
+  "dot":      { "stroke_width": 73 },
+  "hook":     { "strength": 0.20, "stroke_width": 73 },
+  "terminal": { "angle_hv": 0, "angle_diag": 4, "width_norm": 0.8, "probe_frac": 0.45, "stroke_width": 73 },
+  "note": "stroke_offset 不进主流程（重叠轮廓上会造成接缝）"
+}
