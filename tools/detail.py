@@ -393,6 +393,61 @@ def stroke_overshoot(cs):
             "stem_w": lw, "stem_rw": rw}
 
 
+def folds(cs, thr=25.0):
+    """硬折点：轮廓上转角超过 thr 度的顶点数量。
+
+    曲线展平后，真正的弧线每点只转几度；只有"折"才会出现大转角。
+    所以这个数就是"硬角数量" —— 越少越顺。
+    """
+    n = 0
+    big = []
+    for pts in cs:
+        m = len(pts)
+        if m < 5:
+            continue
+        for i in range(1, m - 1):
+            ax, ay = pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]
+            bx, by = pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]
+            la = math.hypot(ax, ay)
+            lb = math.hypot(bx, by)
+            if la < 1e-6 or lb < 1e-6:
+                continue
+            cosv = max(-1.0, min(1.0, (ax * bx + ay * by) / (la * lb)))
+            ang = math.degrees(math.acos(cosv))
+            if ang > thr:
+                n += 1
+                big.append(round(ang))
+    return {"n": n, "angles": sorted(big, reverse=True)[:6]}
+
+
+def joint_flare(cs):
+    """交接加粗：竖笔在横画下缘处的宽度 / 远处宽度。>1 说明搭接鼓包。"""
+    pts = [p for c in cs for p in c]
+    x0, y0, x1, y1 = bbox(pts)
+    xc = (x0 + x1) / 2
+    # 横画边界要在**离开竖笔**的位置取，否则竖笔穿过横画只有一条连续段
+    xs = x0 + 0.12 * (x1 - x0)
+    vs = scan_runs(cs, xs, "v")
+    if not vs:
+        return None
+    bands = sorted(vs)
+    bar_bot, bar_top = bands[0] if len(bands) == 1 else bands[-1]
+    def w_at(y):
+        rs = scan_runs(cs, y, "h")
+        if not rs:
+            return None
+        # 只取包含中心的墨段
+        for a, b in rs:
+            if a <= xc <= b:
+                return b - a
+        return None
+    w_near = w_at(bar_bot - 25)
+    w_far = w_at(bar_bot - 160)
+    if not w_near or not w_far or w_far < 5:
+        return None
+    return {"near": w_near, "far": w_far, "flare": w_near / w_far}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fonts", required=True, help="key=path,key=path")
@@ -415,7 +470,8 @@ def main():
     out = {}
     for key, path in fonts:
         r = {"terminals": [], "corners": [], "diagonals": [], "joints": [],
-             "slants": [], "bars": [], "overshoot": []}
+             "slants": [], "bars": [], "overshoot": [],
+             "folds": [], "flare": []}
         for ch, side in terminals:
             gn, cs = contours_of(path, ch)
             if not cs:
@@ -478,6 +534,23 @@ def main():
             if o:
                 o["ch"] = ch
                 r["overshoot"].append(o)
+        r["folds"] = []
+        for ch in ("永", "国", "回", "日", "田", "明", "京", "雪", "水", "人"):
+            gn, cs = contours_of(path, ch)
+            if not cs:
+                continue
+            f = folds(cs)
+            f["ch"] = ch
+            r["folds"].append(f)
+        r["flare"] = []
+        for ch in ("十", "中", "王", "里", "干"):
+            gn, cs = contours_of(path, ch)
+            if not cs:
+                continue
+            f = joint_flare(cs)
+            if f:
+                f["ch"] = ch
+                r["flare"].append(f)
         for ch in joints:
             gn, cs = contours_of(path, ch)
             if not cs:
