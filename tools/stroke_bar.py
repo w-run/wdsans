@@ -28,12 +28,30 @@ from frame import X0, X1, Y_TOP, Y_BOT   # noqa: E402
 
 DOT_AXIS = 287.0     # 两端中点距离（不是投影跨度）
 DOT_WIDTH = 80.0
-DOT_SAG = 7.0        # 两侧外凸的拱高
+DOT_SAG = 3.0        # 长边同向上拱的拱量
+DOT_AXIS = 331.0     # 目标长边
+DOT_FACE = 66.0      # 目标端面长
 MIN_AREA = 0.002
 MAX_DOT_AREA = 0.055
 
 
-def to_contours(v):
+def _bez(p0, p1, p2, p3, n=8):
+    out = []
+    for i in range(1, n + 1):
+        t = i / n
+        mt = 1 - t
+        out.append((mt ** 3 * p0[0] + 3 * mt * mt * t * p1[0]
+                    + 3 * mt * t * t * p2[0] + t ** 3 * p3[0],
+                    mt ** 3 * p0[1] + 3 * mt * mt * t * p1[1]
+                    + 3 * mt * t * t * p2[1] + t ** 3 * p3[1]))
+    return out
+
+
+def to_contours(v, steps=8):
+    """RecordingPen 值 → 展平轮廓。
+
+    ⚠️ 曲线必须采样；只取端点会把撇捺的弧拉成折线。
+    """
     cs, cur = [], []
     for op, args in v:
         if op == "moveTo":
@@ -43,7 +61,16 @@ def to_contours(v):
         elif op == "lineTo":
             cur.append(tuple(args[0]))
         elif op == "curveTo":
-            cur.append(tuple(args[-1]))
+            p1, p2, p3 = (tuple(p) for p in args)
+            cur.extend(_bez(cur[-1], p1, p2, p3, steps) if cur else [p3])
+        elif op == "qCurveTo":
+            p3 = tuple(args[-1])
+            if cur and len(args) >= 2:
+                c1 = ((cur[-1][0] + 2 * args[-2][0]) / 3, (cur[-1][1] + 2 * args[-2][1]) / 3)
+                c2 = ((p3[0] + 2 * args[-2][0]) / 3, (p3[1] + 2 * args[-2][1]) / 3)
+                cur.extend(_bez(cur[-1], c1, c2, p3, steps))
+            else:
+                cur.append(p3)
         elif op in ("closePath", "endPath"):
             if len(cur) > 2:
                 if cur[0] != cur[-1]:
@@ -74,38 +101,57 @@ def pca(c):
     return (mx, my), (math.cos(ang), math.sin(ang))
 
 
-def rebuild_dot(c, axis_max=DOT_AXIS, width=DOT_WIDTH, sag=DOT_SAG, n=24):
-    """点：按 PCA 轴重建"两端垂直、两侧外凸 sag"的等宽条。"""
+def rebuild_dot(c, width=None, sag=DOT_SAG, n=24):
+    """点：按原轮廓的四角重建 —— 端面直连、两条长边同向向上拱 sag。
+
+    要点（实测自 OPPO）：
+      · 端面是斜的，不要按垂直端面建模
+      · 拱向是"同向上拱"，不是两侧对称外扩
+      · 拱量很小，2.6~3 单位
+    """
+    # 四个角：用轮廓上离四象限极值最近的点
+    xs = [p[0] for p in c]
+    ys = [p[1] for p in c]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    pts = c[:-1] if c[0] == c[-1] else c
+    def near(px, py):
+        return min(pts, key=lambda q: (q[0] - px) ** 2 + (q[1] - py) ** 2)
+    # 长轴方向决定哪两个是长边端点
     (mx, my), (ux, uy) = pca(c)
     nx, ny = -uy, ux
-    pts = c[:-1] if c[0] == c[-1] else c
     ts = [(p[0] - mx) * ux + (p[1] - my) * uy for p in pts]
-    L = min(axis_max, max(ts) - min(ts))
-    tc = (max(ts) + min(ts)) / 2
-    h = width / 2
-    A = (mx + ux * (tc - L / 2) - nx * h, my + uy * (tc - L / 2) - ny * h)
-    B = (mx + ux * (tc + L / 2) - nx * h, my + uy * (tc + L / 2) - ny * h)
-    C = (mx + ux * (tc + L / 2) + nx * h, my + uy * (tc + L / 2) + ny * h)
-    D = (mx + ux * (tc - L / 2) + nx * h, my + uy * (tc - L / 2) + ny * h)
-    cx, cy = mx, my
+    vs = [-(p[0] - mx) * uy + (p[1] - my) * ux for p in pts]
+    tlo, thi = min(ts), max(ts)
+    vlo, vhi = min(vs), max(vs)
+    def corner(t, v):
+        return near(mx + ux * t - uy * v, my + uy * t + ux * v)
+    # 顺序：A(tlo,vlo) B(thi,vlo) C(thi,vhi) D(tlo,vhi)
+    A = corner(tlo, vlo); B = corner(thi, vlo)
+    C = corner(thi, vhi); D = corner(tlo, vhi)
 
-    def arc(p, q):
-        """两侧都向"远离中心"的方向鼓 sag。"""
+    def arch(p, q, sag):
         if sag <= 0:
             return [q]
-        mx2, my2 = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
-        L2 = math.dist(p, q)
-        u2 = ((q[0] - p[0]) / L2, (q[1] - p[1]) / L2)
-        for nn in ((-u2[1], u2[0]), (u2[1], -u2[0])):
-            far = math.dist((mx2 + nn[0] * 40, my2 + nn[1] * 40), (cx, cy))
-            if far > math.dist((mx2, my2), (cx, cy)):
-                qc = (mx2 + nn[0] * sag * 2, my2 + nn[1] * sag * 2)
-                break
-        return [((1 - t) ** 2 * p[0] + 2 * (1 - t) * t * qc[0] + t * t * q[0],
-                 (1 - t) ** 2 * p[1] + 2 * (1 - t) * t * qc[1] + t * t * q[1])
+        return [(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t + sag * math.sin(math.pi * t))
                 for t in (i / n for i in range(1, n + 1))]
 
-    out = [A] + arc(A, B) + [C] + arc(C, D)
+    # 按目标尺寸缩放：沿轴缩到 DOT_AXIS，沿法向缩到 DOT_FACE
+    L0 = thi - tlo
+    W0 = max(1.0, vhi - vlo)
+    ka = min(1.0, DOT_AXIS / L0) if L0 else 1.0
+    kw = DOT_FACE / W0 if W0 else 1.0
+    tc = (tlo + thi) / 2
+    vc = (vlo + vhi) / 2
+    def shrink(q):
+        t = (q[0] - mx) * ux + (q[1] - my) * uy
+        v = -(q[0] - mx) * uy + (q[1] - my) * ux
+        t2 = tc + (t - tc) * ka
+        v2 = vc + (v - vc) * kw
+        return (mx + ux * t2 - uy * v2, my + uy * t2 + ux * v2)
+    A, B, C, D = shrink(A), shrink(B), shrink(C), shrink(D)
+
+    # 判断哪两条是长边：A-B 与 C-D 是两条"宽边"，B-C 与 D-A 是两条"长边"
+    out = [A] + arch(A, B, 0) + arch(B, C, sag) + arch(C, D, 0) + arch(D, A, sag)
     out.append(out[0])
     return out
 
