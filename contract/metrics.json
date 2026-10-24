@@ -1,0 +1,27 @@
+{
+  "$comment": "排版度量目标。A/B 两套产物都必须满足；现值列为 2026-10-24 对 A 的实测。",
+  "unitsPerEm": 1000,
+  "target": {
+    "capHeight": 733,
+    "xHeight": 529,
+    "typoAscender": 880,
+    "typoDescender": -120,
+    "typoLineGap": 0,
+    "winAscent": 1160,
+    "winDescent": 288,
+    "hheaAscender": 1160,
+    "hheaDescender": -288,
+    "hheaLineGap": 0,
+    "useTypoMetrics": false,
+    "fsSelectionWWS": true
+  },
+  "actual_a_2026_10_24": {
+    "os2CapHeight": 784,
+    "os2xHeight": "554..576 (随字重递增)",
+    "note": "cap 784 是旧参数 latinscale=1.08 的遗留，P2 重出时按 733 校正；xh 目标 529 与现值的差异见 CONTRACT §2.2 第 3 条"
+  },
+  "css": {
+    "fontSynthesis": "none",
+    "$note": "必须禁用合成，否则 A（静态族）在 font-weight 非档位值时会被浏览器假加粗，与 B 不一致"
+  }
+}

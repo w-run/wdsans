@@ -3,5 +3,7 @@ ref/*/*.otf
 ref/*/*.ttf
 build/*.otf
 build/*.ttf
+build/meta/*.ttf
+build/*.woff2
 *.pyc
 __pycache__/

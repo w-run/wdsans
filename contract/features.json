@@ -1,0 +1,39 @@
+{
+  "$comment": "特性表契约。来源与白名单——构建前 diff 按此判定，白名单外的差异必须失败。",
+  "source": {
+    "GSUB": "A 产物（7 档字节级相同，任取其一）",
+    "GDEF": "A 产物（7 档字节级相同，任取其一）",
+    "cmap": "A 产物（7 档字节级相同，任取其一）",
+    "GPOS": "A 产物 Regular 档（各档 palt/vpal coverage 有 1–10 字形差，只能锁一套）",
+    "BASE": "SHS 或 A 产物"
+  },
+  "gsub_features": ["aalt", "ccmp", "dlig", "fwid", "hwid", "liga", "pwid", "ruby", "vert", "vrt2"],
+  "gpos_features": ["halt", "kern", "palt", "vert", "vhal", "vkrn", "vpal"],
+  "gsub_scripts": ["DFLT"],
+  "gpos_scripts": ["DFLT", "cyrl", "grek", "hang", "hani", "kana", "latn"],
+  "glyph_classes": { "base": 1112, "ligature": 95, "mark": 11 },
+  "diff_whitelist": [
+    "GPOS:palt:Coverage 字形数差 ≤ 12",
+    "GPOS:vpal:Coverage 字形数差 ≤ 12",
+    "OS/2:字重相关字段"
+  ],
+  "must_exist_after_build": ["GSUB", "GPOS", "GDEF", "BASE", "STAT", "fvar", "vhea", "vmtx"],
+  "shaping_regression": {
+    "$note": "唯一算数的验收标准：hb-shape 输出逐字节比对",
+    "corpora": [
+      { "id": "vert",  "text": "你好，世界。「引号」《书名》", "features": "+vert",  "dir": "ttb" },
+      { "id": "vrt2",  "text": "あいうえお漢字、。", "features": "+vrt2", "dir": "ttb" },
+      { "id": "fwid",  "text": "ABC123", "features": "+fwid", "dir": "ltr" },
+      { "id": "hwid",  "text": "ABC123", "features": "+hwid", "dir": "ltr" },
+      { "id": "pwid",  "text": "ABC123", "features": "+pwid", "dir": "ltr" },
+      { "id": "palt",  "text": "「中文」ABC123", "features": "+palt", "dir": "ltr" },
+      { "id": "kern",  "text": "AVATAR To Ta Yo.", "features": "+kern", "dir": "ltr" },
+      { "id": "kern_off", "text": "AVATAR To Ta Yo.", "features": "-kern", "dir": "ltr" },
+      { "id": "aalt",  "text": "abcABC", "features": "+aalt", "dir": "ltr" },
+      { "id": "ccmp",  "text": "éàüñç", "features": "+ccmp", "dir": "ltr" },
+      { "id": "liga",  "text": "fi fl ffi", "features": "+liga", "dir": "ltr" },
+      { "id": "dlig",  "text": "fi fl", "features": "+dlig", "dir": "ltr" },
+      { "id": "ruby",  "text": "漢字", "features": "+ruby", "dir": "ttb" }
+    ]
+  }
+}

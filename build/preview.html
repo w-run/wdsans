@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WDesign Sans · A 后端元数据验证</title>
+<style>
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Thin.ttf")     format("truetype"); font-weight:250; font-style:normal; font-display:block; }
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Light.ttf")    format("truetype"); font-weight:300; font-style:normal; font-display:block; }
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Normal.ttf")   format("truetype"); font-weight:350; font-style:normal; font-display:block; }
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Regular.ttf")  format("truetype"); font-weight:400; font-style:normal; font-display:block; }
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Medium.ttf")   format("truetype"); font-weight:500; font-style:normal; font-display:block; }
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Bold.ttf")     format("truetype"); font-weight:700; font-style:normal; font-display:block; }
+  @font-face { font-family:"WDesign Sans"; src:url("./meta/WDesignSans-Heavy.ttf")    format("truetype"); font-weight:900; font-style:normal; font-display:block; }
+
+  body{background:#fff;color:#111;margin:24px;font-family:-apple-system,sans-serif}
+  h1{font-size:15px;font-weight:600;letter-spacing:.02em;margin:0 0 4px}
+  .sub{font-size:12px;color:#666;margin:0 0 20px}
+  .row{border-top:1px solid #e5e5e5;padding:10px 0}
+  .tag{font:11px ui-monospace,monospace;color:#888;margin-bottom:2px;display:flex;gap:10px}
+  .tag b{color:#111;font-weight:600}
+  .s{font-family:"WDesign Sans",system-ui,sans-serif;font-synthesis:none;font-size:30px;line-height:1.35}
+  .m{font-size:16px;line-height:1.6;margin-top:4px;color:#333}
+  .ok{color:#0a7a3d}
+</style>
+
+<h1>WDesign Sans · A 后端（元数据修复后）</h1>
+<p class="sub">7 个静态文件挂在同一家族名下，CSS 按 font-weight 匹配。font-synthesis: none。</p>
+
+<div class="row"><div class="tag"><b>250</b> Thin</div><div class="s" style="font-weight:250">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:250">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+<div class="row"><div class="tag"><b>300</b> Light</div><div class="s" style="font-weight:300">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:300">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+<div class="row"><div class="tag"><b>350</b> Normal</div><div class="s" style="font-weight:350">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:350">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+<div class="row"><div class="tag"><b>400</b> Regular</div><div class="s" style="font-weight:400">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:400">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+<div class="row"><div class="tag"><b>500</b> Medium</div><div class="s" style="font-weight:500">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:500">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+<div class="row"><div class="tag"><b>700</b> Bold</div><div class="s" style="font-weight:700">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:700">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+<div class="row"><div class="tag"><b>900</b> Heavy</div><div class="s" style="font-weight:900">永和九年 岁在癸丑 Aa Bb 0123</div><div class="m" style="font-weight:900">永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭。</div></div>
+
+<h1 style="margin-top:28px">中间值匹配（伪 VF 的实际行为）</h1>
+<p class="sub">规则（CSS Fonts 4 §5.2，实测已确认）：&lt;400 向下取档；400–500 向上取；&gt;500 向上取。<br>
+结论：<b>A 的中间值一律偏细或偏粗，不会"居中"</b>——这正是 A 不能替代 B 的地方。</p>
+<div class="row"><div class="tag"><b>375</b> → 350（向下）</div><div class="s" style="font-weight:375">永和九年 Aa 0123</div></div>
+<div class="row"><div class="tag"><b>325</b> → 300（向下）</div><div class="s" style="font-weight:325">永和九年 Aa 0123</div></div>
+<div class="row"><div class="tag"><b>450</b> → 500（向上）</div><div class="s" style="font-weight:450">永和九年 Aa 0123</div></div>
+<div class="row"><div class="tag"><b>600</b> → 700（向上）</div><div class="s" style="font-weight:600">永和九年 Aa 0123</div></div>
+<div class="row"><div class="tag"><b>800</b> → 900（向上）</div><div class="s" style="font-weight:800">永和九年 Aa 0123</div></div>

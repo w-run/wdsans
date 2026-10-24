@@ -1,0 +1,28 @@
+{
+  "$comment": "轴定义——两个后端的唯一真源。改这里等于改整个家族。",
+  "family": "WDesign Sans",
+  "psFamily": "WDesignSans",
+  "vendor": "WDSN",
+  "version": "0.9.1",
+  "upm": 1000,
+  "axes": [
+    {
+      "tag": "wght",
+      "name": "Weight",
+      "min": 250,
+      "max": 900,
+      "default": 400,
+      "ordering": 0
+    }
+  ],
+  "stops": [
+    { "value": 250, "name": "Thin",     "ps": "Thin",     "source_shs": 0 },
+    { "value": 300, "name": "Light",    "ps": "Light",    "source_shs": 1 },
+    { "value": 350, "name": "Normal",   "ps": "Normal",   "source_shs": 2 },
+    { "value": 400, "name": "Regular",  "ps": "Regular",  "source_shs": 3 },
+    { "value": 500, "name": "Medium",   "ps": "Medium",   "source_shs": 4 },
+    { "value": 700, "name": "Bold",     "ps": "Bold",     "source_shs": 5 },
+    { "value": 900, "name": "Heavy",    "ps": "Heavy",    "source_shs": 6 }
+  ],
+  "$note": "严格 7 档（2026-10-24 定）。不引入 ExtraLight(200)。stops 值同时是 usWeightClass 与 CSS font-weight。"
+}
