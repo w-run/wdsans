@@ -46,7 +46,7 @@ def ensure_name(font, nid, value):
         name.setName(value, nid, 1, 0, 0)
 
 
-def fix_one(src_path, out_path, axis, version, use_typo_metrics):
+def fix_one(src_path, out_path, axis, version, use_typo_metrics, fix_line_height):
     font = TTFont(src_path, recalcTimestamp=False)
 
     family = axis['family']
@@ -105,6 +105,25 @@ def fix_one(src_path, out_path, axis, version, use_typo_metrics):
     os2.usWeightClass = stop['value']
     os2.usWidthClass = 5
 
+    # 行高修复（思源黑已知问题）：
+    #   hhea 1160/-288 → 行高 1.448em，macOS/CoreText 与 FreeType 都按 hhea 算
+    #   修法：hhea 与 typo 对齐到 880/-120（=1.0em），并置 USE_TYPO_METRICS
+    #   usWin* 保留 1160/288，避免 Windows 老引擎裁切超出基框的字形
+    if fix_line_height:
+        hhea = font['hhea']
+        hhea.ascent = 880
+        hhea.descent = -120
+        hhea.lineGap = 0
+        os2.sTypoAscender = 880
+        os2.sTypoDescender = -120
+        os2.sTypoLineGap = 0
+        os2.fsSelection = os2.fsSelection | 0x80
+        if 'vhea' in font:
+            v = font['vhea']
+            v.ascent = 500
+            v.descent = -500
+            v.lineGap = 0
+
     head = font['head']
     head.macStyle = 1 if style == 'Bold' else 0
 
@@ -136,6 +155,7 @@ def main():
     ap.add_argument('--out', default=DEFAULT_OUT)
     ap.add_argument('--version', default=None)
     ap.add_argument('--use-typo-metrics', action='store_true')
+    ap.add_argument('--no-fix-line-height', action='store_true')
     args = ap.parse_args()
 
     axis = load_axis()
@@ -147,10 +167,12 @@ def main():
             print(f'MISSING {src}', file=sys.stderr)
             continue
         out = os.path.join(args.out, f"WDesignSans-{s['ps']}.ttf")
-        ps = fix_one(src, out, axis, version, args.use_typo_metrics)
+        ps = fix_one(src, out, axis, version, args.use_typo_metrics,
+                     not args.no_fix_line_height)
         print(f'ok  {ps:24s} wght={s["value"]:3d}  -> {out}')
 
-    print(f'\nversion={version}  typo_metrics={args.use_typo_metrics}')
+    print(f'\nversion={version}  typo_metrics={args.use_typo_metrics}  '
+          f'fix_line_height={not args.no_fix_line_height}')
 
 
 if __name__ == '__main__':

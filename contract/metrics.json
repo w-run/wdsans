@@ -12,9 +12,10 @@
     "hheaAscender": 1160,
     "hheaDescender": -288,
     "hheaLineGap": 0,
-    "useTypoMetrics": false,
+    "useTypoMetrics": true,
     "fsSelectionWWS": true
   },
+  "$line_height_note": "2026-10-24 决定修复行高：hhea 与 typo 对齐 880/-120（1.0em），置 USE_TYPO_METRICS；usWin 保留 1160/288 防裁切。vhea 500/-500。实测字形 bbox yMin=-552/yMax=1356，head bbox 不受 hhea 影响。",
   "actual_a_2026_10_24": {
     "os2CapHeight": 784,
     "os2xHeight": "554..576 (随字重递增)",

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <title>Glow Sans demo</title>
+</head>
+<body>
+  <div id="ops" class="ops scrollable">
+    <div class="ops-content">
+      <div>
+        <h5 class="tooltipped" style="margin-top:25px;" data-position="right" 
+        data-tooltip="思源黑体汉字部分基本设定，选取调整的字重，设定字体大小。<br>Basics for Source Han Sans, especially the selection for the base weight.">基础</h5>
+        <div class="input-field row tooltipped" style="margin:30px 0;" data-position="right"
+        data-tooltip="选定思源黑体字重，用于后续调整。<br>Select the base weight in Source Han Sans to manipulate.">
+          <select id="weight-select">
+            <option value="0">ExtraLight</option>
+            <option value="1">Light</option>
+            <option value="2">Normal</option>
+            <option value="3" selected>Regular</option>
+            <option value="4">Medium</option>
+            <option value="5">Bold</option>
+            <option value="6">Heavy</option>
+          </select>
+          <label>字重 Weight</label>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="画布中使用的字体大小。<br>Font size in use for the glyphs on the canvas.">
+          <label>字体大小 Font size</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="20" max="200" step="1" data-bind="fontsize" />
+          </p>
+        </div>
+        <h5 class="tooltipped" style="margin-top:25px;" data-position="right" 
+        data-tooltip="对汉字做结构的形态学变形与轮廓修饰。<br>Morphologically manipulate and modify the Han glyph contours.">变形与修饰</h5>
+        <div class="row tooltipped" data-position="right" data-tooltip="对字重（粗度）做机械微调。<br>Fine-tuning the weight mechanically.">
+          <label>字重微调 Weight (optical size)</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.75" max="1.25" step="0.01" data-bind="weight" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="纵横对比调整。<br>Contrasts for horizontal and vertical strokes.">
+          <label>对比 Contrast</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.75" max="1.25" step="0.01" data-bind="contrast" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="汉字的宽窄。<br>Width adjustment, more condensed or extended.">
+          <label>宽窄 Width</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.75" max="1.25" step="0.01" data-bind="width" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="相对横向字面率设定，改变字面率相当于改变汉字默认字间距。<br>Adjustment for the horizontal character face (has similar visual effect to horizontal tracking).">
+          <label>横向字面 Horizontal character face</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.95" max="1.05" step="0.001" data-bind="xtracking" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="相对纵向字面率设定，改变字面率相当于改变汉字默认字间距。<br>Adjustment for the vertical character face (has similar visual effect to vertical tracking).">
+          <label>纵向字面 Vertical character face</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.95" max="1.05" step="0.001" data-bind="ytracking" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="结构向内收紧程度，中宫越大内白越多。<br>Zhonggong/douhaba adjustment (has similar visual effect to contour adjustment).">
+          <label>中宫 Counter</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.92" max="1.08" step="0.001" data-bind="counter" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="字的重心高度。<br>Vertical adjustments for visual gravity.">
+          <label>重心 Gravity</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.92" max="1.08" step="0.001" data-bind="gravity" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="撇捺曲线软硬程度。<br>Softness of left and right falling strokes.">
+          <label>软硬 Softness</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.85" max="1.15" step="0.001" data-bind="softness" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="点画软硬程度。<br>Softness of dot strokes.">
+          <label>点软硬 Softness of dots</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0" max="2" step="0.01" data-bind="dotsoftness" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="是否去除“口”类部件的装饰脚。<br>Toggling removal of “口”-s’ feet.">
+          <div class="switch">
+            <label>去脚 Feet removal<input class="binded" type="checkbox" data-bind="feetremoval" >
+              <span class="lever" style="float:right;"></span>
+            </label>
+          </div>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="是否去除撇捺勾末端的喇叭口。<br>Toggling removal of curved stroke opennings.">
+          <div class="switch">
+            <label>去喇叭口凹进 Flat stroke opennings<input class="binded" type="checkbox" data-bind="endsremoval" >
+              <span class="lever" style="float:right;"></span>
+            </label>
+          </div>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="撇捺勾末端平直程度。<br>Flatten ends of the falling strokes and the hooks.">
+          <label>笔末平直化 Flatten stroke ends</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="-1" max="1" step="0.01" data-bind="flattenends" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" data-tooltip="竖弯钩横笔内弧弧度。<br>Tension of the “⺃”-like stroke horizontal curves.">
+          <label>竖弯钩张力 Horizontal hook tension</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="-0.2" max="1" step="0.01" data-bind="hooktension" />
+          </p>
+        </div>
+        <h5 class="tooltipped" style="margin-top:25px;" data-position="right" 
+        data-tooltip="字体附属西文配置。<br>Adjustments for Latin script matching.">附属西文</h5>
+        <div class="row" style="margin: 20px 0;">
+          <div class="col s6"><label>
+              <input id="fira-radio" name="latin-font" onclick="toggleLatin(this.value)" type="radio" value="fira" checked />
+              <span>Fira Sans</span>
+          </label></div>
+          <div class="col s6"><label>
+              <input id="raleway-radio" name="latin-font" onclick="toggleLatin(this.value)" type="radio" value="raleway" />
+              <span>Raleway</span>
+          </label></div>
+        </div>
+        <div id="fira-weight-div" class="input-field row tooltipped" style="margin:30px 0;" data-position="right" 
+        data-tooltip="选定西文基础字重。<br>Select from weights of Fira Sans to match.">
+          <select id="fira-weight-select">
+            <option value="0">Two</option>
+            <option value="1">Four</option>
+            <option value="2">Eight</option>
+            <option value="3">Hair</option>
+            <option value="4">Thin</option>
+            <option value="5">UltraLight</option>
+            <option value="6">ExtraLight</option>
+            <option value="7">Light</option>
+            <option value="8">Book</option>
+            <option value="9" selected>Regular</option>
+            <option value="10">Medium</option>
+            <option value="11">SemiBold</option>
+            <option value="12">Bold</option>
+            <option value="13">ExtraBold</option>
+            <option value="14">Heavy</option>
+          </select>
+          <label>西文字重 Weight for latin</label>
+        </div>
+        <div id="raleway-weight-div" class="input-field row tooltipped" style="margin:30px 0; display:none;" data-position="right" 
+        data-tooltip="选定西文基础字重。<br>Select from weights of Raleway to match.">
+          <select id="raleway-weight-select">
+            <option value="0">Thin</option>
+            <option value="1">ExtraLight</option>
+            <option value="2">Light</option>
+            <option value="3" selected>Regular</option>
+            <option value="4">Medium</option>
+            <option value="5">SemiBold</option>
+            <option value="6">Bold</option>
+            <option value="7">ExtraBold</option>
+            <option value="8">Black</option>
+          </select>
+          <label>西文字重 Weight for latin</label>
+        </div>
+        <div id="fira-width-div" class="input-field row tooltipped" style="margin:30px 0;" data-position="right" 
+        data-tooltip="选定西文基础宽度。<br>Select from widths of Fira Sans to match.">
+          <select id="fira-width-select">
+            <option value="0" selected>Normal</option> 
+            <option value="1">Condensed</option> 
+            <option value="2">Compressed</option> 
+          </select>
+          <label>西文宽度 Width for latin</label>
+        </div>
+        <div class="row tooltipped" data-position="right" 
+        data-tooltip="西文基线相对汉字字身下沿高度。<br>CJK baseline matching.">
+          <label>基线 Baseline</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0" max="200" step="1" data-bind="baseline" />
+          </p>
+        </div>
+        <div class="row tooltipped" data-position="right" 
+        data-tooltip="西文缩放。<br>Scaling Latin script to fit the sizes of CJK glyphs.">
+          <label>缩放 Scale</label>
+          <p class="range-field">
+            <input type="range" class="binded" min="0.8" max="1.2" step="0.01" data-bind="latinscale" />
+          </p>
+        </div>
+        <h5 class="tooltipped" style="margin-top:25px;" data-position="right" 
+        data-tooltip="保存以及载入设定。<br>Save or load adjustments.">保存</h5>
+        <div style="text-align:center;">
+          <a class="save-btn waves-effect waves-dark white black-text btn" href="javascript:copyLink()"><i class="material-icons left">link</i>复制链接 copy link</a>
+          <input type="hidden" name="link-copying" id="link-copying">
+          <a class="save-btn waves-effect waves-dark white black-text btn" href="javascript:$('#input-file').click()"><i class="material-icons left">file_upload</i>载入 load</a>
+          <input type="file" name="input-file" id="input-file" accept="application/json" style="display:none">
+          <a class="save-btn waves-effect waves-light btn" href="javascript:saveJSON()"><i class="material-icons left">save</i>保存 save</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="preview-column">
+    <div id="preview" class="preview-window"></div>
+  </div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script>M.AutoInit()</script>
+<script src="dist/index.js"></script>
+<link rel="stylesheet" href="dist/index.css"/>
+</html>

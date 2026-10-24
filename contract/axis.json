@@ -3,7 +3,8 @@
   "family": "WDesign Sans",
   "psFamily": "WDesignSans",
   "vendor": "WDSN",
-  "version": "0.9.1",
+  "version": "2026.100",
+  "$version_note": "沿用旧格式 YYYY.NNN（2025.060 的后继）。每轮定型 +10，非零非补位。",
   "upm": 1000,
   "axes": [
     {
