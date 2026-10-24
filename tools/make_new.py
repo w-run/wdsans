@@ -28,8 +28,10 @@ from frame import X0, X1, Y_TOP, Y_BOT   # noqa: E402
 
 PARAMS = {
     "feet": {"stroke_width": 78.0, "ratio": 1.0},
+    # max_face_ratio 默认 1.8 会把撇捺的收锋当端面压平（大/小/木 被拉直），
+    # 收到 1.0 只处理"厚度≈笔宽"的等厚端面
     "terminal": {"angle_hv": 0.0, "angle_diag": 4.0, "stroke_width": 78.0,
-                 "width_norm": 1.0},
+                 "width_norm": 1.0, "max_face_ratio": 1.0},
     "dot": {"stroke_width": 78.0, "ratio": 0.95},
     "hook": {"strength": 0.30},
     "soften": {"tension": 1.03},
