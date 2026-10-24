@@ -81,3 +81,29 @@ build-mona/WDesignSans-<style>.otf
 - [ ] 末端斜切仍在（`flattenends 0.75` + `endsremoval true` 从 glow 继承），按 DESIGN 应为 0 / false
 - [ ] hhea 1160/-288（glow 的 tables/hhea.js 硬编码），需接行高修复
 - [ ] kana-like 其余 6 档
+
+## 7. TTF 拉丁源的曲线退化（已修，重要）
+
+Mona Sans 是 **TrueType（glyf，二次贝塞尔）**，而 glow-sans 管线假设拉丁源是 **CFF（三次贝塞尔）**——Fira 和 Raleway 都是 OTF/CFF，所以原作者没遇到。
+
+`otfccdump` 直接读 TTF 会把部分曲线段退化成直线：
+
+| | Mona 原版 | 直接用 otfccdump |
+|---|---|---|
+| `O` 的绘制指令 | `qCurveTo × 8` | `curveTo × 8` + **`lineTo × 6`** |
+| 渲染结果 | 圆 | **八边形** |
+
+**修法**：dump 后重写 contours，用 fontTools 精确转三次：
+
+```python
+cp  = ContourPen(glyphSet)
+pen = Qu2CuPen(cp, max_err=0.5, all_cubic=True)
+glyphSet[name].draw(pen)
+json['glyf'][name]['contours'] = cp.contours
+```
+
+脚本：`scripts/fix_mona_curves.py <Mona-N.ttf> <Mona-N.json> <out.json>`
+
+验证（110px 渲染，"Aa Oo 123"）：修复后 ink 高度 81px，与 Mona 原版**完全一致**；修复前 O 为八边形。
+
+> 教训：**任何 TTF 拉丁源都要先过 Qu2CuPen**，不能直接喂 otfccdump。
