@@ -26,8 +26,9 @@ from fontTools.pens.recordingPen import RecordingPen
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from frame import X0, X1, Y_TOP, Y_BOT   # noqa: E402
 
-DOT_AXIS = 333.0
+DOT_AXIS = 287.0     # 两端中点距离（不是投影跨度）
 DOT_WIDTH = 80.0
+DOT_SAG = 7.0        # 两侧外凸的拱高
 MIN_AREA = 0.002
 MAX_DOT_AREA = 0.055
 
@@ -73,8 +74,8 @@ def pca(c):
     return (mx, my), (math.cos(ang), math.sin(ang))
 
 
-def rebuild_dot(c, axis_max=DOT_AXIS, width=DOT_WIDTH):
-    """点：直接生成等宽平行四边形（不重映射原节点，避免拉成薄片）。"""
+def rebuild_dot(c, axis_max=DOT_AXIS, width=DOT_WIDTH, sag=DOT_SAG, n=24):
+    """点：按 PCA 轴重建"两端垂直、两侧外凸 sag"的等宽条。"""
     (mx, my), (ux, uy) = pca(c)
     nx, ny = -uy, ux
     pts = c[:-1] if c[0] == c[-1] else c
@@ -82,11 +83,31 @@ def rebuild_dot(c, axis_max=DOT_AXIS, width=DOT_WIDTH):
     L = min(axis_max, max(ts) - min(ts))
     tc = (max(ts) + min(ts)) / 2
     h = width / 2
-    a = (mx + ux * (tc - L / 2) - nx * h, my + uy * (tc - L / 2) - ny * h)
-    b = (mx + ux * (tc + L / 2) - nx * h, my + uy * (tc + L / 2) - ny * h)
-    d = (mx + ux * (tc + L / 2) + nx * h, my + uy * (tc + L / 2) + ny * h)
-    e = (mx + ux * (tc - L / 2) + nx * h, my + uy * (tc - L / 2) + ny * h)
-    return [a, b, d, e, a]
+    A = (mx + ux * (tc - L / 2) - nx * h, my + uy * (tc - L / 2) - ny * h)
+    B = (mx + ux * (tc + L / 2) - nx * h, my + uy * (tc + L / 2) - ny * h)
+    C = (mx + ux * (tc + L / 2) + nx * h, my + uy * (tc + L / 2) + ny * h)
+    D = (mx + ux * (tc - L / 2) + nx * h, my + uy * (tc - L / 2) + ny * h)
+    cx, cy = mx, my
+
+    def arc(p, q):
+        """两侧都向"远离中心"的方向鼓 sag。"""
+        if sag <= 0:
+            return [q]
+        mx2, my2 = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
+        L2 = math.dist(p, q)
+        u2 = ((q[0] - p[0]) / L2, (q[1] - p[1]) / L2)
+        for nn in ((-u2[1], u2[0]), (u2[1], -u2[0])):
+            far = math.dist((mx2 + nn[0] * 40, my2 + nn[1] * 40), (cx, cy))
+            if far > math.dist((mx2, my2), (cx, cy)):
+                qc = (mx2 + nn[0] * sag * 2, my2 + nn[1] * sag * 2)
+                break
+        return [((1 - t) ** 2 * p[0] + 2 * (1 - t) * t * qc[0] + t * t * q[0],
+                 (1 - t) ** 2 * p[1] + 2 * (1 - t) * t * qc[1] + t * t * q[1])
+                for t in (i / n for i in range(1, n + 1))]
+
+    out = [A] + arc(A, B) + [C] + arc(C, D)
+    out.append(out[0])
+    return out
 
 
 def barify(c, width=None, taper=0.22, force_axis=None):
@@ -156,6 +177,8 @@ def main():
     ap.add_argument("--size", type=int, default=520)
     ap.add_argument("--diag-min-aspect", type=float, default=2.0)
     ap.add_argument("--taper", type=float, default=0.22)
+    ap.add_argument("--dot-sag", type=float, default=DOT_SAG,
+                    help="点两侧外凸的拱高（默认 7）")
     ap.add_argument("--no-diag", dest="diag", action="store_false", default=True,
                     help="只处理点，跳过斜笔（斜笔需笔画分解，当前不可靠）")
     a = ap.parse_args()
@@ -185,7 +208,7 @@ def main():
         # 点：面积小 + 两个方向都不宽（撇的 W 达 296，不能当点）
         if (MIN_AREA <= A <= MAX_DOT_AREA and aspect < 6
                 and Wp <= 150 and Lp <= 450):
-            out.append(rebuild_dot(c))
+            out.append(rebuild_dot(c, sag=a.dot_sag))
             n_dot += 1
         elif a.diag and aspect >= a.diag_min_aspect and 30 <= Wp <= 200:
             out.append(barify(c, taper=a.taper))
