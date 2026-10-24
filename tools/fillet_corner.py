@@ -75,16 +75,13 @@ def fillet_one(pts, idx, radius):
     arc = [(ctr[0] + radius * math.cos(a1 + da * k / ARC_SEG),
             ctr[1] + radius * math.sin(a1 + da * k / ARC_SEG))
            for k in range(ARC_SEG + 1)]
-    # 用弧替换 idx 附近 d 距离内的点
-    out = []
-    for i in range(n):
-        p = pts[i]
-        if math.dist(p, b) < d * 0.98 and p != p1 and p != p2:
-            continue
-        out.append(p)
-    # 插回弧：找到 p1 与 p2 在原序列里的位置
-    k1 = min(range(len(out)), key=lambda i: math.dist(out[i], p1))
-    return out[:k1] + arc + out[k1:]
+    # 用弧**精确替换**切点之间的那段：按最近点索引切，避免接缝错位
+    i1 = min(range(n), key=lambda i: math.dist(pts[i], p1))
+    i2 = min(range(n), key=lambda i: math.dist(pts[i], p2))
+    if i1 > i2:
+        i1, i2 = i2, i1
+    out = list(pts[:i1]) + arc + list(pts[i2 + 1:])
+    return out
 
 
 def in_box(p, box):
@@ -99,6 +96,8 @@ def main():
     ap.add_argument("--radius", type=float, default=120)
     ap.add_argument("--out", required=True)
     ap.add_argument("--size", type=int, default=440)
+    ap.add_argument("--box", default=None,
+                    help="只渲染这块区域 x0,y0,x1,y1（em 坐标），与 glyph_view 一致")
     a = ap.parse_args()
     box = tuple(float(v) for v in a.region.split(","))
 
@@ -133,7 +132,15 @@ def main():
         new_cs.append(pts2)
         total += 1
 
-    w, h = X1 - X0, Y_TOP - Y_BOT
+    if a.box:
+        bx0, by0, bx1, by1 = [float(v) for v in a.box.split(",")]
+        bx0, bx1 = min(bx0, bx1), max(bx0, bx1)
+        by0, by1 = min(by0, by1), max(by0, by1)
+        w, h = bx1 - bx0, by1 - by0
+        ox, oy = bx0, by1
+    else:
+        ox, oy = X0, Y_TOP
+        w, h = X1 - X0, Y_TOP - Y_BOT
     d = []
     for c in new_cs:
         if len(c) < 3:
@@ -142,14 +149,15 @@ def main():
         for p in c[1:]:
             d.append(f"L{p[0]:.1f} {p[1]:.1f}")
         d.append("Z")
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{a.size}" height="{a.size}" '
-           f'viewBox="{X0} {-Y_TOP} {w} {h}">'
-           f'<rect x="{X0}" y="{-Y_TOP}" width="{w}" height="{h}" fill="white"/>'
+    hpx = int(a.size * h / w) if w else a.size
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{a.size}" height="{hpx}" '
+           f'viewBox="{ox} {-oy} {w} {h}">'
+           f'<rect x="{ox}" y="{-oy}" width="{w}" height="{h}" fill="white"/>'
            f'<g transform="scale(1,-1)"><path d="{" ".join(d)}" fill="#111" '
            f'fill-rule="nonzero"/></g></svg>')
     with open(a.out + ".svg", "w") as f:
         f.write(svg)
-    subprocess.run(["rsvg-convert", "-w", str(a.size), "-h", str(a.size),
+    subprocess.run(["rsvg-convert", "-w", str(a.size), "-h", str(hpx),
                     "-o", a.out, a.out + ".svg"], check=True)
     print(f"saved {a.out}  倒圆 {total} 处  R={a.radius}")
 
