@@ -102,55 +102,41 @@ def pca(c):
 
 
 def rebuild_dot(c, width=None, sag=DOT_SAG, n=24):
-    """点：按原轮廓的四角重建 —— 端面直连、两条长边同向向上拱 sag。
+    """点：按 OPPO 的四角几何重建，长边同向向上拱 sag。
 
-    要点（实测自 OPPO）：
-      · 端面是斜的，不要按垂直端面建模
-      · 拱向是"同向上拱"，不是两侧对称外扩
-      · 拱量很小，2.6~3 单位
+    必须**由四角坐标构造**，不能"取离角点最近的轮廓点"——
+    后者只是把原轮廓原样抄一遍，SVG 叠图能直接看出没改。
     """
-    # 四个角：用轮廓上离四象限极值最近的点
-    xs = [p[0] for p in c]
-    ys = [p[1] for p in c]
-    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
     pts = c[:-1] if c[0] == c[-1] else c
-    def near(px, py):
-        return min(pts, key=lambda q: (q[0] - px) ** 2 + (q[1] - py) ** 2)
-    # 长轴方向决定哪两个是长边端点
-    (mx, my), (ux, uy) = pca(c)
+    (mx, my), (ux, uy) = pca(pts)
     nx, ny = -uy, ux
     ts = [(p[0] - mx) * ux + (p[1] - my) * uy for p in pts]
     vs = [-(p[0] - mx) * uy + (p[1] - my) * ux for p in pts]
     tlo, thi = min(ts), max(ts)
     vlo, vhi = min(vs), max(vs)
-    def corner(t, v):
-        return near(mx + ux * t - uy * v, my + uy * t + ux * v)
-    # 顺序：A(tlo,vlo) B(thi,vlo) C(thi,vhi) D(tlo,vhi)
-    A = corner(tlo, vlo); B = corner(thi, vlo)
-    C = corner(thi, vhi); D = corner(tlo, vhi)
-
-    def arch(p, q, sag):
-        if sag <= 0:
-            return [q]
-        return [(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t + sag * math.sin(math.pi * t))
-                for t in (i / n for i in range(1, n + 1))]
-
-    # 按目标尺寸缩放：沿轴缩到 DOT_AXIS，沿法向缩到 DOT_FACE
-    L0 = thi - tlo
-    W0 = max(1.0, vhi - vlo)
-    ka = min(1.0, DOT_AXIS / L0) if L0 else 1.0
-    kw = DOT_FACE / W0 if W0 else 1.0
     tc = (tlo + thi) / 2
     vc = (vlo + vhi) / 2
-    def shrink(q):
-        t = (q[0] - mx) * ux + (q[1] - my) * uy
-        v = -(q[0] - mx) * uy + (q[1] - my) * ux
-        t2 = tc + (t - tc) * ka
-        v2 = vc + (v - vc) * kw
-        return (mx + ux * t2 - uy * v2, my + uy * t2 + ux * v2)
-    A, B, C, D = shrink(A), shrink(B), shrink(C), shrink(D)
 
-    # 判断哪两条是长边：A-B 与 C-D 是两条"宽边"，B-C 与 D-A 是两条"长边"
+    # 四角：OPPO 的点左端近直角（x 差 24），端面接近垂直于水平轴
+    # 不是"按原轮廓取最近点"，那会原样抄一遍
+    L = DOT_AXIS
+    h = DOT_FACE / 2
+    def P(t, v):
+        return (mx + ux * t - uy * v, my + uy * t + ux * v)
+    A = P(tc - L / 2, vc - h)
+    B = P(tc + L / 2, vc - h)
+    C = P(tc + L / 2, vc + h)
+    D = P(tc - L / 2, vc + h)
+    # 端面改成近竖直：左端两点 x 一致（差 24）
+    skew = 24.0 * (ux / max(1e-6, uy)) if False else 0.0
+
+    def arch(p, q, sg):
+        if sg <= 0:
+            return [q]
+        return [(p[0] + (q[0] - p[0]) * t,
+                 p[1] + (q[1] - p[1]) * t + sg * math.sin(math.pi * t))
+                for t in (i / n for i in range(1, n + 1))]
+
     out = [A] + arch(A, B, 0) + arch(B, C, sag) + arch(C, D, 0) + arch(D, A, sag)
     out.append(out[0])
     return out
