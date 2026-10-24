@@ -161,6 +161,8 @@ def main():
     ap.add_argument("--glyph", required=True)
     ap.add_argument("--anchors", type=int, default=6)
     ap.add_argument("--width", type=float, default=None, help="指定笔宽（默认取实测中位）")
+    ap.add_argument("--corner-deg", type=float, default=28.0,
+                    help="相邻锚点转角超过它就算角点，不平滑")
     ap.add_argument("--out", required=True)
     ap.add_argument("--size", type=int, default=420, help="输出 PNG 边长")
     ap.add_argument("--raster", type=int, default=560,
@@ -195,8 +197,41 @@ def main():
     k = (X1 - X0) / size
     path = [(X0 + x * k, Y_TOP - y * k) for x, y in path_px]
 
-    anchors = resample(path, max(8, a.anchors))
-    center = chaikin(anchors, 3)
+    anchors = resample(path, max(12, a.anchors))
+
+    # 角点检测：相邻锚点之间的转角超过阈值 → 这里是"折"，不许平滑
+    def turn(i):
+        n = len(anchors)
+        p0 = anchors[(i - 1) % n]
+        p1 = anchors[i % n]
+        p2 = anchors[(i + 1) % n]
+        v1 = (p1[0] - p0[0], p1[1] - p0[1])
+        v2 = (p2[0] - p1[0], p2[1] - p1[1])
+        l1, l2 = math.hypot(*v1), math.hypot(*v2)
+        if l1 < 1e-9 or l2 < 1e-9:
+            return 0.0
+        c = max(-1.0, min(1.0, (v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2)))
+        return math.degrees(math.acos(c))
+
+    corners = [i for i in range(len(anchors)) if turn(i) > a.corner_deg]
+    if corners:
+        # 以角点分段，段内平滑，段间保留尖角
+        marks = sorted(set(corners))
+        segs_idx = []
+        for k in range(len(marks)):
+            a0 = marks[k]
+            a1 = marks[(k + 1) % len(marks)]
+            if a1 <= a0:
+                a1 += len(anchors)
+            segs_idx.append((a0, a1))
+        center = [anchors[marks[0]]]
+        for (a0, a1) in segs_idx:
+            seg = [anchors[k % len(anchors)] for k in range(a0, a1 + 1)]
+            sm = chaikin(seg, 3)
+            # 段首是角点，只取段尾到下一角点之间
+            center.extend(sm[1:])
+    else:
+        center = chaikin(anchors, 3)
 
     # 局部笔宽：取骨架像素的 2*距离
     if a.width:
@@ -228,7 +263,8 @@ def main():
         f.write(svg)
     subprocess.run(["rsvg-convert", "-w", str(a.size), "-h", str(a.size),
                     "-o", a.out, a.out + ".svg"], check=True)
-    print(f"saved {a.out}  锚点 {len(anchors)}  平滑后 {len(center)} 点  "
+    print(f"saved {a.out}  锚点 {len(anchors)}  角点 {len(corners)}  "
+          f"平滑后 {len(center)} 点  "
           f"骨架长 {len(path_px)}px  笔宽中位 {float(np.median(widths)):.0f}")
 
 
