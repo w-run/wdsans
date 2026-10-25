@@ -23,12 +23,12 @@ const STOPS = [
 const LATINSCALE = 733 / 729;
 
 function loadParam(stop, overrides) {
+  // 基线：旧版 WDesignSans 的参数（parameters/wds/*.json），只把拉丁换成 Mona
   const p = JSON.parse(
-    fs.readFileSync(path.join(ROOT, 'parameters', stop.tmpl + '.json')).toString());
+    fs.readFileSync(path.join(ROOT, 'parameters/wds', stop.name + '.json')).toString());
   delete p.fira;
   delete p.raleway;
   p.mona = stop.wght;
-  p.latinscale = LATINSCALE;
   p.shs = stop.shsIdx;
   Object.assign(p, overrides || {});
   return p;
@@ -55,10 +55,13 @@ function buildOne(stop, overrides, outDir) {
 
 function main() {
   const only = process.argv[2] ? parseInt(process.argv[2]) : null;
+  // 设计默认：不额外生出角，也不磨平既有的角（DESIGN §4.1）
+  const OVERRIDES = process.env.WDS_OVERRIDE
+    ? JSON.parse(process.env.WDS_OVERRIDE) : {};
   const outDir = path.join(ROOT, process.env.WDS_OUT || 'build');
   for (const stop of STOPS) {
     if (only && stop.wght !== only) continue;
-    buildOne(stop, {}, outDir);
+    buildOne(stop, OVERRIDES, outDir);
   }
 }
 
