@@ -9,6 +9,11 @@ const { hanModelFilter, hanPostFilter, kanaModelFilter,
   lengthenGlyph, puncLikeGlyph, latinGlyph } = require('./glyph-filters');
 const ProgressBar = require('progress');
 
+/** 阶段标记，用 stderr 立即输出以便定位崩溃 */
+function mark(tag) {
+  try { process.stderr.write(`  [buildFont] ${tag}\n`); } catch (e) {}
+}
+
 /** Build font synchronously
  * @param {*} param 
  * @param { 'J' | 'SC' | 'TC' } lang 
@@ -23,6 +28,7 @@ weight, weightClass, buildVersion, showProgress = false) {
   let bar = showProgress ? new ProgressBar(':bar :percent', 
     { total: 100, width: 40 }) : undefined;
 
+  mark('latin-resource');
   // Get Latin font resource
   const latinFont = param.mona !== undefined ?
       monaFont(param.mona)
@@ -30,6 +36,7 @@ weight, weightClass, buildVersion, showProgress = false) {
       firaFont(...index2FiraName(param.fira))
     : ralewayFont(index2RalewayName(param.raleway));
 
+  mark('metadata');
   //#region metadata tables
   // BASE table
   const BASE = require('./tables/BASE')(
@@ -93,6 +100,7 @@ weight, weightClass, buildVersion, showProgress = false) {
     default: throw Error(`Unknown lang tag ${lang} specified`);
   }
 
+  mark('cmap-latin');
   // Not def
   glyf['.notdef'] = latinFont.glyf['.notdef'];
   // Add Latin
@@ -116,16 +124,19 @@ weight, weightClass, buildVersion, showProgress = false) {
   }
 
   // Add CJK glyphs to the glyf table
-  (function addKanaLikes() {
+  mark('kana');
+  if (!process.env.WDS_SKIP_KANA) (function addKanaLikes() {
     var sourceKana = kanaLikeModels(sourceWeight);
     const kanaFilter = kanaModelFilter(param);
     for (let key in sourceKana) {
+      process.stderr.write(`K:${key} `);
       glyf[key] = model2Glyph(
         sourceKana[key], param.baseline, param.width, kanaFilter);
       updateProgress();
     }
   })();
 
+  mark('symbols');
   (function addCJKSymbols() {
     var sourceGlyphs = {
       baseScale: extractedGlyphs('base-scale', lang, sourceWeight),
@@ -155,6 +166,7 @@ weight, weightClass, buildVersion, showProgress = false) {
     }
   })();
 
+  mark('han');
   (function addHan() {
     const hanModelFiles = listHanModelPaths(hanLang, sourceWeight);
     const modelFilter = hanModelFilter(param);
@@ -183,6 +195,7 @@ weight, weightClass, buildVersion, showProgress = false) {
   }
   //#endregion
 
+  mark('features');
   //#region GSUB & GPOS tables
   const GSUB = reduceGSUB(getGSUB(lang, sourceWeight));
   const GPOS = scaleGPOS(getGPOS(lang, sourceWeight), param.width, 1);
@@ -202,6 +215,7 @@ weight, weightClass, buildVersion, showProgress = false) {
   var fontObject = { head, OS_2, name, CFF_, hhea, vhea, post, BASE, 
     cmap, glyf, GDEF, GPOS, GSUB };
 
+  mark('done-assembly');
   if (bar) bar.update(1);
   return fontObject;
 }
