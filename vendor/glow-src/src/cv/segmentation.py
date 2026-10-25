@@ -2,64 +2,33 @@
 # -*- encoding: utf8 -*-
 import numpy as np
 import cv2
-from skimage.morphology import binary_dilation, square
+import numpy as _np
+
+def binary_dilation(img, selem):
+    k = _np.ones((selem[0], selem[1]), dtype=_np.uint8)
+    return cv2.dilate((img * 255).astype(_np.uint8), k) > 0
+
+def square(n):
+    return (n, n)
 
 # Find the junctions of the skeleton image
 # REF: https://answers.opencv.org/question/103162/detection-of-contours-intersections/
 def find_junctions(skeleton):
-    """Give the skeleton segments of a binary image.
+    """骨架分支点（邻居数 >= 3）。
 
-    Parameters
-    ----------
-    skeleton: numpy.ndarray
-        A binary image of the skeleton, with '0' representing the backgroud, and
-        '1' representing the object.
-
-    Returns
-    ----------
-    junction_image: numpy.ndarray
-        A binary image with the found junction points in '255'
+    原实现用 cv2.morphologyEx(HITMISS)，在 aarch64/musl 上会 segfault，
+    这里改成纯 numpy 邻居计数，语义等价且不依赖 OpenCV 形态学。
     """
-    # kernels for hit and miss
-    # k1, k2, k3 and k4 are used to identify intersections
-    k1 = np.array([
-        [-1,  1, -1],
-        [ 1,  1,  1],
-        [-1, -1, -1]], dtype = int)
-    k2 = np.array([
-        [ 1, -1,  1],
-        [-1,  1, -1],
-        [ 1, -1, -1]], dtype = int)
-    k3 = np.array([
-        [ 1, -1,  1],
-        [ 0,  1,  0],
-        [ 0,  1,  0]], dtype = int)
-    k4 = np.array([
-        [-1,  1, -1],
-        [ 1,  1,  0],
-        [-1,  0,  1]], dtype = int)
-    # k5 is used for identifying the corners
-    k5 = np.array([
-        [-1,-1, 0, 0, 0 ],
-        [-1,-1, 1, 0, 0 ],
-        [-1,-1, 0, 1, 0 ],
-        [-1,-1,-1,-1,-1 ],
-        [-1,-1,-1,-1,-1 ]], dtype = int)
+    from numpy.lib.stride_tricks import sliding_window_view
+    b = (skeleton > 0).astype(np.uint8)
+    if not b.any():
+        return np.zeros(b.shape, dtype=np.uint8)
+    padded = np.pad(b, 1)
+    win = sliding_window_view(padded, (3, 3))
+    nb = win.sum(axis=(-1, -2)) - b
+    is_branch = (nb >= 3) & (b == 1)
+    return (is_branch.astype(np.uint8) * 255)
 
-    skeleton = (skeleton > 0).astype(np.uint8) * 255
-    # dst accumulates all matches
-    dst = np.zeros(skeleton.shape, dtype = np.uint8)
-    # Do hit & miss for all possible directions (0,90,180,270)
-    for _ in range(4):
-        dst = cv2.add(dst, cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, k1))
-        dst = cv2.add(dst, cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, k2))
-        dst = cv2.add(dst, cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, k3))
-        dst = cv2.add(dst, cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, k4))
-        dst = cv2.add(dst, cv2.morphologyEx(skeleton, cv2.MORPH_HITMISS, k5))
-        # Rotate the kernels
-        k1 = np.rot90(k1); k2 = np.rot90(k2); k3 = np.rot90(k3)
-        k4 = np.rot90(k4); k5 = np.rot90(k5)
-    return dst
 
 def get_skeleton_segments(
     skeleton,

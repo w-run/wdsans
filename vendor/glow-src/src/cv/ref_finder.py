@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- encoding: utf8 -*-
-import matplotlib.pyplot as plt
 import numpy as np
 from rasterize import rasterize
 from segmentation import get_skeleton_segments
-from skimage.filters import gaussian
-from skimage.measure import label
-from skimage.morphology import medial_axis, skeletonize
+import cv2
+# skimage 在 musl/alpine 上装不了，改用 OpenCV 等价实现
 
 class RefFinder(object):
 
@@ -16,15 +14,23 @@ class RefFinder(object):
     h, w = self.glyph_img.shape
     self.scale_factor = scale_factor
     # Labled by connectivity
-    self.labeled, n_labels = label(self.glyph_img, return_num=True)
-    axis, dist = medial_axis(self.glyph_img, return_distance=True)
+    _n, self.labeled = cv2.connectedComponents(
+        self.glyph_img.astype(np.uint8))
+    n_labels = _n - 1
+    # medial_axis 等价：距离变换 + thinning
+    dist = cv2.distanceTransform(
+        self.glyph_img.astype(np.uint8), cv2.DIST_L2, 5)
+    axis = cv2.ximgproc.thinning(
+        (self.glyph_img * 255).astype(np.uint8)) > 0
     # Estimated stroke width
     self.stroke_width = np.average(dist[axis]) * 2
     # Smoothed image
-    smooth = gaussian(self.glyph_img, 8*scale_factor) > 0.6
+    smooth = cv2.GaussianBlur(
+        self.glyph_img.astype(np.float32), (0, 0), 8 * scale_factor) > 0.6
     # Skeleton image
-    skel = np.logical_and(
-      skeletonize(smooth), dist >= self.stroke_width * 0.3)
+    _sk = cv2.ximgproc.thinning(
+        (smooth * 255).astype(np.uint8)) > 0
+    skel = np.logical_and(_sk, dist >= self.stroke_width * 0.3)
     # Skeleton segments
     skel_segments = get_skeleton_segments(skel, 
       prune_length=self.stroke_width * 0.25)

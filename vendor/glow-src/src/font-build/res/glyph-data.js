@@ -22,9 +22,15 @@ function listHanModelPaths(lang, weight) {
   const fullPath = expandPath(pathInProject);
   if (!fs.readdirSync(fullPath))
     throw Error(`Han models directory ${pathInProject} is not found.`);
-  const result = fs.readdirSync(fullPath)
+  let result = fs.readdirSync(fullPath)
     .filter(f => f.endsWith('.json'))
     .map(f => path.join(pathInProject, f));
+  // WDS_SHARDS=07,08,09 只构建指定分片（本地内存有限时用）
+  const only = process.env.WDS_SHARDS;
+  if (only) {
+    const keep = new Set(only.split(',').map(x => `gid-${x.trim()}.json`));
+    result = result.filter(p => keep.has(path.basename(p)));
+  }
   return result;
 }
 

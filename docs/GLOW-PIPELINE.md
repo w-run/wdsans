@@ -182,3 +182,47 @@ ssh wdsans 'cmd' < /dev/null     # 关键：stdin 给 EOF，等于空密码
 ```
 
 `BatchMode=yes` 会禁用 keyboard-interactive，绝对不要加。
+
+## 10. iSH 本地化边界（2026-10-26）
+
+### 能做的
+
+| 项 | 状态 |
+|---|---|
+| **otfcc 编译** | ✅ 用 gcc 直接编译（premake 是 x86 的，跑不了） |
+| otfccdump / otfccbuild | ✅ aarch64 可用，往返转换 cap 不变 |
+| 数据本地化 | ✅ models 217 个 / kana 7 / extracted / features 14 / Mona 7 / encoding |
+| 指纹质检 | ✅ pure Python，3000 字 80 秒 |
+| 渲染验证 | ✅ hb-view + PIL |
+
+otfcc 编译要点（musl/aarch64）：
+```bash
+# 上游仓库缺 3 个头文件（svn/git 漏提交）
+curl -sL -o dep/extern/json.h          https://cdn.jsdelivr.net/gh/udp/json-parser@master/json.h
+curl -sL -o dep/extern/json-builder.h  https://cdn.jsdelivr.net/gh/udp/json-builder@master/json-builder.h
+curl -sL -o dep/extern/sds.h           https://cdn.jsdelivr.net/gh/antirez/sds@master/sds.h
+sed -i 's/ssize_t/int/g' dep/extern/sds.h          # 旧 sds.c 用 int
+sed -i 's/const json_value \*/json_value */g' dep/extern/json*.h
+
+# 分批编译（-O0 + 6 并发，-O2 太慢）
+SRC="$(find lib dep -name '*.c' | grep -v 'bin-\|premake') src/stopwatch.c"
+for f in $SRC; do gcc -O0 ... -c "$f" -o ... & done
+gcc -o otfccdump $(ls *.o | grep -v otfccbuild) -lz -lm
+```
+
+### 不能做的
+
+**`buildFont()` 在 iSH 上进程级崩溃，无异常栈、无错误输出。**
+
+- 2 个分片（约 2000 字）也崩 → 排除内存
+- `caryll-shapeops` 单独调用正常（纯 JS，无 wasm）
+- node 提示 `disabling flag --expose_wasm` —— iSH 的 node 禁用了 wasm
+- 直接 `try/catch` 包裹仍无输出，说明是 native 层终止
+
+**结论：构建留云端（3 分钟/档），iSH 负责质检、渲染、文档、数据准备。**
+
+### OpenCV 在 iSH 也不稳
+
+`cv2.morphologyEx(HITMISS)` 必崩（已用 numpy 替换）；`cv2.ximgproc.thinning` 偶发 segfault。
+`py3-scikit-image` 不存在，`pip install scikit-image` 编译超时。
+→ CV（模型生成）必须在云端跑一次，结果拉回本地缓存。
