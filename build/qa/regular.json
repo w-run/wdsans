@@ -1,0 +1,2418 @@
+{
+ "ref": "ref/shs/shs-400.otf",
+ "cur": "build/v1/meta/WDesignSans-Regular.otf",
+ "total": 3000,
+ "critical": 423,
+ "warn": 1210,
+ "ok": 1367,
+ "unreadable": 0,
+ "pct_problem": 54.43,
+ "kinds": {
+  "显著曲线丢失": 1342,
+  "bbox": 300,
+  "轮廓数": 166,
+  "面积差": 42
+ },
+ "worst": [
+  {
+   "cp": "U+4E1A",
+   "char": "业",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（4->0）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 4,
+    "sharp": 4,
+    "area": 240806.0,
+    "winding": "ccw",
+    "bbox": [
+     60,
+     -28,
+     943,
+     828
+    ],
+    "w": 883,
+    "h": 856
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 9,
+    "sharp": 0,
+    "area": 234758.8,
+    "winding": "ccw",
+    "bbox": [
+     65,
+     27,
+     937,
+     878
+    ],
+    "w": 872,
+    "h": 851
+   }
+  },
+  {
+   "cp": "U+4E2B",
+   "char": "丫",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（4->1）"
+   ],
+   "ref": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 4,
+    "sharp": 4,
+    "area": 106310.3,
+    "winding": "ccw",
+    "bbox": [
+     145,
+     -79,
+     866,
+     824
+    ],
+    "w": 721,
+    "h": 903
+   },
+   "cur": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 10,
+    "sharp": 1,
+    "area": 106027.9,
+    "winding": "ccw",
+    "bbox": [
+     151,
+     -22,
+     860,
+     873
+    ],
+    "w": 709,
+    "h": 895
+   }
+  },
+  {
+   "cp": "U+4E2F",
+   "char": "丯",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 6 条（10->4）"
+   ],
+   "ref": {
+    "contours": 1,
+    "lines": 0,
+    "curves": 15,
+    "sharp": 10,
+    "area": 206157.3,
+    "winding": "ccw",
+    "bbox": [
+     101,
+     -79,
+     898,
+     840
+    ],
+    "w": 797,
+    "h": 919
+   },
+   "cur": {
+    "contours": 1,
+    "lines": 0,
+    "curves": 24,
+    "sharp": 4,
+    "area": 202694.5,
+    "winding": "ccw",
+    "bbox": [
+     106,
+     -21,
+     893,
+     892
+    ],
+    "w": 787,
+    "h": 913
+   }
+  },
+  {
+   "cp": "U+4E35",
+   "char": "丵",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（7->4）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 8,
+    "sharp": 7,
+    "area": 288606.5,
+    "winding": "ccw",
+    "bbox": [
+     52,
+     -81,
+     949,
+     840
+    ],
+    "w": 897,
+    "h": 921
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 9,
+    "sharp": 4,
+    "area": 286920.3,
+    "winding": "ccw",
+    "bbox": [
+     57,
+     -23,
+     946,
+     891
+    ],
+    "w": 889,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+4E3D",
+   "char": "丽",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（10->6）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 14,
+    "sharp": 10,
+    "area": 330068.4,
+    "winding": "ccw",
+    "bbox": [
+     53,
+     -79,
+     947,
+     780
+    ],
+    "w": 894,
+    "h": 859
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 15,
+    "sharp": 6,
+    "area": 326382.8,
+    "winding": "ccw",
+    "bbox": [
+     58,
+     -21,
+     943,
+     827
+    ],
+    "w": 885,
+    "h": 848
+   }
+  },
+  {
+   "cp": "U+4E44",
+   "char": "乄",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（8->5）"
+   ],
+   "ref": {
+    "contours": 1,
+    "lines": 0,
+    "curves": 11,
+    "sharp": 8,
+    "area": 155994.0,
+    "winding": "ccw",
+    "bbox": [
+     39,
+     -68,
+     882,
+     819
+    ],
+    "w": 843,
+    "h": 887
+   },
+   "cur": {
+    "contours": 1,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 5,
+    "area": 151947.0,
+    "winding": "ccw",
+    "bbox": [
+     42,
+     -9.1,
+     875,
+     870
+    ],
+    "w": 833,
+    "h": 879.1
+   }
+  },
+  {
+   "cp": "U+4E50",
+   "char": "乐",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（13->10）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 17,
+    "sharp": 13,
+    "area": 236193.9,
+    "winding": "ccw",
+    "bbox": [
+     38,
+     -78,
+     960,
+     829
+    ],
+    "w": 922,
+    "h": 907
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 23,
+    "sharp": 10,
+    "area": 233212.6,
+    "winding": "ccw",
+    "bbox": [
+     43,
+     -20.1,
+     957,
+     879
+    ],
+    "w": 914,
+    "h": 899.1
+   }
+  },
+  {
+   "cp": "U+4E53",
+   "char": "乓",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（4->1）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 4,
+    "sharp": 4,
+    "area": 227138.7,
+    "winding": "ccw",
+    "bbox": [
+     50,
+     -79,
+     953,
+     836
+    ],
+    "w": 903,
+    "h": 915
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 11,
+    "sharp": 1,
+    "area": 224253.0,
+    "winding": "ccw",
+    "bbox": [
+     54,
+     -22,
+     948,
+     887
+    ],
+    "w": 894,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+4E60",
+   "char": "习",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（7->4）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 12,
+    "sharp": 7,
+    "area": 196059.4,
+    "winding": "ccw",
+    "bbox": [
+     103,
+     -71.5,
+     889,
+     767
+    ],
+    "w": 786,
+    "h": 838.5
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 4,
+    "area": 194604.0,
+    "winding": "ccw",
+    "bbox": [
+     108,
+     -13.8,
+     882,
+     814
+    ],
+    "w": 774,
+    "h": 827.8
+   }
+  },
+  {
+   "cp": "U+4E63",
+   "char": "乣",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（13->10）"
+   ],
+   "ref": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 13,
+    "area": 228273.0,
+    "winding": "ccw",
+    "bbox": [
+     33,
+     -47,
+     960,
+     829
+    ],
+    "w": 927,
+    "h": 876
+   },
+   "cur": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 23,
+    "sharp": 10,
+    "area": 222517.9,
+    "winding": "ccw",
+    "bbox": [
+     36,
+     9,
+     957,
+     881
+    ],
+    "w": 921,
+    "h": 872
+   }
+  },
+  {
+   "cp": "U+4E66",
+   "char": "书",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（7->4）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 10,
+    "sharp": 7,
+    "area": 237010.7,
+    "winding": "ccw",
+    "bbox": [
+     60,
+     -79,
+     951,
+     837
+    ],
+    "w": 891,
+    "h": 916
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 10,
+    "sharp": 4,
+    "area": 234017.4,
+    "winding": "ccw",
+    "bbox": [
+     65,
+     -22,
+     947,
+     888
+    ],
+    "w": 882,
+    "h": 910
+   }
+  },
+  {
+   "cp": "U+4E6F",
+   "char": "乯",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（14->11）"
+   ],
+   "ref": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 14,
+    "area": 281168.3,
+    "winding": "ccw",
+    "bbox": [
+     70,
+     -61,
+     931,
+     829
+    ],
+    "w": 861,
+    "h": 890
+   },
+   "cur": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 28,
+    "sharp": 11,
+    "area": 277304.9,
+    "winding": "ccw",
+    "bbox": [
+     74,
+     -5,
+     927,
+     879
+    ],
+    "w": 853,
+    "h": 884
+   }
+  },
+  {
+   "cp": "U+4E73",
+   "char": "乳",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 5 条（15->10）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 23,
+    "sharp": 15,
+    "area": 266415.7,
+    "winding": "ccw",
+    "bbox": [
+     46,
+     -79,
+     961,
+     841
+    ],
+    "w": 915,
+    "h": 920
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 31,
+    "sharp": 10,
+    "area": 263972.3,
+    "winding": "ccw",
+    "bbox": [
+     49,
+     -21,
+     957,
+     893
+    ],
+    "w": 908,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+4E77",
+   "char": "乷",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（20->16）"
+   ],
+   "ref": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 27,
+    "sharp": 20,
+    "area": 260736.0,
+    "winding": "ccw",
+    "bbox": [
+     44,
+     -64,
+     964,
+     840
+    ],
+    "w": 920,
+    "h": 904
+   },
+   "cur": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 27,
+    "sharp": 16,
+    "area": 259171.0,
+    "winding": "ccw",
+    "bbox": [
+     48,
+     -7,
+     961,
+     892
+    ],
+    "w": 913,
+    "h": 899
+   }
+  },
+  {
+   "cp": "U+4E7C",
+   "char": "乼",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（11->7）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 11,
+    "area": 290535.5,
+    "winding": "ccw",
+    "bbox": [
+     60,
+     -62,
+     946,
+     845
+    ],
+    "w": 886,
+    "h": 907
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 17,
+    "sharp": 7,
+    "area": 284177.1,
+    "winding": "ccw",
+    "bbox": [
+     65,
+     -6,
+     944,
+     897
+    ],
+    "w": 879,
+    "h": 903
+   }
+  },
+  {
+   "cp": "U+4E7F",
+   "char": "乿",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（21->17）"
+   ],
+   "ref": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 40,
+    "sharp": 21,
+    "area": 276082.4,
+    "winding": "ccw",
+    "bbox": [
+     41,
+     -76,
+     960,
+     842
+    ],
+    "w": 919,
+    "h": 918
+   },
+   "cur": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 36,
+    "sharp": 17,
+    "area": 273321.0,
+    "winding": "ccw",
+    "bbox": [
+     45,
+     -18,
+     957,
+     893
+    ],
+    "w": 912,
+    "h": 911
+   }
+  },
+  {
+   "cp": "U+4E9A",
+   "char": "亚",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（4->1）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 4,
+    "sharp": 4,
+    "area": 286862.7,
+    "winding": "ccw",
+    "bbox": [
+     45,
+     -21,
+     955,
+     780
+    ],
+    "w": 910,
+    "h": 801
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 7,
+    "sharp": 1,
+    "area": 277763.3,
+    "winding": "ccw",
+    "bbox": [
+     49,
+     32,
+     951,
+     827
+    ],
+    "w": 902,
+    "h": 795
+   }
+  },
+  {
+   "cp": "U+4EB8",
+   "char": "亸",
+   "level": "critical",
+   "issues": [
+    "轮廓数 9->8"
+   ],
+   "ref": {
+    "contours": 9,
+    "lines": 0,
+    "curves": 13,
+    "sharp": 8,
+    "area": 354126.0,
+    "winding": "ccw",
+    "bbox": [
+     38,
+     -80,
+     963,
+     846
+    ],
+    "w": 925,
+    "h": 926
+   },
+   "cur": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 19,
+    "sharp": 8,
+    "area": 354669.6,
+    "winding": "ccw",
+    "bbox": [
+     41,
+     -22,
+     959,
+     898
+    ],
+    "w": 918,
+    "h": 920
+   }
+  },
+  {
+   "cp": "U+4F04",
+   "char": "伄",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（8->5）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 14,
+    "sharp": 8,
+    "area": 305620.5,
+    "winding": "ccw",
+    "bbox": [
+     17,
+     -81,
+     941,
+     835
+    ],
+    "w": 924,
+    "h": 916
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 14,
+    "sharp": 5,
+    "area": 301037.5,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -23,
+     936,
+     885
+    ],
+    "w": 915,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+4F05",
+   "char": "伅",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（9->6）"
+   ],
+   "ref": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 17,
+    "sharp": 9,
+    "area": 283443.9,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -79,
+     964,
+     839
+    ],
+    "w": 932,
+    "h": 918
+   },
+   "cur": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 14,
+    "sharp": 6,
+    "area": 277893.4,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -21,
+     960,
+     890
+    ],
+    "w": 923,
+    "h": 911
+   }
+  },
+  {
+   "cp": "U+4F1D",
+   "char": "伝",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（7->4）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 12,
+    "sharp": 7,
+    "area": 253173.4,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -78,
+     953,
+     836
+    ],
+    "w": 921,
+    "h": 914
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 13,
+    "sharp": 4,
+    "area": 251021.7,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -21,
+     949,
+     887
+    ],
+    "w": 912,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+4F27",
+   "char": "伧",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（15->12）"
+   ],
+   "ref": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 26,
+    "sharp": 15,
+    "area": 283451.2,
+    "winding": "ccw",
+    "bbox": [
+     30,
+     -78,
+     963,
+     846
+    ],
+    "w": 933,
+    "h": 924
+   },
+   "cur": {
+    "contours": 2,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 12,
+    "area": 280739.5,
+    "winding": "ccw",
+    "bbox": [
+     33,
+     -22,
+     959,
+     898
+    ],
+    "w": 926,
+    "h": 920
+   }
+  },
+  {
+   "cp": "U+4F2A",
+   "char": "伪",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 5 条（13->8）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 13,
+    "area": 277681.4,
+    "winding": "ccw",
+    "bbox": [
+     24,
+     -78,
+     925,
+     836
+    ],
+    "w": 901,
+    "h": 914
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 8,
+    "area": 275851.8,
+    "winding": "ccw",
+    "bbox": [
+     28,
+     -21,
+     920,
+     887
+    ],
+    "w": 892,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+4F3C",
+   "char": "似",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（11->8）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 11,
+    "area": 271216.1,
+    "winding": "ccw",
+    "bbox": [
+     17,
+     -80,
+     968,
+     835
+    ],
+    "w": 951,
+    "h": 915
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 8,
+    "area": 278524.0,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -21,
+     963,
+     885
+    ],
+    "w": 942,
+    "h": 906
+   }
+  },
+  {
+   "cp": "U+4F4D",
+   "char": "位",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（6->3）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 10,
+    "sharp": 6,
+    "area": 249264.3,
+    "winding": "ccw",
+    "bbox": [
+     38,
+     -78,
+     955,
+     847
+    ],
+    "w": 917,
+    "h": 925
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 15,
+    "sharp": 3,
+    "area": 250219.5,
+    "winding": "ccw",
+    "bbox": [
+     42,
+     -21,
+     950,
+     900
+    ],
+    "w": 908,
+    "h": 921
+   }
+  },
+  {
+   "cp": "U+4F5F",
+   "char": "佟",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（15->11）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 15,
+    "area": 274519.7,
+    "winding": "ccw",
+    "bbox": [
+     20,
+     -79,
+     973,
+     841
+    ],
+    "w": 953,
+    "h": 920
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 27,
+    "sharp": 11,
+    "area": 274258.9,
+    "winding": "ccw",
+    "bbox": [
+     23,
+     -22,
+     969,
+     892
+    ],
+    "w": 946,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+4F7B",
+   "char": "佻",
+   "level": "critical",
+   "issues": [
+    "轮廓数 5->4"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 14,
+    "area": 299534.2,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -84,
+     961,
+     838
+    ],
+    "w": 929,
+    "h": 922
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 19,
+    "sharp": 14,
+    "area": 300231.8,
+    "winding": "ccw",
+    "bbox": [
+     36,
+     -27,
+     958,
+     891
+    ],
+    "w": 922,
+    "h": 918
+   }
+  },
+  {
+   "cp": "U+4F96",
+   "char": "侖",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（9->6）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 12,
+    "sharp": 9,
+    "area": 304383.7,
+    "winding": "ccw",
+    "bbox": [
+     35,
+     -81,
+     972,
+     852
+    ],
+    "w": 937,
+    "h": 933
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 6,
+    "area": 299591.0,
+    "winding": "ccw",
+    "bbox": [
+     39,
+     -23,
+     968,
+     903
+    ],
+    "w": 929,
+    "h": 926
+   }
+  },
+  {
+   "cp": "U+4FA4",
+   "char": "侤",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（10->7）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 10,
+    "area": 298434.5,
+    "winding": "ccw",
+    "bbox": [
+     18,
+     -78.4,
+     958,
+     840
+    ],
+    "w": 940,
+    "h": 918.4
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 19,
+    "sharp": 7,
+    "area": 298260.8,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -20.6,
+     955,
+     892
+    ],
+    "w": 934,
+    "h": 912.6
+   }
+  },
+  {
+   "cp": "U+4FA5",
+   "char": "侥",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（20->17）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 28,
+    "sharp": 20,
+    "area": 320614.9,
+    "winding": "ccw",
+    "bbox": [
+     30,
+     -82,
+     964,
+     840
+    ],
+    "w": 934,
+    "h": 922
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 23,
+    "sharp": 17,
+    "area": 316129.2,
+    "winding": "ccw",
+    "bbox": [
+     35,
+     -25,
+     961,
+     891
+    ],
+    "w": 926,
+    "h": 916
+   }
+  },
+  {
+   "cp": "U+4FAE",
+   "char": "侮",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（12->9）"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 24,
+    "sharp": 12,
+    "area": 332815.2,
+    "winding": "ccw",
+    "bbox": [
+     27,
+     -80,
+     963,
+     841
+    ],
+    "w": 936,
+    "h": 921
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 31,
+    "sharp": 9,
+    "area": 333096.1,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -22,
+     960,
+     892
+    ],
+    "w": 928,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+4FC0",
+   "char": "俀",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 7 条（15->8）"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 26,
+    "sharp": 15,
+    "area": 288918.8,
+    "winding": "ccw",
+    "bbox": [
+     30,
+     -82,
+     960,
+     836
+    ],
+    "w": 930,
+    "h": 918
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 33,
+    "sharp": 8,
+    "area": 286195.1,
+    "winding": "ccw",
+    "bbox": [
+     35,
+     -24,
+     956,
+     888
+    ],
+    "w": 921,
+    "h": 912
+   }
+  },
+  {
+   "cp": "U+4FC4",
+   "char": "俄",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（18->14）"
+   ],
+   "ref": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 30,
+    "sharp": 18,
+    "area": 349119.4,
+    "winding": "ccw",
+    "bbox": [
+     17,
+     -82,
+     966,
+     835
+    ],
+    "w": 949,
+    "h": 917
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 37,
+    "sharp": 14,
+    "area": 347856.5,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -23,
+     962,
+     886
+    ],
+    "w": 941,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+4FC6",
+   "char": "俆",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（14->10）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 14,
+    "area": 284571.1,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -80,
+     963,
+     847
+    ],
+    "w": 931,
+    "h": 927
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 18,
+    "sharp": 10,
+    "area": 282014.8,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -23,
+     959,
+     899
+    ],
+    "w": 922,
+    "h": 922
+   }
+  },
+  {
+   "cp": "U+4FCD",
+   "char": "俍",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（9->6）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 9,
+    "area": 313333.8,
+    "winding": "ccw",
+    "bbox": [
+     24,
+     -86,
+     948,
+     842
+    ],
+    "w": 924,
+    "h": 928
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 6,
+    "area": 310508.3,
+    "winding": "ccw",
+    "bbox": [
+     28,
+     -27,
+     943,
+     893
+    ],
+    "w": 915,
+    "h": 920
+   }
+  },
+  {
+   "cp": "U+4FD7",
+   "char": "俗",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（11->8）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 17,
+    "sharp": 11,
+    "area": 294737.8,
+    "winding": "ccw",
+    "bbox": [
+     24,
+     -81,
+     972,
+     836
+    ],
+    "w": 948,
+    "h": 917
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 17,
+    "sharp": 8,
+    "area": 292944.4,
+    "winding": "ccw",
+    "bbox": [
+     28,
+     -21,
+     969,
+     888
+    ],
+    "w": 941,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+4FD8",
+   "char": "俘",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 5 条（12->7）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 12,
+    "area": 272762.9,
+    "winding": "ccw",
+    "bbox": [
+     35,
+     -79,
+     937,
+     840
+    ],
+    "w": 902,
+    "h": 919
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 25,
+    "sharp": 7,
+    "area": 272752.5,
+    "winding": "ccw",
+    "bbox": [
+     39,
+     -21,
+     933,
+     891
+    ],
+    "w": 894,
+    "h": 912
+   }
+  },
+  {
+   "cp": "U+4FE8",
+   "char": "俨",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（7->4）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 11,
+    "sharp": 7,
+    "area": 252938.2,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -78,
+     955,
+     836
+    ],
+    "w": 934,
+    "h": 914
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 10,
+    "sharp": 4,
+    "area": 254344.3,
+    "winding": "ccw",
+    "bbox": [
+     25,
+     -20,
+     952,
+     888
+    ],
+    "w": 927,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+4FEB",
+   "char": "俫",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（9->5）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 14,
+    "sharp": 9,
+    "area": 298198.2,
+    "winding": "ccw",
+    "bbox": [
+     18,
+     -78,
+     959,
+     836
+    ],
+    "w": 941,
+    "h": 914
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 13,
+    "sharp": 5,
+    "area": 293205.8,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -21,
+     956,
+     888
+    ],
+    "w": 935,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+4FEE",
+   "char": "修",
+   "level": "critical",
+   "issues": [
+    "轮廓数 7->6"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 27,
+    "sharp": 17,
+    "area": 293526.5,
+    "winding": "ccw",
+    "bbox": [
+     20,
+     -80,
+     972,
+     841
+    ],
+    "w": 952,
+    "h": 921
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 23,
+    "sharp": 17,
+    "area": 293482.8,
+    "winding": "ccw",
+    "bbox": [
+     23,
+     -22,
+     968,
+     892
+    ],
+    "w": 945,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+4FF2",
+   "char": "俲",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（17->14）"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 33,
+    "sharp": 17,
+    "area": 315899.8,
+    "winding": "ccw",
+    "bbox": [
+     24,
+     -87,
+     950,
+     843
+    ],
+    "w": 926,
+    "h": 930
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 29,
+    "sharp": 14,
+    "area": 316115.4,
+    "winding": "ccw",
+    "bbox": [
+     29,
+     -29,
+     946,
+     895
+    ],
+    "w": 917,
+    "h": 924
+   }
+  },
+  {
+   "cp": "U+500A",
+   "char": "倊",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（20->17）"
+   ],
+   "ref": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 31,
+    "sharp": 20,
+    "area": 281983.7,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -80,
+     963,
+     835
+    ],
+    "w": 931,
+    "h": 915
+   },
+   "cur": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 28,
+    "sharp": 17,
+    "area": 282438.4,
+    "winding": "ccw",
+    "bbox": [
+     36,
+     -22,
+     960,
+     886
+    ],
+    "w": 924,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+5010",
+   "char": "倐",
+   "level": "critical",
+   "issues": [
+    "轮廓数 7->6"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 28,
+    "sharp": 18,
+    "area": 312109.1,
+    "winding": "ccw",
+    "bbox": [
+     17,
+     -80,
+     969,
+     840
+    ],
+    "w": 952,
+    "h": 920
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 25,
+    "sharp": 18,
+    "area": 321504.1,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -22,
+     965,
+     892
+    ],
+    "w": 944,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+5013",
+   "char": "倓",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（18->15）"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 24,
+    "sharp": 18,
+    "area": 272817.3,
+    "winding": "ccw",
+    "bbox": [
+     16,
+     -80,
+     974,
+     840
+    ],
+    "w": 958,
+    "h": 920
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 25,
+    "sharp": 15,
+    "area": 278921.1,
+    "winding": "ccw",
+    "bbox": [
+     19,
+     -22,
+     971,
+     891
+    ],
+    "w": 952,
+    "h": 913
+   }
+  },
+  {
+   "cp": "U+501D",
+   "char": "倝",
+   "level": "critical",
+   "issues": [
+    "轮廓数 4->3"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 6,
+    "sharp": 4,
+    "area": 295765.7,
+    "winding": "ccw",
+    "bbox": [
+     40,
+     -81,
+     969,
+     840
+    ],
+    "w": 929,
+    "h": 921
+   },
+   "cur": {
+    "contours": 3,
+    "lines": 0,
+    "curves": 6,
+    "sharp": 5,
+    "area": 297602.2,
+    "winding": "ccw",
+    "bbox": [
+     44,
+     -22,
+     965,
+     891
+    ],
+    "w": 921,
+    "h": 913
+   }
+  },
+  {
+   "cp": "U+5030",
+   "char": "倰",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（15->12）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 15,
+    "area": 312715.5,
+    "winding": "ccw",
+    "bbox": [
+     19,
+     -80,
+     964,
+     840
+    ],
+    "w": 945,
+    "h": 920
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 12,
+    "area": 309594.0,
+    "winding": "ccw",
+    "bbox": [
+     22,
+     -22,
+     961,
+     892
+    ],
+    "w": 939,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+5038",
+   "char": "倸",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（13->9）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 13,
+    "area": 288084.2,
+    "winding": "ccw",
+    "bbox": [
+     25,
+     -78,
+     965,
+     836
+    ],
+    "w": 940,
+    "h": 914
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 9,
+    "area": 283256.8,
+    "winding": "ccw",
+    "bbox": [
+     29,
+     -21,
+     961,
+     888
+    ],
+    "w": 932,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+5041",
+   "char": "偁",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（13->9）"
+   ],
+   "ref": {
+    "contours": 10,
+    "lines": 0,
+    "curves": 19,
+    "sharp": 13,
+    "area": 324483.8,
+    "winding": "ccw",
+    "bbox": [
+     26,
+     -81,
+     951,
+     835
+    ],
+    "w": 925,
+    "h": 916
+   },
+   "cur": {
+    "contours": 10,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 9,
+    "area": 320080.2,
+    "winding": "ccw",
+    "bbox": [
+     31,
+     -23,
+     948,
+     886
+    ],
+    "w": 917,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+5042",
+   "char": "偂",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（11->8）"
+   ],
+   "ref": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 18,
+    "sharp": 11,
+    "area": 333101.5,
+    "winding": "ccw",
+    "bbox": [
+     26,
+     -81,
+     961,
+     840
+    ],
+    "w": 935,
+    "h": 921
+   },
+   "cur": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 15,
+    "sharp": 8,
+    "area": 330931.2,
+    "winding": "ccw",
+    "bbox": [
+     31,
+     -23,
+     957,
+     891
+    ],
+    "w": 926,
+    "h": 914
+   }
+  },
+  {
+   "cp": "U+5048",
+   "char": "偈",
+   "level": "critical",
+   "issues": [
+    "轮廓数 6->7"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 10,
+    "area": 321476.1,
+    "winding": "ccw",
+    "bbox": [
+     34,
+     -78,
+     923,
+     836
+    ],
+    "w": 889,
+    "h": 914
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 18,
+    "sharp": 11,
+    "area": 321624.2,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -20,
+     919,
+     888
+    ],
+    "w": 882,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+5053",
+   "char": "偓",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（8->5）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 15,
+    "sharp": 8,
+    "area": 364517.2,
+    "winding": "ccw",
+    "bbox": [
+     32,
+     -80,
+     961,
+     836
+    ],
+    "w": 929,
+    "h": 916
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 13,
+    "sharp": 5,
+    "area": 364141.3,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -23,
+     957,
+     888
+    ],
+    "w": 920,
+    "h": 911
+   }
+  },
+  {
+   "cp": "U+5057",
+   "char": "偗",
+   "level": "critical",
+   "issues": [
+    "轮廓数 8->7"
+   ],
+   "ref": {
+    "contours": 8,
+    "lines": 0,
+    "curves": 13,
+    "sharp": 8,
+    "area": 318499.7,
+    "winding": "ccw",
+    "bbox": [
+     18,
+     -78,
+     969,
+     836
+    ],
+    "w": 951,
+    "h": 914
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 12,
+    "sharp": 10,
+    "area": 316683.3,
+    "winding": "ccw",
+    "bbox": [
+     21,
+     -21,
+     964,
+     888
+    ],
+    "w": 943,
+    "h": 909
+   }
+  },
+  {
+   "cp": "U+5064",
+   "char": "偤",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（10->7）"
+   ],
+   "ref": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 10,
+    "area": 344176.2,
+    "winding": "ccw",
+    "bbox": [
+     27,
+     -80,
+     953,
+     843
+    ],
+    "w": 926,
+    "h": 923
+   },
+   "cur": {
+    "contours": 7,
+    "lines": 0,
+    "curves": 12,
+    "sharp": 7,
+    "area": 340791.3,
+    "winding": "ccw",
+    "bbox": [
+     30,
+     -21,
+     950,
+     894
+    ],
+    "w": 920,
+    "h": 915
+   }
+  },
+  {
+   "cp": "U+5065",
+   "char": "健",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（13->10）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 13,
+    "area": 362156.5,
+    "winding": "ccw",
+    "bbox": [
+     33,
+     -79,
+     963,
+     839
+    ],
+    "w": 930,
+    "h": 918
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 21,
+    "sharp": 10,
+    "area": 361238.1,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -22,
+     959,
+     889
+    ],
+    "w": 922,
+    "h": 911
+   }
+  },
+  {
+   "cp": "U+5092",
+   "char": "傒",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（19->15）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 35,
+    "sharp": 19,
+    "area": 326550.3,
+    "winding": "ccw",
+    "bbox": [
+     33,
+     -81,
+     966,
+     836
+    ],
+    "w": 933,
+    "h": 917
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 41,
+    "sharp": 15,
+    "area": 321431.5,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -24,
+     961,
+     887
+    ],
+    "w": 924,
+    "h": 911
+   }
+  },
+  {
+   "cp": "U+509C",
+   "char": "傜",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（10->7）"
+   ],
+   "ref": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 16,
+    "sharp": 10,
+    "area": 319554.8,
+    "winding": "ccw",
+    "bbox": [
+     33,
+     -80,
+     958,
+     835
+    ],
+    "w": 925,
+    "h": 915
+   },
+   "cur": {
+    "contours": 5,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 7,
+    "area": 317528.6,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -22,
+     954,
+     886
+    ],
+    "w": 917,
+    "h": 908
+   }
+  },
+  {
+   "cp": "U+50A1",
+   "char": "傡",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 10 条（11->1）"
+   ],
+   "ref": {
+    "contours": 9,
+    "lines": 0,
+    "curves": 18,
+    "sharp": 11,
+    "area": 297276.4,
+    "winding": "ccw",
+    "bbox": [
+     37,
+     -79,
+     959,
+     848
+    ],
+    "w": 922,
+    "h": 927
+   },
+   "cur": {
+    "contours": 9,
+    "lines": 0,
+    "curves": 35,
+    "sharp": 1,
+    "area": 298202.8,
+    "winding": "ccw",
+    "bbox": [
+     41,
+     -21,
+     956,
+     899
+    ],
+    "w": 915,
+    "h": 920
+   }
+  },
+  {
+   "cp": "U+50A3",
+   "char": "傣",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（12->9）"
+   ],
+   "ref": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 28,
+    "sharp": 12,
+    "area": 336890.0,
+    "winding": "ccw",
+    "bbox": [
+     29,
+     -78,
+     970,
+     839
+    ],
+    "w": 941,
+    "h": 917
+   },
+   "cur": {
+    "contours": 4,
+    "lines": 0,
+    "curves": 33,
+    "sharp": 9,
+    "area": 334877.5,
+    "winding": "ccw",
+    "bbox": [
+     34,
+     -21,
+     966,
+     891
+    ],
+    "w": 932,
+    "h": 912
+   }
+  },
+  {
+   "cp": "U+50A5",
+   "char": "傥",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 4 条（11->7）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 18,
+    "sharp": 11,
+    "area": 318429.2,
+    "winding": "ccw",
+    "bbox": [
+     23,
+     -80,
+     960,
+     841
+    ],
+    "w": 937,
+    "h": 921
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 15,
+    "sharp": 7,
+    "area": 316677.2,
+    "winding": "ccw",
+    "bbox": [
+     27,
+     -23,
+     957,
+     893
+    ],
+    "w": 930,
+    "h": 916
+   }
+  },
+  {
+   "cp": "U+50A9",
+   "char": "傩",
+   "level": "critical",
+   "issues": [
+    "显著曲线丢失 3 条（10->7）"
+   ],
+   "ref": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 20,
+    "sharp": 10,
+    "area": 345022.4,
+    "winding": "ccw",
+    "bbox": [
+     27,
+     -78,
+     957,
+     842
+    ],
+    "w": 930,
+    "h": 920
+   },
+   "cur": {
+    "contours": 6,
+    "lines": 0,
+    "curves": 22,
+    "sharp": 7,
+    "area": 343627.5,
+    "winding": "ccw",
+    "bbox": [
+     30,
+     -20,
+     953,
+     893
+    ],
+    "w": 923,
+    "h": 913
+   }
+  }
+ ]
+}
