@@ -16,11 +16,15 @@ import sys
 
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.t2CharStringPen import T2CharStringPen
+from fontTools.pens.ttGlyphPen import TTGlyphPen
+from fontTools.pens.cu2quPen import Cu2QuPen
 from fontTools.ttLib import TTFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from glyph import restore, han_model_filter  # noqa: E402
+from postfilters import (han_post_filter, round_glyph,  # noqa: E402
+                         translation as pf_translation)
 
 ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, 'vendor', 'build-data')
@@ -92,11 +96,13 @@ def build(style, template, out_path, limit=0, shards=None):
     tpl_hhea = tpl['hhea']
 
     filt = han_model_filter(param)
+    post = han_post_filter(param)
     glyphs = {}
     want = set(cp_of.values())
     if limit:
         want = set(sorted(want)[:limit])
 
+    n_done = 0
     for f in files:
         models = json.load(open(f))
         for gname, m in models.items():
@@ -104,43 +110,52 @@ def build(style, template, out_path, limit=0, shards=None):
             if cp is None or cp not in want:
                 continue
             contours = restore(m, filt)
-            # 与 JS 一致：平移 -baseline
-            b = param['baseline']
-            for c in contours:
-                for p in c:
-                    p['y'] -= b
+            contours = post(contours)
+            contours = round_glyph(pf_translation(contours, 0,
+                                                  -param['baseline']))
             tpl_g = tpl_cmap.get(cp)      # 模板用 cidXXXXX，模型用 uniXXXX
             if tpl_g is None:
                 continue
             glyphs[tpl_g] = contours
+        n_done += len(models)
+        print(f'  {n_done} glyphs...', flush=True)
 
     print(f'{style}: files={len(files)} want={len(want)} glyphs={len(glyphs)}')
     print(f'{style}: 生成 {len(glyphs)} 个字形')
 
     order = ['.notdef'] + [g for g in tpl_order if g in glyphs]
     metrics = {'.notdef': (500, 0)}
-    charstrings = {}
+    use_ttf = out_path.lower().endswith('.ttf')
+    built = {}
     for g in order:
         if g == '.notdef':
-            pen = T2CharStringPen(500, None)
-            charstrings[g] = pen.getCharString()
+            pen = TTGlyphPen(None) if use_ttf else T2CharStringPen(500, None)
+            built[g] = pen.glyph() if use_ttf else pen.getCharString()
             continue
         adv = tpl_hmtx[g][0] if g in tpl_hmtx.metrics else 1000
-        pen = T2CharStringPen(adv, None)
-        draw_to_pen(pen, glyphs[g])
-        charstrings[g] = pen.getCharString()
+        if use_ttf:
+            tp = TTGlyphPen(None)
+            draw_to_pen(Cu2QuPen(tp, max_err=1.0), glyphs[g])
+            built[g] = tp.glyph()
+        else:
+            pen = T2CharStringPen(adv, None)
+            draw_to_pen(pen, glyphs[g])
+            built[g] = pen.getCharString()
         metrics[g] = (adv, 0)
 
-    fb = FontBuilder(1000, isTTF=False)
+    fb = FontBuilder(1000, isTTF=use_ttf)
     fb.setupGlyphOrder(order)
     inv = {}
     for cp, g in tpl_cmap.items():
         if g in glyphs:
             inv[cp] = g
     fb.setupCharacterMap(inv)
-    fb.setupCFF(tpl_name.get(6, 'WDesignSans-Regular'),
-                {'FullName': tpl_name.get(4, 'WDesign Sans')},
-                charstrings, {})
+    if use_ttf:
+        fb.setupGlyf(built)
+    else:
+        fb.setupCFF(tpl_name.get(6, 'WDesignSans-Regular'),
+                    {'FullName': tpl_name.get(4, 'WDesign Sans')},
+                    built, {})
     fb.setupHorizontalMetrics(metrics)
     fb.setupHorizontalHeader(ascent=tpl_hhea.ascent, descent=tpl_hhea.descent,
                              lineGap=tpl_hhea.lineGap)

@@ -1,0 +1,14 @@
+const fs = require('fs');
+const { readModels } = require('./src/font-build/res/glyph-data');
+const GM = require('./src/glyph-manipulate/GlyphModel');
+const PF = require('./src/glyph-manipulate/PostFilters');
+const { hanModelFilter, hanPostFilter } = require('./src/font-build/glyph-filters');
+const p = JSON.parse(fs.readFileSync('parameters/wds/Regular.json'));
+delete p.fira; delete p.raleway; p.mona = 400; p.shs = 3;
+const m = readModels('build-files/models/shs-sc/Regular/gid-14.json');
+const g = m['uni6C38'];
+const c1 = new GM(g).restore(hanModelFilter(p));
+const c2 = hanPostFilter(p)(c1);
+const c3 = PF.round()(PF.translation(0, -p.baseline)(c2));
+fs.writeFileSync('/tmp/js_post.json', JSON.stringify(c3));
+console.log('js', c3.length, c3.reduce((s,c)=>s+c.length,0));
