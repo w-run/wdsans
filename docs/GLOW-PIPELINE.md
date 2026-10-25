@@ -107,3 +107,33 @@ json['glyf'][name]['contours'] = cp.contours
 验证（110px 渲染，"Aa Oo 123"）：修复后 ink 高度 81px，与 Mona 原版**完全一致**；修复前 O 为八边形。
 
 > 教训：**任何 TTF 拉丁源都要先过 Qu2CuPen**，不能直接喂 otfccdump。
+
+## 8. 全量模型的执行困境（2026-10-25）
+
+### 已完成的
+- 管线全线打通，参数定稿，三项端部硬指标达标
+- Regular：18/31 分片模型，构建产物 20,176 字形（覆盖约 2/3 常用字）
+
+### 卡点：CloudStudio 环境不适合长任务
+
+| 尝试 | 结果 |
+|---|---|
+| `nohup` / `setsid` 后台 | 任务被回收，最多撑到一批（6 个）结束 |
+| 前台 ssh 跑 20 分钟 | 连接被网关断开（无输出超过约 10 分钟） |
+| 心跳保活（每 45s echo） | 仍被断，且机器自动重启（`up 1 min`） |
+| 心跳 + 独立脚本文件 | 同上 |
+
+单任务 4.4 分钟 × 217 个 = 需要连续跑 2.5 小时，这个环境给不了。
+
+### 可选方案
+
+1. **本地 iSH 跑**：Alpine 有 `py3-opencv-4.10.0`，6 核/4GB，稳定但慢，需要把
+   `build-files/extracted/`（约 434MB）拉到本地、模型再传回
+2. **CloudStudio 小批次**：每次 6 个任务（约 5 分钟），需 33 次调用
+3. **升规格 / 换镜像**：改成 PROFESSION(8C16G) 或换一个带 tmux 的镜像，用 tmux 挂着跑
+
+### 当前可用资产
+
+- `build-r/WDesignSans-Regular.otf`（20,176 字形，参数定稿版）
+- 7 档参数 `parameters/wds/*.json`
+- 全部脚本：`wds_prepare.js` / `wds_extract.js` / `wds_build.js` / `fix_mona_curves.py`
