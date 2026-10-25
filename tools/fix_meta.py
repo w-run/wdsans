@@ -54,7 +54,7 @@ def fix_one(src_path, out_path, axis, version, use_typo_metrics, fix_line_height
     vendor = axis['vendor']
     stop = None
     for s in axis['stops']:
-        if src_path.endswith(f"-{s['ps']}.ttf"):
+        if src_path.endswith(f"-{s['ps']}.ttf") or src_path.endswith(f"-{s['ps']}.otf"):
             stop = s
             break
     if stop is None:
@@ -86,6 +86,7 @@ def fix_one(src_path, out_path, axis, version, use_typo_metrics, fix_line_height
 
     # fsSelection
     os2 = font['OS/2']
+    os2.version = 4  # bit7/8/9 需要 v4+
     fs = os2.fsSelection
     fs &= ~0x01  # clear ITALIC
     fs |= 0x100  # WWS
@@ -162,11 +163,16 @@ def main():
     version = args.version or axis['version']
 
     for s in axis['stops']:
-        src = os.path.join(args.src, f"WDesignSans-{s['ps']}.ttf")
-        if not os.path.exists(src):
-            print(f'MISSING {src}', file=sys.stderr)
+        src = None
+        for ext in ('.ttf', '.otf'):
+            cand = os.path.join(args.src, f"WDesignSans-{s['ps']}{ext}")
+            if os.path.exists(cand):
+                src = cand
+                break
+        if src is None:
+            print(f"MISSING WDesignSans-{s['ps']}.ttf/.otf in {args.src}", file=sys.stderr)
             continue
-        out = os.path.join(args.out, f"WDesignSans-{s['ps']}.ttf")
+        out = os.path.join(args.out, f"WDesignSans-{s['ps']}" + os.path.splitext(src)[1])
         ps = fix_one(src, out, axis, version, args.use_typo_metrics,
                      not args.no_fix_line_height)
         print(f'ok  {ps:24s} wght={s["value"]:3d}  -> {out}')

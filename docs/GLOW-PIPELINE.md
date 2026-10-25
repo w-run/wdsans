@@ -137,3 +137,48 @@ json['glyf'][name]['contours'] = cp.contours
 - `build-r/WDesignSans-Regular.otf`（20,176 字形，参数定稿版）
 - 7 档参数 `parameters/wds/*.json`
 - 全部脚本：`wds_prepare.js` / `wds_extract.js` / `wds_build.js` / `fix_mona_curves.py`
+
+## 9. 七档产物完成（2026-10-25）
+
+```
+build/v1/meta/WDesignSans-{Thin,Light,Normal,Regular,Medium,Bold,Heavy}.otf
+每档 31,962 字形，约 8.7MB
+```
+
+实测指标：
+
+| 项 | 值 |
+|---|---|
+| upm | 1000 |
+| cap / xh | **733 / 520**（OPPO 519、HOS 519） |
+| usWeightClass | 250 / 300 / 350 / 400 / 500 / 700 / 900 |
+| hhea | **880 / -120**（行高 1.0em） |
+| OS/2 version | 4（bit7 USE_TYPO_METRICS 生效） |
+| fsSelection | 0x01c0 (Regular) / 0x0180 |
+| name 1/2/16/17 | 完整，Regular/Bold 也补了 16/17 |
+| STAT | 有，wght 轴 + 7 个命名实例 |
+| 版本 | `Version 2026.100`，FontCreator 指纹已抹除 |
+
+表齐全：BASE / CFF / GDEF / GPOS / GSUB / OS2 / STAT / VORG / cmap / head / hhea /
+hmtx / maxp / name / vhea / vmtx。
+
+### SSH 连 CloudStudio 的正确姿势
+
+```bash
+# ~/.ssh/config
+Host wdsans
+  HostName uiuelm.36pjm1ub.ssh.cloudstudio.work
+  User 8a3472f7...-uiuelm
+  PreferredAuthentications keyboard-interactive,password
+  PubkeyAuthentication no
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+```
+
+**跳板用户 + 空密码 + keyboard-interactive**，不需要 sshpass，也不需要公钥：
+
+```bash
+ssh wdsans 'cmd' < /dev/null     # 关键：stdin 给 EOF，等于空密码
+```
+
+`BatchMode=yes` 会禁用 keyboard-interactive，绝对不要加。

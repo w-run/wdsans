@@ -32,6 +32,7 @@ function toChunks(array, chunkSize) {
       for (const chunk of toChunks(encodingFiles, nProcesses)) {
         const promises = chunk.map(async filename => {
           const target = filename.replace('.tsv', '.json');
+      if (fs.existsSync(path.join(modelDir, target))) return;
           
           await exec(`node \
             scripts/extract-han-gid.js \
@@ -40,7 +41,7 @@ function toChunks(array, chunkSize) {
             ${fallbackFontName ? fallbackFontName(weight) : ''}`);
           console.log(`${path.join(extractDir, target)} extracted.`)
           
-          await exec(`npm run convert-model\
+          await exec(`python3 scripts/glyph_model_convert.py\
             ${path.join(extractDir, target)} ${path.join(modelDir, target)}`)
             .then(() => fs.unlinkSync(path.join(extractDir, target)))
           console.log(`${path.join(modelDir, target)} converted.`);
@@ -57,21 +58,6 @@ function toChunks(array, chunkSize) {
       w => `fonts/SourceHanSansSC/SourceHanSansSC-${w}.json`
     );
     
-    // Extract TC/K
-    await extract(
-      `build-files/extracted/genne/${weight}`,
-      `build-files/models/genne/${weight}`,
-      `encoding/gid/shs-tc-han/`,
-      w => `fonts/Genne/GenneGothic-${w}.json`,
-      w => `fonts/SourceHanSansK/SourceHanSansK-${w}.json`
-    );
-
-    // Extract J
-    await extract(
-      `build-files/extracted/shs-j/${weight}`,
-      `build-files/models/shs-j/${weight}`,
-      `encoding/gid/shs-j-han/`,
-      w => `fonts/SourceHanSansJ/SourceHanSans-${w}.json`
-    );
+    // TC/K/J skipped (SC only)
   }
 })();
