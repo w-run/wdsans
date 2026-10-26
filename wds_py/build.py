@@ -35,6 +35,18 @@ WEIGHT_SOURCE = {
 }
 
 
+def gb2312_cps():
+    """GB2312 汉字区（6763 字）"""
+    cps = set()
+    for hi in range(0xB0, 0xF8):
+        for lo in range(0xA1, 0xFF):
+            try:
+                cps.add(ord(bytes([hi, lo]).decode('gb2312')))
+            except (UnicodeDecodeError, ValueError):
+                pass
+    return cps
+
+
 def load_param(style):
     p = json.load(open(os.path.join(ROOT, 'parameters', 'wds', f'{style}.json')))
     p.pop('fira', None)
@@ -68,7 +80,7 @@ def draw_to_pen(pen, contours):
         pen.closePath()
 
 
-def build(style, template, out_path, limit=0, shards=None):
+def build(style, template, out_path, limit=0, shards=None, charset=''):
     param = load_param(style)
     src = WEIGHT_SOURCE[style]
     model_dir = os.path.join(DATA, 'models', 'shs-sc', src)
@@ -99,6 +111,17 @@ def build(style, template, out_path, limit=0, shards=None):
     post = han_post_filter(param)
     glyphs = {}
     want = set(cp_of.values())
+    if charset == 'gb2312':
+        want &= gb2312_cps()
+    elif charset == 'gb1':
+        cps = set()
+        for hi in range(0xB0, 0xD8):
+            for lo in range(0xA1, 0xFF):
+                try:
+                    cps.add(ord(bytes([hi, lo]).decode('gb2312')))
+                except (UnicodeDecodeError, ValueError):
+                    pass
+        want &= cps
     if limit:
         want = set(sorted(want)[:limit])
 
@@ -121,8 +144,12 @@ def build(style, template, out_path, limit=0, shards=None):
         print(f'  {n_done} glyphs...', flush=True)
 
     print(f'{style}: files={len(files)} want={len(want)} glyphs={len(glyphs)}')
+    import time as _t
+    _t0 = _t.time()
     print(f'{style}: 生成 {len(glyphs)} 个字形')
 
+    print(f'[t] 处理 {_t.time()-_t0:.0f}s', flush=True)
+    _t1 = _t.time()
     order = ['.notdef'] + [g for g in tpl_order if g in glyphs]
     metrics = {'.notdef': (500, 0)}
     use_ttf = out_path.lower().endswith('.ttf')
@@ -141,8 +168,11 @@ def build(style, template, out_path, limit=0, shards=None):
             pen = T2CharStringPen(adv, None)
             draw_to_pen(pen, glyphs[g])
             built[g] = pen.getCharString()
-        metrics[g] = (adv, 0)
+        xmin = min((pt['x'] for c in glyphs[g] for pt in c), default=0)
+        metrics[g] = (adv, round(xmin))
 
+    print(f'[t] 编译 {_t.time()-_t1:.0f}s', flush=True)
+    _t2 = _t.time()
     fb = FontBuilder(1000, isTTF=use_ttf)
     fb.setupGlyphOrder(order)
     inv = {}
@@ -171,7 +201,7 @@ def build(style, template, out_path, limit=0, shards=None):
                 usWidthClass=5, fsSelection=tpl_os2.fsSelection)
     fb.setupPost()
 
-    if not limit and not shards:   # 裁剪模式下 GSUB/GPOS 会引用被删的字形
+    if not limit and not shards and not charset:   # 裁剪模式下 GSUB/GPOS 会引用被删的字形
         for tag in ('GSUB', 'GPOS', 'GDEF', 'BASE'):
             if tag in tpl:
                 fb.font[tag] = tpl[tag]
@@ -187,9 +217,11 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--shards', default='')
+    ap.add_argument('--charset', default='', choices=['', 'gb2312', 'gb1'])
     a = ap.parse_args()
     build(a.weight, a.template, a.out, a.limit,
-          [s.strip() for s in a.shards.split(',') if s.strip()] or None)
+          [s.strip() for s in a.shards.split(',') if s.strip()] or None,
+          a.charset)
 
 
 if __name__ == '__main__':

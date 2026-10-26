@@ -158,7 +158,8 @@ def main():
             pen = T2CharStringPen(adv, None)
             draw_to_pen(pen, glyphs[g])
             built[g] = pen.getCharString()
-        metrics[g] = (adv, 0)
+        xmin = min((pt['x'] for c in glyphs[g] for pt in c), default=0)
+        metrics[g] = (adv, round(xmin))
     print(f'字形编译完成, {time.time()-t0:.0f}s', flush=True)
 
     fb = FontBuilder(1000, isTTF=use_ttf)

@@ -51,7 +51,20 @@ def fingerprint(glyphSet, gname):
             last = p3
         elif op == 'qCurveTo' and args:
             qcurves += 1
-            last = args[-1]
+            # TrueType 二次曲线：args 是若干控制点 + 终点（None 表示隐含中点）
+            if last and len(args) >= 2:
+                p3 = args[-1] if args[-1] is not None else last
+                dx, dy = p3[0] - last[0], p3[1] - last[1]
+                L = (dx * dx + dy * dy) ** 0.5 or 1.0
+                dev = 0.0
+                for a in args[:-1]:
+                    if a is None:
+                        continue
+                    dev = max(dev, abs((a[0] - last[0]) * dy
+                                       - (a[1] - last[1]) * dx) / L)
+                if dev > 5:
+                    sharp += 1
+            last = args[-1] if args[-1] is not None else last
     contours = sum(1 for op, _ in pen.value if op == 'moveTo')
 
     bp = BoundsPen(glyphSet)

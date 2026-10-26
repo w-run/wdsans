@@ -127,13 +127,21 @@ def detect_feet(contour, max_stroke=10, longest_foot=100, angle_tol=2):
     left, right = [], []
     n = len(contour)
     for i in range(n):
-        pts = [contour[(i + k) % n] for k in range(7)]
-        if is_left_foot(pts, max_stroke, longest_foot, angle_tol):
-            left.append(mod(i + 1, n))
-        mirrored = [{'x': 1000 - p['x'], 'y': p['y'], 'on': p['on']}
-                    for p in reversed(pts)]
-        if is_left_foot(mirrored, max_stroke, longest_foot, angle_tol):
-            right.append(mod(i + 5, n))
+        p1 = contour[i]
+        p2 = contour[(i + 1) % n]
+        p6 = contour[(i + 6) % n]
+        p7 = contour[(i + 5) % n]
+        # 预筛：绝大多数点连"on 且向下"都不满足，省掉函数调用与角度计算
+        if p1['on'] and p2['on'] and p1['y'] > p2['y']:
+            pts = [contour[(i + k) % n] for k in range(7)]
+            if is_left_foot(pts, max_stroke, longest_foot, angle_tol):
+                left.append((i + 1) % n)
+        if p7['on'] and p6['on'] and p7['y'] > p6['y']:
+            pts = [contour[(i + k) % n] for k in range(7)]
+            mirrored = [{'x': 1000 - p['x'], 'y': p['y'], 'on': p['on']}
+                        for p in reversed(pts)]
+            if is_left_foot(mirrored, max_stroke, longest_foot, angle_tol):
+                right.append((i + 5) % n)
     return left, right
 
 
@@ -159,9 +167,13 @@ def detect_ends(contour, max_stroke=10, angle_tol=20):
     n = len(contour)
     out = []
     for i in range(n):
-        pts = [contour[mod(i + k, n)] for k in range(6)]
+        p2 = contour[(i + 1) % n]
+        p5 = contour[(i + 4) % n]
+        if not (p2['on'] and p5['on']):
+            continue
+        pts = [contour[(i + k) % n] for k in range(6)]
         if is_end(pts, max_stroke, angle_tol):
-            out.append(mod(i + 1, n))
+            out.append((i + 1) % n)
     return out
 
 
@@ -241,6 +253,8 @@ def sink_feet(glyph, gleft, gright, glen, grlen, max_stroke=10, sink_ratio=0.25)
         to_sink.append((cid, lp))
         lengths.append(grlen[i])
 
+    if not to_sink:
+        return glyph
     result = clone_glyph(glyph)
     for i, (cid, pid) in enumerate(to_sink):
         lpt = result[cid][pid]
