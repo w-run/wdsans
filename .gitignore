@@ -7,3 +7,9 @@ build/meta/*.ttf
 build/*.woff2
 *.pyc
 __pycache__/
+
+# 大体量可重建产物：字形 JSON（1.8G）/ python 虚拟环境 / ref 根层参照字体
+venv/
+fonts/
+ref/*.ttf
+ref/*.otf

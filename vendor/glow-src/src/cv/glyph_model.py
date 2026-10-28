@@ -24,26 +24,30 @@ class GlyphModel(object):
     # The messy part of the function...
     for contour_index, contour in enumerate(self.glyph):
       first_on_index = len(on_pts); previous_on = True
+      last_on_index = first_on_index
       for pt_index, pt in enumerate(contour):
         x, y = as_list(pt)
         if pt['on']:
           if 0 <= x < 1000: x_bins[x].append('on' + str(len(on_pts)))
           if 0 <= y < 1000: y_bins[y].append('on' + str(len(on_pts)))
           previous_on = True
+          last_on_index = len(on_pts)
           on_pts.append(as_list(pt))
           on_contour_indices.append(contour_index)
         else:
           if 0 <= x < 1000: x_bins[x].append('off' + str(len(off_pts)))
           if 0 <= y < 1000: y_bins[y].append('off' + str(len(off_pts)))
           off_pts.append(as_list(pt))
-          if previous_on:
-            off_on_indices.append(len(on_pts) - 1)
-          elif pt_index == len(contour) - 1:
-            off_on_indices.append(first_on_index)
-          else:
-            off_on_indices.append(len(on_pts))
+          # 修复：两个控制点都归属于最近的 on 点。
+          # 原实现把第 2 个 off 指向 len(on_pts)（即下一个 on），导致三次曲线
+          # 的控制点错配、曲线被拉直。contour 以 off 开头时记 -1，事后回填。
+          off_on_indices.append(last_on_index)
           previous_on = False
     
+    if on_pts:
+        off_on_indices = [(len(on_pts) - 1) if i < 0 else i
+                          for i in off_on_indices]
+
     # Off points offsets relative to the on points
     on_refs = [ self.ref_finder.find_ref(on_pt[0], on_pt[1]).tolist()
       for on_pt in on_pts ]
