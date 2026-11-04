@@ -28,8 +28,41 @@ VF 源：/data/build-cache/wdsans-p1/wdsans-FINAL.ttf（50.3 MB）
 
 ## 踩坑记录（重要）
 
-用 fontTools 的 instancer.instantiateVariableFont 读 advance width 是**错的**：
-它不会应用 HVAR，会读到 hmtx 的 base 值（对 H 恒为 675/684），
-从而误判「advance 不随字重变化」。必须用 hb-shape 或 hb-view 测真实渲染值。
+用 fontTools 的 `instancer.instantiateVariableFont` 读 advance width 是**错的**：
+它实例化时会**丢掉 HVAR 表**，只剩 gvar phantom 那一份 delta，
+与 HarfBuzz（优先用 HVAR）的真实渲染值不一致。必须用 `hb-shape` / `hb-view` 测。
 
-这个假象一度让我以为 HVAR 有问题，实际是测量方法错误。
+实测对照（字形 H，本字体）：
+
+| 来源 | 250 | 400 | 700 | 900 |
+|---|---|---|---|---|
+| `instancer` → `hmtx` | 678 | 684 | 694 | 700 |
+| **hb-shape（真值）** | **663** | **684** | **713** | **730** |
+
+### ⚠️ 更正：HVAR 确实有问题，不是「测量方法错误」
+
+本文初稿写成「这个假象一度让我以为 HVAR 有问题，实际是测量方法错误」——**后半句是错的，现已更正。**
+
+HVAR 是真实缺陷，实测证据：
+
+```
+本字体 HVAR 的 advance delta 与合并前 Noto 逐字形完全相同（抽样 200 个：same=200, diff=0）
+  H  ours hmtx 684 + HVAR[+46,-21]  ==  Noto hmtx 728 + HVAR[+46,-21]
+  T  ours hmtx 576 + HVAR[+41,-18]  ==  Noto hmtx 599 + HVAR[+41,-18]
+  o  ours hmtx 532 + HVAR[+31,-14]  ==  Noto hmtx 606 + HVAR[+31,-14]
+```
+
+也就是：**base 换成了 Mona，delta 还是 Noto 的**。真实 advance = Mona base + Noto delta，
+既不是 Noto 也不是 Mona：
+
+| 字形 | base(Mona×0.895) | HVAR 后 @900 | 应为(Mona@900×0.895) | 误差 |
+|---|---|---|---|---|
+| H | 684 | 730 | 700 | **+30** |
+| T | 576 | 617 | 572 | **+45** |
+| o | 532 | 563 | 539 | **+24** |
+
+**所以「两个测法数字不同」这件事本身，既证明了测量口径问题，也暴露了 HVAR 未重建这个真 bug。**
+不能因为换对工具就宣布没问题——换对工具之后读到的 730 里，有 30 是错的。
+修复函数 `wds/hvar_fix.py` 已写好但**未接入构建**。
+
+详见 `docs/P7-COMPOSITE-INLINE.md` §4 与 §6-1。

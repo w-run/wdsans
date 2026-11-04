@@ -236,7 +236,7 @@ wdsans/
 
 ## 9. 里程碑（建议）
 
-> 状态更新：2026-11-05（P0–P6 已落地，各阶段记录见 `docs/P1..P7-*.md`）
+> 状态更新：2026-11-05（P0–P6 已落地，各阶段记录见 `docs/P1..P8-*.md`）
 
 | 阶段 | 交付 | 出口条件 | 预估 | **状态（2026-11-05）** |
 |---|---|---|---|---|
@@ -247,6 +247,7 @@ wdsans/
 | **P4 交付** | TTF + WOFF2 + CSS + demo | Windows/macOS/Linux 三场景实测 | 1 周 | 🟡 **部分完成**（`P5-NAMING-DELIVERY.md`）— 七档 TTF+WOFF2 已出，命名/STAT 合规；**三场景实测未做** |
 | **P6 拉丁合并** | Mona Sans 拉丁并入 VF | 拉丁跨字重行为与中文一致 | 1 周 | 🟡 **部分完成**（`P6-LATIN-MERGE.md`）— 117 简单字形合并、gvar 采样重建成功（v1/v3/v4 三次失败已记录）；复合字形留给 P7 |
 | **P7 复合字形内联** | 重音拉丁与基础字母同族 | 同字母有/无重音宽度一致 | — | ✅ **完成**（`P7-COMPOSITE-INLINE.md`）— v8 内联 136/136，宽度差全 0.0%；撞过 numGlyphs=65535 硬上限 |
+| **P8 交付验证** | 七档静态 + WOFF2 实检 | 可解码、竖排完整、实例含复合字形 | — | ✅ **完成**（`P8-DELIVERY-VERIFICATION.md`）— WOFF2 全部可解码；七档 A/Á 同宽且随字重递增；vhea/vmtx/vert 完整 |
 
 ### 9.1 修订说明：实际阶段与初始规划的差异
 
@@ -259,16 +260,17 @@ wdsans/
 > 原因：每轮都推翻上一轮的判据（P4 记录累计 7 条判断被推翻），
 > 判据不稳时做全量没有意义。这个顺序是对的，保留。
 
-### 9.2 P6/P7 之后的剩余缺口（按优先级）
+### 9.2 P8 之后的剩余缺口（按优先级）
 
 | # | 缺口 | 出处 |
 |---|---|---|
 | **1** | **HVAR 的 advance delta 仍是 Noto 旧数据**，叠加 Mona base 后极端字重偏 +45 单位（`wds/hvar_fix.py` 已写但未接入构建） | P7 §6-1 / P6 §7-2 |
-| 2 | 中英混排样张 + 12px 正文视觉验收（AGENTS 铁律 6，P6/P7 都欠这张图） | P6 §7-6 / P7 §6-2 |
+| 2 | 中英混排样张 + 12px 正文视觉验收（AGENTS 铁律 6，P6/P7/P8 都欠这张图）；P8 已出 hb-view 渲染但未做并排对比 | P6 §7-6 / P7 §6-2 |
 | 3 | `OS/2.sxHeight` 仍 543 / `sCapHeight` 仍 733，与实测拉丁 529/732 不符 | P6 §7-4 / P7 §6-3 |
 | 4 | OFL 署名：name ID 0 缺 GitHub(Mona) 版权声明 | P6 §7-3 / P7 §6-4 |
-| 5 | `wdsans-dist` 七档仍是合并前产物（拉丁 H 墨宽 520 = Noto 原样） | P6 §7-5 / P7 §6-5 |
-| 6 | G3/G4 闸门未覆盖拉丁段；竖排 vmtx/vhea 未查 | P6 §7 / P5 §6 |
+| 5 | ~~`wdsans-dist` 七档仍是合并前产物~~ → **已由 P8 重出**；但仍缺 Windows/macOS/Linux 三场景实测 | P8 / P5 §6 |
+| 6 | G3/G4 闸门未覆盖拉丁段 | P6 §7 / P5 §6 |
+| 6b | ~~竖排 vmtx/vhea 未查~~ → **已由 P8 验证**（vhea 500/-500、vmtx 65,158 条、GSUB vert/vrt2 全在） | P8 §3 |
 | 7 | `periodcentered` 仍为 Noto（253 个拉丁槽位里唯一一个） | P7 §6-6 |
 | 8 | **测 advance 一律用 hb-shape，禁用 instancer** —— 已写成规则，但尚未落进 QA 脚本 | P6 §7.7 / P7 §4 |
 
@@ -301,5 +303,7 @@ ref/mona/LICENSE.txt           Mona OFL 1.1 原文（RFN: "Mona Sans"）
 /data/build-cache/wdsans-p1/wdsans-p6c.ttf             P6 v4（字重 ramp 出现，但未压缩、advance 冻结）
 /data/build-cache/wdsans-p1/wdsans-p7-latin-final.ttf  P6 v5 最终产物（sx=0.895 sy=1.0046，117 字形；≡ p6d）
 /data/build-cache/wdsans-p1/wdsans-p8-latin-acc.ttf    复合字形中间态（67 个，gvar 不可反编译，非交付）
-/data/build-cache/wdsans-p1/wdsans-p8c.ttf          P7 v8 最终产物（136 复合字形全部内联，复合数=0）
+/data/build-cache/wdsans-p1/wdsans-p8c.ttf             P7 v8 产物（136 复合字形全部内联，复合数=0）
+/data/build-cache/wdsans-p1/wdsans-FINAL.ttf          P8 交付源（md5 644fcc65…，≡ p8c）
+/data/build-cache/wdsans-dist/                         P8 交付产物（七档 TTF + WOFF2 + VF WOFF2）
 ```
