@@ -236,7 +236,7 @@ wdsans/
 
 ## 9. 里程碑（建议）
 
-> 状态更新：2026-11-05（P0–P6 已落地，各阶段记录见 `docs/P1..P6-*.md`）
+> 状态更新：2026-11-05（P0–P6 已落地，各阶段记录见 `docs/P1..P7-*.md`）
 
 | 阶段 | 交付 | 出口条件 | 预估 | **状态（2026-11-05）** |
 |---|---|---|---|---|
@@ -245,29 +245,32 @@ wdsans/
 | **P2 风格定稿** | 3000 常用字 + 参数冻结 | 视觉闸门 + 参数冻结机制生效 | 2 周 | ✅ **完成**（`P2-FEET-REMOVAL.md` + `P3-CORRECTION.md`）— 出脚判决量 107.6u→0.0u，判据定到 v5 |
 | **P3 全量** | 65,535 字形 × 7 档 + 分片 | 全闸门 + 耗时达标 | 3–5 天 | ✅ **完成**（`P4-VF-RAMP.md`）— 全字重验证：减细量恒定 12.1/6.7，竖横比 1.057（400 档） |
 | **P4 交付** | TTF + WOFF2 + CSS + demo | Windows/macOS/Linux 三场景实测 | 1 周 | 🟡 **部分完成**（`P5-NAMING-DELIVERY.md`）— 七档 TTF+WOFF2 已出，命名/STAT 合规；**三场景实测未做** |
-| **P6 拉丁合并** | Mona Sans 拉丁并入 VF | 拉丁跨字重行为与中文一致 | 1 周 | 🟡 **部分完成**（`P6-LATIN-MERGE.md`）— 117 字形合并、gvar 采样重建成功（v1/v3/v4 三次失败已记录）；**512 复合字形未搬，无视觉验收图** |
+| **P6 拉丁合并** | Mona Sans 拉丁并入 VF | 拉丁跨字重行为与中文一致 | 1 周 | 🟡 **部分完成**（`P6-LATIN-MERGE.md`）— 117 简单字形合并、gvar 采样重建成功（v1/v3/v4 三次失败已记录）；复合字形留给 P7 |
+| **P7 复合字形内联** | 重音拉丁与基础字母同族 | 同字母有/无重音宽度一致 | — | ✅ **完成**（`P7-COMPOSITE-INLINE.md`）— v8 内联 136/136，宽度差全 0.0%；撞过 numGlyphs=65535 硬上限 |
 
 ### 9.1 修订说明：实际阶段与初始规划的差异
 
 | 初始规划 | 实际执行 |
 |---|---|
-| P1=算子、P2=风格定稿、P3=全量、P4=交付 | P1=减细算子、P2=去出脚、P3=去脚判据修正、P4=VF 全字重验证、P5=命名+STAT+静态实例、**P6=拉丁合并** |
-| 拉丁处理未排期（Q4 待裁决） | 单独立为 P6，见 `docs/P6-LATIN-MERGE.md` |
+| P1=算子、P2=风格定稿、P3=全量、P4=交付 | P1=减细算子、P2=去出脚、P3=去脚判据修正、P4=VF 全字重验证、P5=命名+STAT+静态实例、**P6=拉丁合并**、**P7=复合字形内联** |
+| 拉丁处理未排期（Q4 待裁决） | 单独立为 P6 + P7，见 `docs/P6-LATIN-MERGE.md`、`docs/P7-COMPOSITE-INLINE.md` |
 
 > 实际是「一个缺陷一个阶段」，不是「3000 字 → 全量」的批量推进。
 > 原因：每轮都推翻上一轮的判据（P4 记录累计 7 条判断被推翻），
 > 判据不稳时做全量没有意义。这个顺序是对的，保留。
 
-### 9.2 P6 之后的剩余缺口（按优先级）
+### 9.2 P6/P7 之后的剩余缺口（按优先级）
 
 | # | 缺口 | 出处 |
 |---|---|---|
-| 1 | 中英混排样张 + 12px 正文视觉验收（AGENTS 铁律 6） | P6 §7-6 |
-| 2 | 512 个复合字形（`Aacute` 等）未合并，带重音拉丁仍是 Noto | P6 §7-1 |
-| 3 | `OS/2.sxHeight` 仍 543 / `sCapHeight` 仍 733，与实测拉丁 529/732 不符 | P6 §7-4 |
-| 4 | OFL 署名：name ID 0 缺 GitHub(Mona) 版权声明 | P6 §7-3 |
-| 5 | `wdsans-dist` 七档仍是合并前产物（拉丁 H 宽 520 = Noto 原样） | P6 §7-5 |
+| **1** | **HVAR 的 advance delta 仍是 Noto 旧数据**，叠加 Mona base 后极端字重偏 +45 单位（`wds/hvar_fix.py` 已写但未接入构建） | P7 §6-1 / P6 §7-2 |
+| 2 | 中英混排样张 + 12px 正文视觉验收（AGENTS 铁律 6，P6/P7 都欠这张图） | P6 §7-6 / P7 §6-2 |
+| 3 | `OS/2.sxHeight` 仍 543 / `sCapHeight` 仍 733，与实测拉丁 529/732 不符 | P6 §7-4 / P7 §6-3 |
+| 4 | OFL 署名：name ID 0 缺 GitHub(Mona) 版权声明 | P6 §7-3 / P7 §6-4 |
+| 5 | `wdsans-dist` 七档仍是合并前产物（拉丁 H 墨宽 520 = Noto 原样） | P6 §7-5 / P7 §6-5 |
 | 6 | G3/G4 闸门未覆盖拉丁段；竖排 vmtx/vhea 未查 | P6 §7 / P5 §6 |
+| 7 | `periodcentered` 仍为 Noto（253 个拉丁槽位里唯一一个） | P7 §6-6 |
+| 8 | **测 advance 一律用 hb-shape，禁用 instancer** —— 已写成规则，但尚未落进 QA 脚本 | P6 §7.7 / P7 §4 |
 
 ---
 
@@ -298,4 +301,5 @@ ref/mona/LICENSE.txt           Mona OFL 1.1 原文（RFN: "Mona Sans"）
 /data/build-cache/wdsans-p1/wdsans-p6c.ttf             P6 v4（字重 ramp 出现，但未压缩、advance 冻结）
 /data/build-cache/wdsans-p1/wdsans-p7-latin-final.ttf  P6 v5 最终产物（sx=0.895 sy=1.0046，117 字形；≡ p6d）
 /data/build-cache/wdsans-p1/wdsans-p8-latin-acc.ttf    复合字形中间态（67 个，gvar 不可反编译，非交付）
+/data/build-cache/wdsans-p1/wdsans-p8c.ttf          P7 v8 最终产物（136 复合字形全部内联，复合数=0）
 ```

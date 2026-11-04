@@ -14,8 +14,8 @@
 | 字重行为 | 250 / 400 / 900 三档轮廓**不同**，墨宽与 advance 都随 `wght` 单调递增 |
 | gvar 结构 | 1 轴，每字形 **2 个 tuple**（peak +1→900 / −1→250），coords 长度 = 点数 + **4**（phantom） |
 | 中文影响 | **零**：CJK 字形 glyf 与 gvar 逐点相同；cmap 44,810 不变；glyph 65,535 不变；GSUB 483 features / 52 lookups、GPOS 296 / 13 与合并前完全一致 |
-| 最终产物 | `/data/build-cache/wdsans-p1/wdsans-p7-latin-final.ttf`（≡ `wdsans-p6d.ttf`，md5 `16eb0736…`） |
-| 已知限制 | Mona 的 **512 个复合字形**（`Aacute` 等）未搬，带重音拉丁仍是 Noto 原样 |
+| 本阶段产物 | `/data/build-cache/wdsans-p1/wdsans-p7-latin-final.ttf`（≡ `wdsans-p6d.ttf`，md5 `16eb0736…`）<br>**后续 P7 已在此基础上内联复合字形，最终产物见 `wdsans-p8c.ttf`** |
+| 已知限制 | ~~Mona 的 512 个复合字形未搬~~ → **已由 P7 解决**（复合字形数已归零）；HVAR advance delta 仍是 Noto 旧数据，待接入 `wds/hvar_fix.py` |
 
 ---
 
@@ -261,16 +261,17 @@ p6d/d7 coords == Mona@400 × (sx, sy): 116 match   1 mismatch
 
 ## 7. 已知限制（下一轮必须处理）
 
-1. **带重音的拉丁仍是 Noto 原样** —— Mona 有 **512 个复合字形**（`Aacute`/`eacute`/`ntilde`/`odieresis`/`Uacute`…），
-   本次**一个都没搬**。实测这 5 个字形与合并前**逐点相同**，
-   即西文重音字母现在与基础字母不同族。
-   要补的话要么让终产物支持复合字形（当前基座 0 个复合字形，Noto 走全简单字形路线），
-   要么把 Mona 的复合字形**拆成简单字形 + 逐字重采样**——后者与 v4 同构，可复用现有代码。
-   > 进度：另有 `wds/latin6.py` / `latin7.py` 在试这条路（按**字形名**而非码位解析组件），
-   > 但处在中间态：`wdsans-p8-latin-acc.ttf` 只进了 67 个复合字形，且 **gvar 反编译断言失败**（字体不可实例化）。
-   > **不是可交付产物，未纳入本轮结果。**
-2. **advance 只对了大方向** —— v5 已按 `pp1/pp2` 公式写入，H 的 678/684/700 与 Mona 的 757/764/782×0.895 一致；
-   但只校验了 H/n/o 抽样，未做 117 个逐字形 advance 全量断言。
+1. ~~**带重音的拉丁仍是 Noto 原样**~~ → **已由 P7 解决**（`docs/P7-COMPOSITE-INLINE.md`）。
+   Mona 拉丁区共 225 个复合字形（其中 136 个在我们 cmap 内），P7 用 **v8 内联**（`DecomposingRecordingPen`
+   把组件展开成单一简单轮廓，不新增字形槽位）全部搬完，**136/136 成功**。
+   重音字母与基础字母宽度差已归零。最终字体中**复合字形数 = 0**。
+   > 关键卡点：本字体 `numGlyphs` 已满 65,535（TrueType 上限），
+   > 任何「新增组件字形」的方案都不可行（v7 崩在 `struct.error: 'H' format requires <= 65535`）。
+2. **advance 的验证方式是错的（不是数值范围问题）** —— v5 已按 `pp1/pp2` 公式把 phantom delta 写对，
+   但**当时用 `instancer` 读 `hmtx` 来验证，这个方法本身无效**（详见 §7.7）：
+   `instancer` 会丢掉 HVAR，而 HarfBuzz 优先用 HVAR。真值须用 `hb-shape`。
+   另有一个**尚未修复**的缺陷：**HVAR 的 advance delta 仍是 Noto 旧数据**，
+   叠加在 Mona 的 base 上，使极端字重最多偏 **+45 单位**（T 字形）。修复函数 `wds/hvar_fix.py` 已写好但未接入构建。
 3. **OFL 署名待补** —— name ID 0 在 P5 已删（原 `Reserved Font Name 'Source'`），
    现在表里**没有 GitHub 的 Mona Sans 版权声明**。OFL 1.1 要求保留上游署名，建议写入：
    `Copyright (c) 2023, GitHub (Mona Sans, OFL 1.1); Copyright (c) 2014-2021 Adobe (Source Han Sans, OFL 1.1); modified by WDesign`。
@@ -280,6 +281,38 @@ p6d/d7 coords == Mona@400 × (sx, sy): 116 match   1 mismatch
    （拉丁 H 墨宽 520 = Noto 原样）**还是合并前的**，需从 `p7-latin-final` 重跑 `wds/deliver.py`。
 6. **无视觉验收图** —— 本轮只有量化验证，**没有出 PNG 并排图**（AGENTS.md 铁律 6 未满足）。
    下一轮第一件事：中英混排样张，250/400/900 三档并排 + 12px 正文，实看字重过渡。
+
+### 7.7 踩坑：用 `instancer` 测 advance 是错的（P7 补记）
+
+> 这条在 P6 当时没发现，是 P7 阶段由 verify-latin 队友用 HarfBuzz 交叉验证才暴露的。
+> 写在 P6 是因为**源头在 P6 的 advance 实现**（§5 phantom 点那段）。
+
+P6 §5 里我用 `fontTools` 的 `instancer` 实例化后读 `hmtx` 来验证 advance。
+**这个测法是错的**，原因有两条：
+
+1. `instancer` 实例化时**把 HVAR 表整个丢掉**（实测：实例化后表清单里没有 HVAR）；
+2. 真实排版引擎（HarfBuzz）**优先用 HVAR** 算 advance，gvar phantom 只是兜底。
+
+所以 `instancer` 给出的是「只有 phantom 那一份 delta」的 advance，与用户实际看到的宽度不一致：
+
+| 字形 H | wght 250 | 400 | 700 | 900 |
+|---|---|---|---|---|
+| `instancer` → `hmtx`（错） | 678 | 684 | 694 | 700 |
+| **hb-shape（真值）** | **663** | **684** | **713** | **730** |
+
+400 档两者相同（幻影 delta 为 0），**越往极端字重差得越多**：250 差 −15、900 差 +30。
+
+**规则**（写进项目操作习惯）：
+
+| 测什么 | 用什么 |
+|---|---|
+| 轮廓几何（点数 / 坐标 / bbox） | `fontTools` `instancer` ✅ |
+| **advance / 排版宽度** | **`hb-shape --variations="wght=..." --no-glyph-names --output-format=json`** ✅ |
+| 单字宽度（避免 kerning 干扰） | 单字 shape，不要整串 |
+
+> 这个坑的危险之处在于**它会静默给出一个自洽的错值**：单看 `instancer` 的 678/684/694/700，
+> 曲线是单调的、看着完全正常。只有拿第二个独立工具交叉验证才发现。
+> 详见 `docs/P7-COMPOSITE-INLINE.md` §4。
 
 ---
 
@@ -327,13 +360,18 @@ PY
 
 ## 9. 下一轮
 
+> 状态（P7 之后回看）：
+> - ✅ 复合字形 → **P7 已完成**（v8 内联 136/136，复合字形数归零）
+> - ⚠️ advance 验证方式 → **原列的「117 字形 advance 全量断言」方向错了**，
+>   因为当时用 `instancer` 读数（§7.7）；正确做法是 `hb-shape`，且这条已升级为项目规则
+> - ❌ **HVAR 未修** —— 当前优先级最高的遗留项
+
+- [ ] **接上 `wds/hvar_fix.py`**（HVAR advance delta 仍是 Noto 旧值，极端字重偏 +45）
 - [ ] 出中英混排样张（250/400/900 并排 + 12px 正文），**实看**字重过渡与小字号
-- [ ] 补 512 个复合字形（拆成简单字形后走 v4 采样法；`latin6/7` 中间态需先修 gvar 反编译断言）
-- [ ] 117 个字形 advance 全量断言（不只抽 H/n/o）
 - [ ] `OS/2.sxHeight` → 529、`sCapHeight` → 732
 - [ ] name ID 0 补 GitHub / Adobe 双版权（OFL 合规）
-- [ ] 从 `p7-latin-final` 重跑七档静态 + WOFF2，regen `wdsans-dist`
-- [ ] G3/G4 闸门脚本纳入拉丁段（当前只覆盖 CJK 段）
+- [ ] 从 `wdsans-p8c.ttf` 重跑七档静态 + WOFF2，regen `wdsans-dist`
+- [ ] G3/G4 闸门脚本纳入拉丁段（当前只覆盖 CJK 段），并把 hb-shape 定为 advance 唯一口径
 
 ---
 
