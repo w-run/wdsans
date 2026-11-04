@@ -1,113 +1,136 @@
-"""笔画角色识别。
+"""笔画角色识别 v2 —— 基于实测几何，不用 glow 的固定阈值。
 
-取代 glow-sans 的固定阈值判据（detect-feet.js 用 7 点窗口 + 2° 直角容差，
-字重一变就失效 —— 见 docs/UPSTREAM-DEFECTS.md A1）。
+P0 版本的错误（已实测确认）：
+  1. 笔画宽度用 bbox 短边估 → 「口」量出 375（真实约 80）
+  2. 折角判据没区分「笔画端面」与「转折」→ 「口」量出 12 个折角（真实 4 个）
 
-这里改用**几何不变量**判据，且结果落盘为 JSON，可人工覆盖：
-  build/roles/<glyph>.json
+v2 的判据来源：「一」「丨」「口」「十」的实测结构（Noto/OPPO 双字体对照）：
+  - 「一」= 单轮廓矩形 4 点，横厚 = |y1-y2|
+  - 「丨」= 单轮廓矩形 4 点，竖宽 = |x1-x2|
+  - 「口」= 外轮廓 8 点，端面落在侧壁，四个内角是转折
+  - 端面（stroke end）= 两条几乎平行的短边之间夹一段「宽度约等于笔画厚」的短边
 """
 from __future__ import annotations
-import json
 import math
-import os
-
-ROLE_END = "end"      # 笔画端面
-ROLE_FOOT = "foot"    # 出脚（竖画顶端小方突）
-ROLE_CORNER = "corner"  # 折角
-ROLE_HOOK = "hook"    # 钩
 
 
-def _dist(a, b):
+def _d(a, b):
     return math.hypot(a.x - b.x, a.y - b.y)
 
 
-def _angle(ax, ay, bx, by, cx, cy):
-    """B 处的夹角（度），A-B-C。"""
-    v1 = (ax - bx, ay - by)
-    v2 = (cx - bx, cy - by)
-    n1 = math.hypot(*v1)
-    n2 = math.hypot(*v2)
-    if n1 == 0 or n2 == 0:
+def _turn_deg(prev, cur, nxt):
+    """在 cur 处的转向角（0 = 直行，90 = 直角）。"""
+    v1x, v1y = cur.x - prev.x, cur.y - prev.y
+    v2x, v2y = nxt.x - cur.x, nxt.y - cur.y
+    n1 = math.hypot(v1x, v1y)
+    n2 = math.hypot(v2x, v2y)
+    if n1 < 1e-9 or n2 < 1e-9:
         return 0.0
-    cosv = max(-1.0, min(1.0, (v1[0] * v2[0] + v1[1] * v2[1]) / (n1 * n2)))
-    return math.degrees(math.acos(cosv))
+    c = max(-1.0, min(1.0, (v1x * v2x + v1y * v2y) / (n1 * n2)))
+    return math.degrees(math.acos(c))
 
 
-def detect_ends(contour, stroke_w: float, angle_tol: float = 25.0):
-    """笔画端面：连续 on,off,off,on 结构，两端距离 ≈ 笔画宽度。
+def contour_bbox(c):
+    xs = [p.x for p in c]
+    ys = [p.y for p in c]
+    return min(xs), min(ys), max(xs), max(ys)
 
-    对应 glow 的 detect-ends.js，但容差放宽且以**笔画宽度实测值**为准，
-    而不是写死的 maxStroke。
+
+def is_rect(c, tol=1.0):
+    """单轮廓是否轴对齐矩形（4 点，「一」「丨」这种）。"""
+    if len(c) != 4 or not all(p.on for p in c):
+        return False
+    for i in range(4):
+        p, q = c[i], c[(i + 1) % 4]
+        # 只允许水平或垂直边
+        if abs(p.x - q.x) > tol and abs(p.y - q.y) > tol:
+            return False
+    return True
+
+
+def rect_thickness(c):
+    """矩形轮廓的笔画厚度：短边长度。"""
+    x0, y0, x1, y1 = contour_bbox(c)
+    return min(x1 - x0, y1 - y0)
+
+
+def find_corners(c, min_turn=60.0):
+    """真转折点：跳过共线点后，转向角 >= min_turn。
+
+    「口」的 8 点轮廓里，4 个角是 90 度转向，其余点是端面/共线点。
     """
-    n = len(contour)
-    hits = []
+    n = len(c)
+    out = []
     for i in range(n):
-        p1 = contour[i]
-        p2 = contour[(i + 1) % n]
-        p3 = contour[(i + 2) % n]
-        p4 = contour[(i + 3) % n]
-        p5 = contour[(i + 4) % n]
-        p6 = contour[(i + 5) % n]
-        if p1.on or not p2.on or p3.on or p4.on or not p5.on or p6.on:
+        prev, cur, nxt = c[(i - 1) % n], c[i], c[(i + 1) % n]
+        # 共线点跳过（短边或几乎不转向）
+        if _d(prev, cur) < 1e-6 or _d(cur, nxt) < 1e-6:
             continue
-        width = _dist(p2, p5)
-        if width > stroke_w * 1.6:
-            continue
-        a1 = _angle(p5.x, p5.y, p2.x, p2.y, p1.x, p1.y)
-        a2 = _angle(p6.x, p6.y, p5.x, p5.y, p2.x, p2.y)
-        if abs((a1 + a2) - 160.0) > angle_tol:
-            continue
-        hits.append((i + 1) % n)
-    return hits
+        t = _turn_deg(prev, cur, nxt)
+        if t >= min_turn:
+            out.append((i, round(t, 1)))
+    return out
 
 
-def detect_corners(contour, min_turn: float = 70.0):
-    """折角：相邻两个 on 点之间的转向角 ≥ min_turn。"""
-    hits = []
-    on_idx = [i for i, p in enumerate(contour) if p.on]
-    if len(on_idx) < 3:
-        return hits
-    for k in range(len(on_idx)):
-        i0 = on_idx[k - 1]
-        i1 = on_idx[k]
-        i2 = on_idx[(k + 1) % len(on_idx)]
-        a = _angle(contour[i0].x, contour[i0].y,
-                   contour[i1].x, contour[i1].y,
-                   contour[i2].x, contour[i2].y)
-        turn = abs(180.0 - a)
-        if turn >= min_turn:
-            hits.append(i1)
-    return hits
+def find_ends(c, stroke_w, ratio=1.6):
+    """笔画端面：转向角约 90 度、且一侧边长 ≈ 笔画厚度。
 
-
-def measure_stroke_width(contours) -> float:
-    """粗估笔画宽度：所有轮廓 bbox 的短边中位数 × 0.5。
-
-    只用于给识别器一个尺度量级，不作为最终判据。
+    与 glow 的 detect-ends 区别：不用「on/off 交替」这种依赖曲线表达的判据，
+    改用「长度 ≈ 笔画厚」这个几何不变量 —— 对直线和曲线一视同仁。
     """
-    boxes = []
-    for c in contours:
-        xs = [p.x for p in c]
-        ys = [p.y for p in c]
-        if not xs:
+    n = len(c)
+    out = []
+    for i in range(n):
+        prev, cur, nxt = c[(i - 1) % n], c[i], c[(i + 1) % n]
+        e1, e2 = _d(prev, cur), _d(cur, nxt)
+        if e1 < 1e-6 or e2 < 1e-6:
             continue
-        boxes.append((max(xs) - min(xs), max(ys) - min(ys)))
-    if not boxes:
+        t = _turn_deg(prev, cur, nxt)
+        if abs(t - 90.0) > 20.0:
+            continue
+        # 至少一侧边 ≈ 笔画厚度 → 这是端面的两个角
+        if min(e1, e2) <= stroke_w * ratio:
+            out.append((i, round(min(e1, e2), 1)))
+    return out
+
+
+def stroke_width_from_skeleton(contours):
+    """从矩形轮廓直接量笔画厚度（最可靠的方式）。
+
+    对「一」「丨」这种单矩形：短边即厚度。
+    对含矩形的多轮廓字：取所有矩形短边的中位数。
+    兜底：用全字 bbox 的 1/12（经验值，仅当没有任何矩形轮廓）。
+    """
+    widths = []
+    for c in contours:
+        if is_rect(c):
+            w = rect_thickness(c)
+            if 5 < w < 250:
+                widths.append(w)
+    if widths:
+        widths.sort()
+        return widths[len(widths) // 2]
+    # 兜底
+    xs = [p.x for c in contours for p in c]
+    ys = [p.y for c in contours for p in c]
+    if not xs:
         return 50.0
-    short = sorted(min(b) for b in boxes)
-    mid = short[len(short) // 2]
-    return max(10.0, mid * 0.5)
+    return max(10.0, min(max(xs) - min(xs), max(ys) - min(ys)) / 12.0)
 
 
-def roles_for_glyph(contours, stroke_w=None):
-    if stroke_w is None:
-        stroke_w = measure_stroke_width(contours)
-    out = {"stroke_width": round(stroke_w, 2), "contours": []}
+def analyze(contours):
+    sw = stroke_width_from_skeleton(contours)
+    out = {"stroke_width": round(sw, 1), "contours": []}
     for ci, c in enumerate(contours):
-        out["contours"].append({
+        info = {
             "index": ci,
-            "ends": detect_ends(c, stroke_w),
-            "corners": detect_corners(c),
             "n_points": len(c),
-        })
+            "rect": is_rect(c),
+            "corners": find_corners(c),
+            "ends": find_ends(c, sw),
+        }
+        if info["rect"]:
+            info["thickness"] = round(rect_thickness(c), 1)
+            info["bbox"] = [round(v, 1) for v in contour_bbox(c)]
+        out["contours"].append(info)
     return out
