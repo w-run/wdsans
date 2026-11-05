@@ -1,6 +1,10 @@
 # WDesign Sans 重构方案（接手评审稿）
 
-> 起草：2026-11-04 · 状态：**待用户裁决**（本轮未改任何代码）
+> 起草：2026-11-04 · 原状态：待用户裁决
+>
+> **已执行完毕（2026-11-05）**。用户裁决：noto 基座 / 不出 OTF-CFF / VF + 命名实例 / Mona Sans 作拉丁 / glow-src 只读参考。
+> 全部 22 轮已落地交付，产物见 /data/build-cache/wdsans-dist/。
+> 本方案中的若干预测已被实测推翻，详见各 P* 文档与 P22 的方法论总结。
 > 依据：/workspace/AGENTS.md、wdsans 全部文档、上游 welai/glow-sans README + 49 条 issue/PR 全量、旧版产物实测审计、Noto/SHS 双基座实测。
 
 ---
