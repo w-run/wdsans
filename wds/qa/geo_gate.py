@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
-"""几何健壮性闸门（P55）。
+"""几何健壮性闸门（P55 建立，P61 修复绕向盲区）。
 
 检查全库字形是否因减细/变形而产生：
-  1. 极小碎片（area < 200 平方单位）—— 渲染成黑点
-  2. 意外零面积字形 —— 轮廓塌缩
+  1. 极小碎片 —— 渲染成黑点
+  2. 意外零面积 —— 轮廓塌缩
 
-背景：thin_edges() 的 assert 只验「点数不变」，不验几何有效性。
-一个完全塌缩的轮廓也能通过点数断言，所以必须用面积独立检查。
+## P61 修复：改用「绝对面积和」而非「有向面积和」
 
-允许的零面积字形：空白字符（space / U+2002 / U+2003 / U+115F / U+1160
-以及内部保留槽位）。与基座 Noto 的清单比对，我们独有的即为缺陷。
+P60 发现 AreaPen 的有向代数和受轮廓绕向影响：
+  外轮廓 +A，内轮廓 -a  -> A-a（正确）
+  外轮廓 +A，内轮廓 +a  -> A+a（出错）
+
+实测本字体有 816 个字形存在绕向抵消（如 O 只有真实墨量的 29%）。
+虽然都远大于阈值 200、不会误判，但这是潜在盲区：
+若某字形外轮廓 210、内轮廓 205 且同向，总面积为 5，会被误报为碎片。
+
+现改为逐轮廓取 |面积| 再求和 —— 与绕向无关，量纲正确。
 """
 from __future__ import annotations
 
-# 基座自带的零面积字形（与 Noto 完全一致，见 P55）
 EXPECTED_ZERO = {
     "space", "uni115F", "uni1160", "uni2002", "uni2003",
     "glyph63108", "glyph64403", "glyph65531", "glyph65532",
@@ -23,10 +28,39 @@ EXPECTED_ZERO = {
 TINY_AREA = 200.0
 
 
+def _contour_abs_areas(glyph_set, name):
+    """返回该字形每个轮廓的 |面积| 之和（绕向无关）。"""
+    from fontTools.pens.areaPen import AreaPen
+    from fontTools.pens.recordingPen import RecordingPen
+
+    rec = RecordingPen()
+    glyph_set[name].draw(rec)
+    total = 0.0
+    pen = None
+    for op, args in rec.value:
+        if op == "moveTo":
+            if pen is not None:
+                total += abs(pen.value)
+            pen = AreaPen()
+            pen.moveTo(args[0])
+        elif pen is None:
+            continue
+        elif op == "lineTo":
+            pen.lineTo(args[0])
+        elif op == "curveTo":
+            pen.curveTo(*args)
+        elif op == "qCurveTo":
+            pen.qCurveTo(*args)
+        elif op == "closePath":
+            pen.closePath()
+    if pen is not None:
+        total += abs(pen.value)
+    return total
+
+
 def check(path, verbose=False):
     """返回问题数量（0 = 通过）。"""
     from fontTools.ttLib import TTFont
-    from fontTools.pens.areaPen import AreaPen
 
     font = TTFont(path, lazy=False)
     gs = font.getGlyphSet()
@@ -35,10 +69,8 @@ def check(path, verbose=False):
     unexpected_zero = []
 
     for name in font.getGlyphOrder():
-        ap = AreaPen(gs)
         try:
-            gs[name].draw(ap)
-            area = abs(ap.value)
+            area = _contour_abs_areas(gs, name)
         except Exception:
             continue
         if area == 0:
@@ -61,8 +93,7 @@ def check(path, verbose=False):
 
 if __name__ == "__main__":
     import sys
-    p = sys.argv[1] if len(sys.argv) > 1 else \
-        "/data/build-cache/wdsans-dist/WDesignSansSC-Regular.ttf"
+    p = sys.argv[1] if len(sys.argv) > 1 else "/data/build-cache/wdsans-dist/WDesignSansSC-Regular.ttf"
     print("检查:", p)
     n = check(p, verbose=True)
     print("几何健壮性: %s" % ("通过" if n == 0 else "%d 个问题" % n))
