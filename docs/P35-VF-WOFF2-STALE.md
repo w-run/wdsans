@@ -59,3 +59,41 @@ f.save("WDesignSansSC-VF.woff2")
 
 以后交付前应该跑一个「产物清单 vs 母版时间戳」的自动核对，
 而不是靠记忆确认哪些重建了。
+## 根治：新增产物一致性审计工具
+
+`wds/qa/audit_dist.py` —— 不再靠记忆核对，改为机器核对。
+
+```bash
+python -m wds.qa.audit_dist \
+  --master /data/build-cache/wdsans-p1/wdsans-FINAL.ttf \
+  --dist   /data/build-cache/wdsans-dist
+```
+
+逐个产物比对 4 个指标（cmap / Latin Ext-A / glyphs / fvar）与母版是否一致，
+任一不一致则退出码非 0，可直接作为构建流水线的最后一道闸门。
+
+### 首跑结果：15/15 全部一致
+
+```
+母版 cmap=44905 ext_a=125 glyphs=65535 fvar=True
+
+状态   档位      格式    指标                              时间
+OK    Thin     ttf    cmap=44905 ext_a=125            19:57
+OK    Thin     woff2  cmap=44905 ext_a=125            20:01
+...    （七档 TTF + WOFF2 共 14 个）
+OK    VF       woff2  cmap=44905 ext_a=125 fvar=True  22:13
+
+结论: 全部 15 个产物与母版一致
+```
+
+## 教训
+
+**「重建全部产物」必须逐项核对，不能只看主要产物。**
+
+我在 P31 声称「七档全部重建完成」，这句话是对的，
+但「VF WOFF2」不在那个「七档」里，于是被漏掉。
+
+这与 P30 的 gvar 遗漏、P33 的闸门未跑是同一类问题：
+**验证覆盖面有一个默认的认知边界，边界外的东西不会被想起来检查。**
+
+解法不是「下次更小心」，而是**把核对变成机器执行的动作**。
