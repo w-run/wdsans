@@ -153,4 +153,15 @@ def build(vf_path, out_dir, woff2=True):
             print("OTS 闸门：全部通过", flush=True)
     except Exception as e:
         print("!! OTS 闸门执行失败: %s" % e, flush=True)
+
+    # P50：交付包完整性闸门（README 引用的文件是否存在 / 版权声明是否齐全）
+    try:
+        from .qa import deliver_gate
+        np = deliver_gate.check(out_dir, "/data/build-cache/wdsans-subset")
+        if np:
+            print("!! 交付完整性闸门：%d 个问题" % np, flush=True)
+        else:
+            print("交付完整性闸门：通过", flush=True)
+    except Exception as e:
+        print("!! 交付完整性闸门执行失败: %s" % e, flush=True)
     return results
