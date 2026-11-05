@@ -89,3 +89,43 @@ def set_style_name(font, style):
             elif rec.platformID == 1 and rec.platEncID == 0:
                 rec.string = style.encode("mac_roman", errors="replace")
     return changed
+
+
+# -*- coding: utf-8 -*-
+"""P49: SIL OFL compliance - restore copyright / trademark (ID0 / ID7).
+
+本字体同时继承两套 OFL 字体：
+  - Noto Sans CJK (Adobe, OFL 1.1)
+  - Mona Sans (GitHub, OFL 1.1)
+OFL 1.1 第 1 条要求保留原作者版权声明。
+P12 时因 fontbakery mac-names 建议删掉了 ID0/ID7，这是不合规的。
+"""
+
+COPYRIGHT = (
+    "Copyright 2014-2021 Adobe (http://www.adobe.com/), "
+    "with Reserved Font Name 'Source'. "
+    "Copyright 2022 The Mona Sans Project Authors "
+    "(https://github.com/github/mona-sans), with Reserved Font Name 'Mona'. "
+    "WDesign Sans modifications Copyright 2026 WDesign."
+)
+
+TRADEMARK = (
+    "Source is a trademark of Adobe in the United States and/or other countries."
+)
+
+
+def fix_legal(font):
+    """确保 ID0 版权 / ID7 商标存在（OFL 1.1 合规）。返回新增条数。"""
+    nm = font["name"]
+    have = {(r.nameID, r.platformID) for r in nm.names}
+    added = 0
+    for nid, val in ((0, COPYRIGHT), (7, TRADEMARK)):
+        for pid, eid in ((3, 1), (1, 0)):
+            if (nid, pid) in have:
+                continue
+            try:
+                nm.setName(val, nid, pid, eid, 0)
+                added += 1
+            except Exception:
+                pass
+    return added

@@ -109,6 +109,7 @@ def build(vf_path, out_dir, woff2=True):
         # fontbakery findings (P12)
         meta_fix.fix_version(inst)
         meta_fix.fix_fsselection(inst, style)
+        meta_fix.fix_legal(inst)   # P49: OFL compliance (ID0/ID7)
         inst["name"].names = [n for n in inst["name"].names if n.platformID != 1]
         p = os.path.join(out_dir, f"{PS_PREFIX}-{style}.ttf")
         inst.save(p)
