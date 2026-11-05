@@ -42,23 +42,27 @@ P21：笔画验收总表（本轮收官）
 
 ## 四、可复现命令
 
+验证脚本已固化入库：`tools/stroke_audit.py`
+
 ```bash
-# 字面率
-/workspace/wdsans/venv/bin/python /tmp/glow/stroke2.py
+cd /workspace/wdsans
 
-# 去出脚
-/workspace/wdsans/venv/bin/python /tmp/glow/foot2.py
+# 几何保真度：包围盒缩放比，检测局部破坏（1614 字，0 离群）
+venv/bin/python tools/stroke_audit.py geo
 
-# 曲线饱满度
-/workspace/wdsans/venv/bin/python /tmp/glow/curv3.py
+# 减细均匀性：减细比 vs 笔画密度（r=0.088，无偏）
+venv/bin/python tools/stroke_audit.py density
 
-# SVG 锚点图
-/workspace/wdsans/venv/bin/python /workspace/wdsans/tools/glyph_svg.py "永" \
+# 单字墨量三方对比
+venv/bin/python tools/stroke_audit.py stats 国 永 漆 口 十
+
+# SVG 锚点图（带编号+标尺）
+venv/bin/python tools/glyph_svg.py "永" \
   --font /data/build-cache/wdsans-p1/wdsans-FINAL.ttf --wght 400 --out /tmp/yong.svg
 rsvg-convert -w 820 /tmp/yong.svg -o /tmp/yong.png
 ```
 
-> 注：脚本目前在 /tmp/glow/，未入库。需要长期复用时再迁入 tools/。
+全部基于矢量轮廓（AreaPen / BoundsPen），不依赖渲染，结果可复现。
 
 ## 五、本轮方法论收获
 
