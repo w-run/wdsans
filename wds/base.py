@@ -8,7 +8,10 @@ import os
 from fontTools.ttLib import TTFont
 from fontTools.varLib import instancer
 
-SRC = "/workspace/wdsans/ref/NotoSansCJKsc-VF.ttf"
+from . import paths
+
+# 基座路径统一由 wds.paths 提供（P72），可用环境变量 WDSANS_ROOT 覆盖
+SRC = paths.NOTO_VF
 
 # 七档命名实例（wght 值 → 名称），DESIGN.md §3.3
 STOPS = [
