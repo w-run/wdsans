@@ -35,7 +35,15 @@ def fix_version(font):
 
 
 def fix_fsselection(font, style):
-    """Set OS/2.fsSelection bits 5 (bold) / 6 (regular) per style."""
+    """Set OS/2.fsSelection bits 5 (bold) / 6 (regular) per style.
+
+    P39 修正：非 RIBBI 档位（Thin/Light/Normal/Medium/Heavy）不能只清 bit6，
+    因为 nameID 2 仍写着 "Regular"，两者矛盾 —— fontbakery 会据此判定
+    该字体「应该是 Regular」，于是要求 bit6=1，报 bad-REGULAR。
+
+    正确做法（OpenType 规范）：非 RIBBI 档位的 nameID 2 用描述性 style 名，
+    fsSelection 的 bold/regular 位都清零（Windows 只看 weight class）。
+    """
     os2 = font["OS/2"]
     sel = os2.fsSelection & ~((1 << 0) | (1 << 5) | (1 << 6))
     if style == "Bold":
@@ -46,5 +54,32 @@ def fix_fsselection(font, style):
         font["head"].macStyle = (font["head"].macStyle & ~0x1)
     else:
         font["head"].macStyle = (font["head"].macStyle & ~0x1)
+        # nameID 2 改为描述性 style 名，与 fsSelection 保持一致
+        set_style_name(font, style)
     os2.fsSelection = sel
     return bin(sel)
+
+
+def set_style_name(font, style):
+    """把 nameID 2 设为描述性 style 名（非 RIBBI 档位应为 Thin/Light/...）。"""
+    nm = font["name"]
+    changed = 0
+    for rec in nm.names:
+        if rec.nameID == 2:
+            if rec.platformID == 3 and rec.platEncID in (1, 10):
+                rec.string = style.encode("utf-16-be")
+                changed += 1
+            elif rec.platformID == 0:
+                rec.string = style.encode("utf-16-be")
+                changed += 1
+            elif rec.platformID == 1 and rec.platEncID == 0:
+                rec.string = style.encode("mac_roman", errors="replace")
+                changed += 1
+    # 同时改 nameID 17（typographic subfamily）
+    for rec in nm.names:
+        if rec.nameID == 17:
+            if rec.platformID in (0, 3):
+                rec.string = style.encode("utf-16-be")
+            elif rec.platformID == 1 and rec.platEncID == 0:
+                rec.string = style.encode("mac_roman", errors="replace")
+    return changed
