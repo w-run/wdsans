@@ -158,7 +158,7 @@ def build(vf_path, out_dir, woff2=True):
     # P50：交付包完整性闸门（README 引用的文件是否存在 / 版权声明是否齐全）
     try:
         from .qa import deliver_gate
-        np = deliver_gate.check(out_dir, paths.SUBSET_DIR)
+        np = deliver_gate.check(out_dir, paths.SUBSET_DIR, mode="build")
         if np:
             print("!! 交付完整性闸门：%d 个问题" % np, flush=True)
         else:

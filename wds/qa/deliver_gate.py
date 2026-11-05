@@ -7,6 +7,15 @@
   3. 每个字体文件是否含 name ID 0（版权，OFL 1.1 要求）
 
 起因：P49 在 README 写了「许可证全文见 OFL.txt」，但文件根本没建。
+
+## mode 参数（P74）
+
+交付目录分两种形态，检查项不同：
+
+  mode="build"  —— 构建产物目录（只有字体文件）。
+                   跳过 README/OFL 检查，避免每次构建刷出噪音。
+  mode="package"—— 最终交付包（字体 + README + OFL）。
+                   检查全部项（默认）。
 """
 from __future__ import annotations
 from .. import paths
@@ -20,14 +29,21 @@ REQUIRED = ["README.md", "OFL.txt"]
 FILE_EXT = (".ttf", ".woff2", ".txt", ".md")
 
 
-def check(dist_dir, subset_dir=None, verbose=False):
+def check(dist_dir, subset_dir=None, verbose=False, mode="package"):
     """返回问题数量（0 = 通过）。"""
     problems = []
 
-    # 1. 必需文件
-    for name in REQUIRED:
-        if not os.path.exists(os.path.join(dist_dir, name)):
-            problems.append("缺少必需文件: %s" % name)
+    # 0. 两种模式都要求：至少存在一个字体文件
+    #    （P74 修复：build 模式曾因跳过必需文件检查而漏判空目录）
+    fonts_here = sorted(glob.glob(os.path.join(dist_dir, "*.ttf"))) +                  sorted(glob.glob(os.path.join(dist_dir, "*.woff2")))
+    if not fonts_here:
+        problems.append("目录内没有任何字体文件: %s" % dist_dir)
+
+    # 1. 必需文件（仅 package 模式检查）
+    if mode == "package":
+        for name in REQUIRED:
+            if not os.path.exists(os.path.join(dist_dir, name)):
+                problems.append("缺少必需文件: %s" % name)
 
     # 2. README 引用的文件是否真实存在
     readme = os.path.join(dist_dir, "README.md")
@@ -71,8 +87,11 @@ def check(dist_dir, subset_dir=None, verbose=False):
 
 if __name__ == "__main__":
     import sys
-    d = sys.argv[1] if len(sys.argv) > 1 else paths.DIST_DIR
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    mode = "build" if "--build" in sys.argv else "package"
+    d = args[0] if args else paths.DIST_DIR
     sd = paths.SUBSET_DIR
-    n = check(d, sd, verbose=True)
+    print("模式:", mode)
+    n = check(d, sd, verbose=True, mode=mode)
     print("交付完整性: %s" % ("通过" if n == 0 else "%d 个问题" % n))
     sys.exit(0 if n == 0 else 1)
