@@ -126,6 +126,7 @@ def fix(font_path, mona_path, out_path, ranges=None, sx=0.895, sy=1.0046):
     hmtx = f["hmtx"]
     mhmtx = m_inst["hmtx"]
     added = []
+    replaced = []
     for cp, orph in zip(need, orphans):
         mname = mcm.get(cp)
         if not mname:
@@ -152,9 +153,21 @@ def fix(font_path, mona_path, out_path, ranges=None, sx=0.895, sy=1.0046):
             newg.program.fromBytecode(b"")
             glyf[orph] = newg
             hmtx[orph] = (int(round(mhmtx[mname][0] * sx)), 0)
+            # 关键：原字体的 gvar 对每个字形都有 tuple，替换轮廓后点数变了，
+            # 旧 delta 数与新点数不匹配 -> gvar 解压失败、字体损坏。
+            # 必须清掉这些槽位的 gvar 记录（新字形不参与字重变化）。
+            replaced.append(orph)
             added.append((cp, orph))
         except Exception:
             continue
+
+    # 清除被替换槽位的 gvar 记录（否则点数与 delta 不匹配 -> 字体损坏）
+    gv = f["gvar"]
+    cleared = 0
+    for n in replaced:
+        if n in gv.variations:
+            del gv.variations[n]
+            cleared += 1
 
     # 关键：format 4 与 format 12 都要写
     for cp, orph in added:
@@ -168,4 +181,4 @@ def fix(font_path, mona_path, out_path, ranges=None, sx=0.895, sy=1.0046):
     f.close()
     m.close()
     m_inst.close()
-    return {"added": len(added), "orphans": len(orphans), "needed": len(need)}
+    return {"added": len(added), "orphans": len(orphans), "needed": len(need), "gvar_cleared": cleared}
