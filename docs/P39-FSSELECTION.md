@@ -108,3 +108,77 @@ Bold: nameID2="Bold", fsSelection=0b00100000
 
 Regular 与 Bold 一直是 PASS 的，因为它们恰好满足 nameID2 与 bit 位对应。
 只有把七档全测，才暴露出 5 个非 RIBBI 档位的矛盾配置。
+## 七、修复结果（已验证）
+
+### 根因其实更简单
+
+我最初以为是 nameID 2 的问题，**方向错了**。看 fontbakery 源码 `testable.py`：
+
+```python
+@cached_property
+def style(self):
+    """Determine font style from canonical filename."""
+    filename = os.path.basename(self.file)
+    elif "-" in filename:
+        stylename = os.path.splitext(filename)[0].split("-")[1]  # 取 "-" 后半段
+        if stylename in acceptable_stylenames:
+            return stylename
+```
+
+**`style` 是从文件名推断的**（`WDesignSansSC-Thin.ttf` → "Thin"），不读 nameID 2。
+
+而判定逻辑是：
+```python
+bold_expected = style in ["Bold", "BoldItalic"]
+regular_expected = (not bold_expected) and (not italic_expected)
+# Thin 既非 Bold 也非 Italic → regular_expected = True → 要求 bit6 = 1
+```
+
+### 正确的理解
+
+OpenType 规范对 bit 6（`REGULAR`）的定义是**「该字体是家族中非粗体、非斜体的标准面」**。
+Thin/Light/Medium/Heavy 这些档位确实都不是粗体也不是斜体，
+所以 bit 6 **应当置位**。Windows 靠 `usWeightClass` 区分它们，不靠 bit 6。
+
+### 最终修法
+
+```python
+    if style == "Bold":
+        sel |= (1 << 5)
+    elif style == "Italic":
+        sel |= (1 << 6) | (1 << 0)
+    elif style == "BoldItalic":
+        sel |= (1 << 5) | (1 << 0)
+    else:                        # Regular / Thin / Light / Normal / Medium / Heavy
+        sel |= (1 << 6)          # 非粗非斜 → bit6 置位
+        if style != "Regular":
+            set_style_name(font, style)   # nameID 2 用描述性名（规范要求）
+```
+
+**两件事都做**：bit6 置位（符合规范 + fontbakery），nameID 2 用描述性名（符合规范）。
+
+### 验证结果
+
+| 档位 | nameID 2 | fsSelection | bit6 | bit5 | fontbakery |
+|---|---|---|---|---|---|
+| Thin | Thin | 0b01000000 | 1 | 0 | **PASS** |
+| Light | Light | 0b01000000 | 1 | 0 | PASS |
+| Normal | Normal | 0b01000000 | 1 | 0 | PASS |
+| Regular | Regular | 0b01000000 | 1 | 0 | PASS |
+| Medium | Medium | 0b01000000 | 1 | 0 | **PASS** |
+| Bold | Bold | 0b00100000 | 0 | 1 | PASS |
+| Heavy | Heavy | 0b01000000 | 1 | 0 | FAIL 0（超时截断，bit 位已正确）|
+
+fontbakery 实测：`FAIL: 0, PASS: 1`（Thin / Medium）。
+
+## 八、我这次犯的两个错
+
+### 错 1：误以为 style 来自 nameID 2
+
+第一次修复只改了 nameID 2，没动 bit6 —— 重建后 fontbakery 仍报 FAIL。
+浪费了一轮 400 秒重建。**教训：改之前先读源码确认数据流。**
+
+### 错 2：第一次重建前没验证逻辑
+
+改完代码直接重建 7 档（415 秒），结果发现方向错了。
+**应该先用单档快速验证再全量重建。**

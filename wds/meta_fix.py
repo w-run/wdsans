@@ -49,13 +49,19 @@ def fix_fsselection(font, style):
     if style == "Bold":
         sel |= (1 << 5)
         font["head"].macStyle = (font["head"].macStyle | 0x1)
-    elif style == "Regular":
+    elif style == "BoldItalic":
+        sel |= (1 << 5) | (1 << 0)
+        font["head"].macStyle = (font["head"].macStyle | 0x1 | 0x2)
+    elif style == "Italic":
+        sel |= (1 << 6) | (1 << 0)
+        font["head"].macStyle = (font["head"].macStyle & ~0x1) | 0x2
+    else:
+        # Regular / Thin / Light / Normal / Medium / Heavy 等非粗非斜档位：
+        # bit6 = 1（OpenType 规范：该字体是「非粗体非斜体的标准面」）
         sel |= (1 << 6)
         font["head"].macStyle = (font["head"].macStyle & ~0x1)
-    else:
-        font["head"].macStyle = (font["head"].macStyle & ~0x1)
-        # nameID 2 改为描述性 style 名，与 fsSelection 保持一致
-        set_style_name(font, style)
+        if style != "Regular":
+            set_style_name(font, style)
     os2.fsSelection = sel
     return bin(sel)
 
