@@ -111,9 +111,12 @@ def g5_structure(font_path: str, sample=300, wght=400):
     否则闸门会误杀（实测基座就有 6 个）。
     """
     from fontTools.pens.areaPen import AreaPen
-    inst = instancer.instantiateVariableFont(
-        TTFont(font_path), {"wght": wght}, inplace=True, updateFontNames=False, optimize=False
-    )
+    inst = TTFont(font_path)
+    # 静态实例没有 fvar，不能再走 instancer（P33 修复）
+    if "fvar" in inst:
+        inst = instancer.instantiateVariableFont(
+            inst, {"wght": wght}, inplace=True,
+            updateFontNames=False, optimize=False)
     gs = inst.getGlyphSet()
     cmap = inst.getBestCmap()
     degen, zero_len, blank = 0, 0, 0
