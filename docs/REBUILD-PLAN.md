@@ -276,7 +276,7 @@ wdsans/
 | 6 | G3/G4 闸门未覆盖拉丁段 | P6 §7 / P5 §6 |
 | 6b | ~~竖排 vmtx/vhea 未查~~ → **已由 P8 验证**（vhea 500/-500、vmtx 65,158 条、GSUB vert/vrt2 全在） | P8 §3 |
 | 7 | `periodcentered` 仍为 Noto（253 个拉丁槽位里唯一一个） | P7 §6-6 |
-| 8 | **测 advance 一律用 hb-shape，禁用 instancer** —— 已写成规则，但尚未落进 QA 脚本 | P6 §7.7 / P7 §4 |
+| 8 | **测 advance 一律用 hb-shape，禁用 instancer** —— 已写成规则，并落进 wds/advance_fix3.py 与 tools/stroke_audit.py | P6 §7.7 / P7 §4 |
 
 ---
 

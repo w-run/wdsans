@@ -270,7 +270,7 @@ p6d/d7 coords == Mona@400 × (sx, sy): 116 match   1 mismatch
 2. **advance 的验证方式是错的（不是数值范围问题）** —— v5 已按 `pp1/pp2` 公式把 phantom delta 写对，
    但**当时用 `instancer` 读 `hmtx` 来验证，这个方法本身无效**（详见 §7.7）：
    `instancer` 会丢掉 HVAR，而 HarfBuzz 优先用 HVAR。真值须用 `hb-shape`。
-   另有一个**尚未修复**的缺陷：**HVAR 的 advance delta 仍是 Noto 旧数据**，
+   另有一个缺陷（**已在 P9 修复**）：HVAR 的 advance delta 当时仍是 Noto 旧数据，
    叠加在 Mona 的 base 上，使极端字重最多偏 **+45 单位**（T 字形）。修复函数 `wds/hvar_fix.py` 已写好但未接入构建。
 3. **OFL 署名待补** —— name ID 0 在 P5 已删（原 `Reserved Font Name 'Source'`），
    现在表里**没有 GitHub 的 Mona Sans 版权声明**。OFL 1.1 要求保留上游署名，建议写入：
