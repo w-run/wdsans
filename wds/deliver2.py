@@ -178,4 +178,15 @@ def build(vf_path, out_dir, woff2=True):
                 print("几何健壮性闸门：通过", flush=True)
     except Exception as e:
         print("!! 几何健壮性闸门执行失败: %s" % e, flush=True)
+
+    # P70：命名唯一性闸门（ID6 全局唯一，防止安装时互相覆盖）
+    try:
+        from .qa import name_gate
+        nn = name_gate.check(out_dir, "/data/build-cache/wdsans-subset")
+        if nn:
+            print("!! 命名唯一性闸门：%d 个 ID6 冲突" % nn, flush=True)
+        else:
+            print("命名唯一性闸门：通过", flush=True)
+    except Exception as e:
+        print("!! 命名唯一性闸门执行失败: %s" % e, flush=True)
     return results
