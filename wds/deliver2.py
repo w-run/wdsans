@@ -164,4 +164,18 @@ def build(vf_path, out_dir, woff2=True):
             print("交付完整性闸门：通过", flush=True)
     except Exception as e:
         print("!! 交付完整性闸门执行失败: %s" % e, flush=True)
+
+    # P55：几何健壮性闸门（仅检 Regular，全库面积扫描，约 60s）
+    try:
+        from .qa import geo_gate
+        import os as _os
+        _p = _os.path.join(out_dir, "%s-Regular.ttf" % PS_PREFIX)
+        if _os.path.exists(_p):
+            ng = geo_gate.check(_p)
+            if ng:
+                print("!! 几何健壮性闸门：%d 个问题" % ng, flush=True)
+            else:
+                print("几何健壮性闸门：通过", flush=True)
+    except Exception as e:
+        print("!! 几何健壮性闸门执行失败: %s" % e, flush=True)
     return results

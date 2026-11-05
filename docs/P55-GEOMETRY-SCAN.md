@@ -97,3 +97,42 @@ out.extend(best[1] if best[0] < a0 else seg)   # ← 若不减小面积则放弃
 一个点数不变但完全塌缩的轮廓（比如所有点挤到一点）也能通过这个断言。
 
 **必须用独立的几何度量（面积）二次验证，不能依赖构建时的断言。**
+## 已固化为闸门
+
+`wds/qa/geo_gate.py`，已嵌入 `deliver2.build()`：
+
+```python
+from .qa import geo_gate
+ng = geo_gate.check(Regular.ttf)
+```
+
+检查项：
+| 项 | 阈值 |
+|---|---|
+| 极小碎片 | area < 200 平方单位 |
+| 意外零面积 | 不在 EXPECTED_ZERO 白名单内 |
+
+`EXPECTED_ZERO` 白名单是 P55 实测确定的 11 个空白字符，
+与基座 Noto 完全一致。任何**额外的**零面积字形都会被报出。
+
+单独运行：
+```bash
+python -m wds.qa.geo_gate <font.ttf>
+```
+
+实测输出：
+```
+检查: WDesignSansSC-Regular.ttf
+  极小碎片: 0
+  意外零面积: 0
+几何健壮性: 通过
+```
+
+## 现在的四道闸门
+
+| 顺序 | 闸门 | 检查 |
+|---|---|---|
+| 1 | `audit_dist` | 产物与母版一致性 |
+| 2 | `ots_gate` | 浏览器可加载性 |
+| 3 | `deliver_gate` | 交付包完整性 + 版权声明 |
+| 4 | **`geo_gate`** | **几何健壮性（零塌缩/零碎片）** |
