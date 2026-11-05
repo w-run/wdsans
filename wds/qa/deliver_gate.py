@@ -9,6 +9,7 @@
 起因：P49 在 README 写了「许可证全文见 OFL.txt」，但文件根本没建。
 """
 from __future__ import annotations
+from .. import paths
 import glob
 import os
 import re
@@ -70,8 +71,8 @@ def check(dist_dir, subset_dir=None, verbose=False):
 
 if __name__ == "__main__":
     import sys
-    d = sys.argv[1] if len(sys.argv) > 1 else "/data/build-cache/wdsans-dist"
-    sd = "/data/build-cache/wdsans-subset"
+    d = sys.argv[1] if len(sys.argv) > 1 else paths.DIST_DIR
+    sd = paths.SUBSET_DIR
     n = check(d, sd, verbose=True)
     print("交付完整性: %s" % ("通过" if n == 0 else "%d 个问题" % n))
     sys.exit(0 if n == 0 else 1)

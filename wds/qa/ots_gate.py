@@ -13,6 +13,7 @@ Python 会优先导入那个文件，导致找不到 ots-sanitize 而崩溃。
 不依赖 CWD，也不依赖 sys.path 顺序。
 """
 from __future__ import annotations
+from .. import paths
 import glob
 import os
 import subprocess
@@ -72,8 +73,8 @@ def check(paths=None, dist_dirs=None, verbose=False):
 
 
 if __name__ == "__main__":
-    dirs = sys.argv[1:] or ["/data/build-cache/wdsans-dist",
-                            "/data/build-cache/wdsans-subset"]
+    dirs = sys.argv[1:] or [paths.DIST_DIR,
+                            paths.SUBSET_DIR]
     n = check(dist_dirs=dirs, verbose=True)
     print("OTS: %s" % ("全部通过" if n == 0 else "%d 个失败" % n))
     sys.exit(0 if n == 0 else 1)

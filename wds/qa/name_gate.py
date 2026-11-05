@@ -19,6 +19,7 @@ P67/P69 发现两类命名冲突：
   - 不同 basename 但 ID6 相同 → 冲突
 """
 from __future__ import annotations
+from .. import paths
 import glob
 import os
 import re
@@ -66,7 +67,7 @@ def check(dist_dir, subset_dir=None, verbose=False):
 
 if __name__ == "__main__":
     import sys
-    n = check("/data/build-cache/wdsans-dist",
-              "/data/build-cache/wdsans-subset", verbose=True)
+    n = check(paths.DIST_DIR,
+              paths.SUBSET_DIR, verbose=True)
     print("命名唯一性: %s" % ("通过" if n == 0 else "%d 个冲突" % n))
     sys.exit(0 if n == 0 else 1)

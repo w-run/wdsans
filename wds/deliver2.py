@@ -12,6 +12,7 @@ measured from the variable font by harfbuzz at that weight.
 Only touches advance widths - outlines come from the correct instancer output.
 """
 from __future__ import annotations
+from . import paths
 
 import os
 import subprocess
@@ -146,7 +147,7 @@ def build(vf_path, out_dir, woff2=True):
     try:
         from .qa import ots_gate
         nb = ots_gate.check(dist_dirs=[out_dir,
-                                      "/data/build-cache/wdsans-subset"])
+                                      paths.SUBSET_DIR])
         if nb:
             print("!! OTS 闸门：%d 个产物不通过" % nb, flush=True)
         else:
@@ -157,7 +158,7 @@ def build(vf_path, out_dir, woff2=True):
     # P50：交付包完整性闸门（README 引用的文件是否存在 / 版权声明是否齐全）
     try:
         from .qa import deliver_gate
-        np = deliver_gate.check(out_dir, "/data/build-cache/wdsans-subset")
+        np = deliver_gate.check(out_dir, paths.SUBSET_DIR)
         if np:
             print("!! 交付完整性闸门：%d 个问题" % np, flush=True)
         else:
@@ -182,7 +183,7 @@ def build(vf_path, out_dir, woff2=True):
     # P70：命名唯一性闸门（ID6 全局唯一，防止安装时互相覆盖）
     try:
         from .qa import name_gate
-        nn = name_gate.check(out_dir, "/data/build-cache/wdsans-subset")
+        nn = name_gate.check(out_dir, paths.SUBSET_DIR)
         if nn:
             print("!! 命名唯一性闸门：%d 个 ID6 冲突" % nn, flush=True)
         else:

@@ -18,6 +18,8 @@ P60 发现 AreaPen 的有向代数和受轮廓绕向影响：
 现改为逐轮廓取 |面积| 再求和 —— 与绕向无关，量纲正确。
 """
 from __future__ import annotations
+import os
+from .. import paths
 
 EXPECTED_ZERO = {
     "space", "uni115F", "uni1160", "uni2002", "uni2003",
@@ -93,7 +95,7 @@ def check(path, verbose=False):
 
 if __name__ == "__main__":
     import sys
-    p = sys.argv[1] if len(sys.argv) > 1 else "/data/build-cache/wdsans-dist/WDesignSansSC-Regular.ttf"
+    p = sys.argv[1] if len(sys.argv) > 1 else os.path.join(paths.DIST_DIR, "WDesignSansSC-Regular.ttf")
     print("检查:", p)
     n = check(p, verbose=True)
     print("几何健壮性: %s" % ("通过" if n == 0 else "%d 个问题" % n))
