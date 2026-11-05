@@ -68,3 +68,34 @@ OTS 首次净化只是重新序列化（表顺序/填充），没有修正任何
 队友的结论在当时的产物上有效，但产物变了就要重验。
 这与 P44（文档旧值要分历史记录 vs 当前结论）是同类：
 **结论有时效性，依赖它之前要确认它对应哪个版本。**
+## 六、已嵌入自动化闸门
+
+与 P40 的产物审计一样，OTS 也**嵌入 `deliver2.build()` 末尾**：
+
+```python
+# P48：OTS 浏览器兼容性闸门（Chrome/Firefox 加载字体的强制关卡）
+try:
+    from .qa import ots_gate
+    nb = ots_gate.check(dist_dirs=[out_dir, "/data/build-cache/wdsans-subset"])
+    if nb:
+        print("!! OTS 闸门：%d 个产物不通过" % nb, flush=True)
+    else:
+        print("OTS 闸门：全部通过", flush=True)
+except Exception as e:
+    print("!! OTS 闸门执行失败: %s" % e, flush=True)
+```
+
+也可单独运行：
+```bash
+python -m wds.qa.ots_gate                    # 检查默认目录
+python -m wds.qa.ots_gate <dir1> <dir2>      # 指定目录
+```
+
+### 现在的构建末尾会自动跑三道闸门
+
+| 顺序 | 闸门 | 检查内容 |
+|---|---|---|
+| 1 | `audit_dist.check()` | 产物与母版一致性（cmap / Ext-A / glyphs / fvar）|
+| 2 | `ots_gate.check()` | 浏览器可加载性（Chrome/Firefox 强制关卡）|
+
+两者都是「不通过就打印警告」，不再依赖人工记忆。

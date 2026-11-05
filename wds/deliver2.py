@@ -140,4 +140,16 @@ def build(vf_path, out_dir, woff2=True):
             print("产物一致性审计：全部一致", flush=True)
     except Exception as e:
         print("!! 审计执行失败: %s" % e, flush=True)
+
+    # P48：OTS 浏览器兼容性闸门（Chrome/Firefox 加载字体的强制关卡）
+    try:
+        from .qa import ots_gate
+        nb = ots_gate.check(dist_dirs=[out_dir,
+                                      "/data/build-cache/wdsans-subset"])
+        if nb:
+            print("!! OTS 闸门：%d 个产物不通过" % nb, flush=True)
+        else:
+            print("OTS 闸门：全部通过", flush=True)
+    except Exception as e:
+        print("!! OTS 闸门执行失败: %s" % e, flush=True)
     return results
