@@ -125,4 +125,19 @@ def build(vf_path, out_dir, woff2=True):
                 results.append((wp, os.path.getsize(wp), n))
             except Exception:
                 results.append((p.replace(".ttf", ".woff2"), -1, n))
+
+    # P40：把一致性审计嵌入构建收尾，避免「改了 TTF 忘了重建 WOFF2」
+    # （P35/P39 同类问题反复出现，根因是依赖人工记忆去跑 audit）
+    try:
+        from .qa import audit_dist
+        bad = audit_dist.check(vf_path, out_dir, verbose=False)
+        if bad:
+            print("!! 产物一致性审计发现 %d 处不一致（见 audit_dist）" % bad,
+                  flush=True)
+            for r in results:
+                pass
+        else:
+            print("产物一致性审计：全部一致", flush=True)
+    except Exception as e:
+        print("!! 审计执行失败: %s" % e, flush=True)
     return results

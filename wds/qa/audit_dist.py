@@ -30,6 +30,37 @@ def metrics(path):
     return d
 
 
+def check(master_path, dist_dir, verbose=False):
+    """返回不一致的产物数量（0 = 全部一致）。供构建流水线调用。"""
+    m = metrics(master_path)
+    bad = 0
+    rows = []
+    for name, w in WEIGHTS:
+        for ext in ("ttf", "woff2"):
+            p = os.path.join(dist_dir, "WDesignSansSC-%s.%s" % (name, ext))
+            if not os.path.exists(p):
+                rows.append(("MISSING", name, ext, "", "")); bad += 1; continue
+            d = metrics(p)
+            ok = d["cmap"] == m["cmap"] and d["ext_a"] == m["ext_a"]
+            if not ok: bad += 1
+            rows.append(("OK" if ok else "STALE", name, ext,
+                         "cmap=%d ext_a=%d" % (d["cmap"], d["ext_a"]), d["mtime"]))
+    p = os.path.join(dist_dir, "WDesignSansSC-VF.woff2")
+    if os.path.exists(p):
+        d = metrics(p)
+        ok = d["cmap"] == m["cmap"] and d["ext_a"] == m["ext_a"] and d["fvar"]
+        if not ok: bad += 1
+        rows.append(("OK" if ok else "STALE", "VF", "woff2",
+                     "cmap=%d ext_a=%d" % (d["cmap"], d["ext_a"]), d["mtime"]))
+    else:
+        rows.append(("MISSING", "VF", "woff2", "", "")); bad += 1
+    if verbose:
+        print("%-8s %-8s %-6s %-28s %s" % ("状态","档位","格式","指标","时间"))
+        for r in rows:
+            print("%-8s %-8s %-6s %-28s %s" % r)
+    return bad
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--master", required=True)
