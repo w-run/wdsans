@@ -298,7 +298,8 @@ glow-sans 依赖 `opencv-python 3.4.7` / `scikit-image 0.14.2` / `numpy 1.17.2` 
 - [x] glow-sans **独立维护**（上游已停更，不跟随）
 - [x] 构建环境走 **CloudStudio**，**新建** `wdsans-build-1`（不占用 mkit-build-*）
 - [x] `wdth` 轴首版不上，锁 100
-- [x] **修复行高**（思源黑已知问题）：hhea/typo 对齐 880/-120，置 USE_TYPO_METRICS，vhea 500/-500
+- [x] **修复行高**（思源黑已知问题）：hhea/typo 对齐 880/-120，vhea 500/-500
+  - ⚠️ **USE_TYPO_METRICS 未置位**（P24 实测修正，2026-11-05）：原计划置位，但实测发现置位后行高变 1.0em 会导致拉丁下伸（g/j/p/q/y，−193）与竖排符号 `〱〲`（−542）跨行重叠。**Noto 与 OPPO 同样未置位**，故最终不置位。产物实际 `fsSelection` bit7 = 0，详见 docs/P24-LINEHEIGHT.md。
 - [x] **A 交付做 woff2 分片**（按 unicode-range）
 - [x] 版本号沿用 `YYYY.NNN`，本轮 `2026.100`
 - [x] 旧版产物的定性：**glow-sans 产物 + FontCreator 多次手工修改**，不是直接产物
