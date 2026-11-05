@@ -318,14 +318,24 @@ typoDescender        -120
 typoLineGap            0
 winAscent            1160
 winDescent            288
-hhea ascent          1160
-hhea descent         -288
+hhea ascent          1000
+hhea descent         -200
 hhea lineGap            0
 underlinePosition     -120
 underlineThickness    见字重（≈ 竖画的 85%）
 ```
 
-> 默认行高 = 1000/1000 = 1.0 em，给排版留出自行调节的空间，不内置夸张行距。
+> **字面框高度（typo）= 880 - (-120) = 1000 = 1.0 em。**
+> 这是设计目标的字面框，**不是 CSS line-height**。
+>
+> 实际行距由渲染器决定（未启用 USE_TYPO_METRICS 时取 hhea/win）：
+> - hhea = (1000 + 200) / 1000 = **1.200 em**
+> - win  = (1160 + 288) / 1000 = **1.448 em**
+> - 实测生效值 1.448 em（OPPO Sans 为 1.319 em）
+>
+> 该选择与 Noto 基座、OPPO Sans 一致（两者均未置位 USE_TYPO_METRICS）。
+> 若改用 typo（1.0 em），拉丁下伸字母 g/j/p/q/y 与竖排符号 〱〲 会跨行重叠
+> ——全库扫描 9400+ 字形已确认。详见 [P24-LINEHEIGHT.md](P24-LINEHEIGHT.md)。
 
 ---
 
