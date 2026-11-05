@@ -20,6 +20,7 @@ from fontTools.ttLib import TTFont
 from fontTools.varLib import instancer
 
 from .rename import STOPS, FAMILY, PS_PREFIX, VENDOR, VERSION
+from . import meta_fix
 
 RIBBI = {"Regular", "Bold"}
 
@@ -105,6 +106,10 @@ def build(vf_path, out_dir, woff2=True):
             n += 1
 
         set_names(inst, style, wght)
+        # fontbakery findings (P12)
+        meta_fix.fix_version(inst)
+        meta_fix.fix_fsselection(inst, style)
+        inst["name"].names = [n for n in inst["name"].names if n.platformID != 1]
         p = os.path.join(out_dir, f"{PS_PREFIX}-{style}.ttf")
         inst.save(p)
         inst.close()
