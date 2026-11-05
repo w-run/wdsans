@@ -1,0 +1,38 @@
+[
+ {
+  "name": "WDesign Sans (ours)",
+  "lat_u": -5.0,
+  "cjk_u": -67.5,
+  "top_u": 835.0,
+  "cap": 732,
+  "height_med": 902.5,
+  "delta_u": 62.5
+ },
+ {
+  "name": "Noto Sans CJK SC",
+  "lat_u": -10.0,
+  "cjk_u": -75.0,
+  "top_u": 840.0,
+  "cap": 732,
+  "height_med": 915.0,
+  "delta_u": 65.0
+ },
+ {
+  "name": "OPPO Sans",
+  "lat_u": -60.0,
+  "cjk_u": -100.0,
+  "top_u": 835.0,
+  "cap": 732,
+  "height_med": 935.0,
+  "delta_u": 40.0
+ },
+ {
+  "name": "HarmonyOS Sans",
+  "lat_u": -5.0,
+  "cjk_u": -65.0,
+  "top_u": 845.0,
+  "cap": 732,
+  "height_med": 910.0,
+  "delta_u": 60.0
+ }
+]

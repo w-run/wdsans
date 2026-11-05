@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="761" height="972" viewBox="0 0 761 972">
+<rect width="761" height="972" fill="white"/>
+<line x1="-61.0" y1="0" x2="-61.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="39.0" y1="0" x2="39.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="139.0" y1="0" x2="139.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="239.0" y1="0" x2="239.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="339.0" y1="0" x2="339.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="439.0" y1="0" x2="439.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="539.0" y1="0" x2="539.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="639.0" y1="0" x2="639.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="739.0" y1="0" x2="739.0" y2="972" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="1052.0" x2="761" y2="1052.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="952.0" x2="761" y2="952.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="852.0" x2="761" y2="852.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="752.0" x2="761" y2="752.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="652.0" x2="761" y2="652.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="552.0" x2="761" y2="552.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="452.0" x2="761" y2="452.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="352.0" x2="761" y2="352.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="252.0" x2="761" y2="252.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="152.0" x2="761" y2="152.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="52.0" x2="761" y2="52.0" stroke="#e8e8e8" stroke-width="1"/>
+<line x1="0" y1="852.0" x2="761" y2="852.0" stroke="#e33" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.85"/>
+<text x="4" y="848.0" font-size="16" fill="#e33" font-family="monospace">baseline 0</text>
+<line x1="0" y1="119.0" x2="761" y2="119.0" stroke="#39f" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.85"/>
+<text x="4" y="115.0" font-size="16" fill="#39f" font-family="monospace">cap 733</text>
+<line x1="0" y1="-28.0" x2="761" y2="-28.0" stroke="#9c9" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.85"/>
+<text x="4" y="-32.0" font-size="16" fill="#9c9" font-family="monospace">typoAsc 880</text>
+<line x1="0" y1="972.0" x2="761" y2="972.0" stroke="#9c9" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.85"/>
+<text x="4" y="968.0" font-size="16" fill="#9c9" font-family="monospace">typoDesc -120</text>
+<g transform="translate(39.0,852.0) scale(1,-1)">
+<path d="M81 732H165V0H81ZM520 732H602V0H520ZM141 419H543V337H141Z" fill="none" stroke="#111" stroke-width="2.5"/>
+</g>
+<circle cx="120.0" cy="120.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="127.0" y="114.0" font-size="13" fill="#666" font-family="monospace">0</text>
+<circle cx="204.0" cy="120.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="211.0" y="114.0" font-size="13" fill="#666" font-family="monospace">1</text>
+<circle cx="204.0" cy="852.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="211.0" y="846.0" font-size="13" fill="#666" font-family="monospace">2</text>
+<circle cx="120.0" cy="852.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="127.0" y="846.0" font-size="13" fill="#666" font-family="monospace">3</text>
+<circle cx="559.0" cy="120.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="566.0" y="114.0" font-size="13" fill="#666" font-family="monospace">4</text>
+<circle cx="641.0" cy="120.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="648.0" y="114.0" font-size="13" fill="#666" font-family="monospace">5</text>
+<circle cx="641.0" cy="852.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="648.0" y="846.0" font-size="13" fill="#666" font-family="monospace">6</text>
+<circle cx="559.0" cy="852.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="566.0" y="846.0" font-size="13" fill="#666" font-family="monospace">7</text>
+<circle cx="180.0" cy="433.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="187.0" y="427.0" font-size="13" fill="#666" font-family="monospace">8</text>
+<circle cx="582.0" cy="433.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="589.0" y="427.0" font-size="13" fill="#666" font-family="monospace">9</text>
+<circle cx="582.0" cy="515.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="589.0" y="509.0" font-size="13" fill="#666" font-family="monospace">10</text>
+<circle cx="180.0" cy="515.0" r="5" fill="#fff" stroke="#d00" stroke-width="2"/>
+<text x="187.0" y="509.0" font-size="13" fill="#666" font-family="monospace">11</text>
+<text x="6" y="20" font-size="18" fill="#000" font-family="monospace">H U+0048 H  轮廓3 点数12</text>
+</svg>
