@@ -180,6 +180,17 @@ def build(vf_path, out_dir, woff2=True):
     except Exception as e:
         print("!! 几何健壮性闸门执行失败: %s" % e, flush=True)
 
+    # P89：文档一致性闸门（已推翻结论必须标注更正）
+    try:
+        from .qa import doc_gate
+        nd = doc_gate.check()
+        if nd:
+            print("!! 文档一致性闸门：%d 处未标注更正" % nd, flush=True)
+        else:
+            print("文档一致性闸门：通过", flush=True)
+    except Exception as e:
+        print("!! 文档一致性闸门执行失败: %s" % e, flush=True)
+
     # P81：README 事实一致性闸门（防止文件数/大小/份数过时）
     try:
         from . import gen_readme_facts
