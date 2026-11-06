@@ -180,6 +180,17 @@ def build(vf_path, out_dir, woff2=True):
     except Exception as e:
         print("!! 几何健壮性闸门执行失败: %s" % e, flush=True)
 
+    # P81：README 事实一致性闸门（防止文件数/大小/份数过时）
+    try:
+        from . import gen_readme_facts
+        nf = gen_readme_facts.check(dist_dir=out_dir)
+        if nf:
+            print("!! README 事实闸门：%d 处与实际不符" % nf, flush=True)
+        else:
+            print("README 事实闸门：通过", flush=True)
+    except Exception as e:
+        print("!! README 事实闸门执行失败: %s" % e, flush=True)
+
     # P70：命名唯一性闸门（ID6 全局唯一，防止安装时互相覆盖）
     try:
         from .qa import name_gate
