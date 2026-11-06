@@ -38,30 +38,65 @@ def _area(seg):
 
 
 def _offset_miter(seg, d_h, d_v, sign):
-    """每条边整体平移；角点取相邻两边位移矢量和（斜接）。"""
+    """每条边按自身法向平移，角点取相邻两条偏移线的交点（精确斜接）。
+
+    P93：原实现用法向矢量和，仅在 90 度角正确；钝角处会超出 1.7 倍，
+    导致斜边反而被拉长。改为求交点，对任意角度精确。
+    """
     n = len(seg)
     if n < 3:
         return seg
 
-    def edge_disp(i, j):
+    def offset_line(i, j):
+        """返回边(i->j)的偏移直线：(点, 方向)。"""
         x1, y1 = seg[i]
         x2, y2 = seg[j]
         dx, dy = x2 - x1, y2 - y1
         L = math.hypot(dx, dy)
         if L < 1e-9:
-            return (0.0, 0.0)
+            return None
         nx, ny = -dy / L, dx / L
+        # 水平边（法向竖直）用 d_h，竖直边（法向水平）用 d_v
         d = d_h if abs(ny) >= abs(nx) else d_v
-        return (nx * d * sign, ny * d * sign)
+        return ((x1 + nx * d * sign, y1 + ny * d * sign), (dx, dy))
+
+    lines = [offset_line(k, (k + 1) % n) for k in range(n)]
+
+    def intersect(l1, l2):
+        """两直线交点；平行时返回 None。"""
+        if l1 is None or l2 is None:
+            return None
+        (p1, d1), (p2, d2) = l1, l2
+        den = d1[0] * d2[1] - d1[1] * d2[0]
+        if abs(den) < 1e-9:
+            return None
+        t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den
+        return (p1[0] + d1[0] * t, p1[1] + d1[1] * t)
 
     out = []
     for k in range(n):
         prev = (k - 1) % n
-        nxt = (k + 1) % n
-        d1 = edge_disp(prev, k)
-        d2 = edge_disp(k, nxt)
-        out.append((seg[k][0] + d1[0] + d2[0],
-                    seg[k][1] + d1[1] + d2[1]))
+        pt = intersect(lines[prev], lines[k])
+        if pt is None:
+            # 平行退化：退回单边法向平移
+            l = lines[k] if lines[k] else lines[prev]
+            if l is None:
+                out.append(seg[k])
+            else:
+                (px, py), (dx, dy) = l
+                L = math.hypot(dx, dy)
+                nx, ny = -dy / L, dx / L
+                d = d_h if abs(ny) >= abs(nx) else d_v
+                out.append((seg[k][0] + nx * d * sign, seg[k][1] + ny * d * sign))
+            continue
+        # 抑制极端斜接（锐角处交点会飞很远）
+        mx = (seg[k][0] + pt[0]) / 2
+        my = (seg[k][1] + pt[1]) / 2
+        maxmove = 3.0 * max(d_h, d_v)
+        if math.hypot(pt[0] - seg[k][0], pt[1] - seg[k][1]) > maxmove:
+            out.append((mx, my))
+        else:
+            out.append(pt)
     return out
 
 

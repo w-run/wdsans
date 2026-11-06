@@ -95,7 +95,7 @@ def _collect_refs(font):
     return refs
 
 
-def fix(font_path, mona_path, out_path, ranges=None, sx=0.895, sy=1.0046):
+def fix(font_path, mona_path, out_path, ranges=None, sx=1.0, sy=1.0046):
     """在孤立槽位里补齐缺失的 Latin Ext-A 字符。返回统计。"""
     if ranges is None:
         ranges = [(0x0100, 0x0180)]
