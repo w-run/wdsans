@@ -128,10 +128,12 @@ def check(dist_dir=None, readme=None):
         if m and m.group(1) != "%.2f MB" % _mb(vf):
             problems.append("VF.woff2: README %s != 实际 %.2f MB" % (m.group(1), _mb(vf)))
 
-    docs = doc_count()
-    m = re.search(r"（(\d+) 份", text)
-    if m and int(m.group(1)) != docs:
-        problems.append("文档份数: README %s != 实际 %d" % (m.group(1), docs))
+    # P82：不再校验「编号文档份数」。
+    # 该指标每写一份文档就变，写进交付 README 必然立刻过时，
+    # 且对最终用户无意义（他们拿到的是字体，不是我们的开发文档）。
+    # 若 README 里出现精确份数，反而提示应移除。
+    if re.search(r"（(\d+) 份", text):
+        problems.append("README 不应包含精确的编号文档份数（该指标持续变化）")
 
     for p in problems:
         print("  !! " + p)
