@@ -153,6 +153,21 @@
 | 无 ExtraLight(200) | 严格 7 档 | 产品决策 |
 | 不出 OTF-CFF | 只出 TTF/WOFF2 | 用户决策 |
 | 子集只做 3 字重 | Regular/Medium/Bold | 覆盖主要场景 |
+### 子集特性保留机制（P86/P87 更正）
+
+此前 P67 将「子集丢失 GDEF / mark / vkrn / format14」记为缺陷。
+**经实测推翻**：全部是子集工具「闭包裁减」的正常行为。
+
+| 被裁的东西 | 需要字符集包含什么才保留 |
+|---|---|
+| GDEF | 组合标记 U+0300-036F |
+| GPOS mark | 组合标记 + 基字 |
+| cmap format 12 | 非 BMP 字符（>U+FFFF）|
+| cmap format 14 IVS | 变体选择符本身 U+FE00-FE0F |
+
+**GPOS 特性数恒定 5（halt/kern/palt/vhal/vpal），从未丢失。**
+
+当前 sub3755/sub6763 供中文正文用，不需要上述任何一项，故「表不在」恰好正确。
 | Mac name 记录已删 | 保留现状 | 内网自用，现代系统优先 platformID=3 |
 
 ## 十一、使用建议（实测支持）
