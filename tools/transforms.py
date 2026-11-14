@@ -120,12 +120,19 @@ def stroke_offset(value, delta=0.0):
     contours = _split_contours(value)
     out = []
     for kind, start, segs in contours:
-        n = len(segs)
+        n_stmt = len(segs)
+        n = n_stmt + sum(len([q for q in a if q is not None]) for _o, a in segs)
         if n < 2:
             out.extend(_rebuild(kind, start, segs))
             continue
 
-        P = [start] + [args[-1] for _, args in segs]
+        # P94: TrueType 的 qCurveTo 打包多点，必须展开全部点
+        _pts = []
+        for _op, _args in segs:
+            for _a in _args:
+                if _a is not None:
+                    _pts.append(_a)
+        P = [start] + _pts
         m = len(P)
         if m > 1 and math.hypot(P[0][0] - P[-1][0], P[0][1] - P[-1][1]) < 1e-6:
             P = P[:-1]
@@ -198,14 +205,21 @@ def terminal_fix(value, angle_hv=0.0, angle_diag=4.0, stroke_width=82.0,
     contours = _split_contours(value)
     out = []
     for kind, start, segs in contours:
-        n = len(segs)
+        n_stmt = len(segs)
+        n = n_stmt + sum(len([q for q in a if q is not None]) for _o, a in segs)
         if n < 3:
             out.extend(_rebuild(kind, start, segs))
             continue
 
-        P = [start] + [args[-1] for _, args in segs]
-        m = n + 1
-        eop = [segs[k][0] if k < n else "lineTo" for k in range(m)]
+        # P94: TrueType 的 qCurveTo 打包多点，必须展开全部点
+        _pts = []
+        for _op, _args in segs:
+            for _a in _args:
+                if _a is not None:
+                    _pts.append(_a)
+        P = [start] + _pts
+        m = len(P)
+        eop = [segs[k][0] if k < n_stmt else "lineTo" for k in range(m)]
         elen = [math.hypot(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
                 for k in range(m)]
 
@@ -327,14 +341,21 @@ def flatten_flare(value, ratio=1.0, stroke_width=82.0,
     out = []
     for kind, start, segs in contours:
         ops = [op for op, _ in segs]
-        n = len(segs)
+        n_stmt = len(segs)
+        n = n_stmt + sum(len([q for q in a if q is not None]) for _o, a in segs)
         if n < 3 or all(o != "lineTo" for o in ops):
             out.extend(_rebuild(kind, start, segs))
             continue
 
-        P = [start] + [args[-1] for _, args in segs]
-        m = n + 1
-        eop = [ops[k] if k < n else "lineTo" for k in range(m)]
+        # P94: TrueType 的 qCurveTo 打包多点，必须展开全部点
+        _pts = []
+        for _op, _args in segs:
+            for _a in _args:
+                if _a is not None:
+                    _pts.append(_a)
+        P = [start] + _pts
+        m = len(P)
+        eop = [ops[k] if k < n_stmt else "lineTo" for k in range(m)]
         elen = [math.hypot(P[(k + 1) % m][0] - P[k][0], P[(k + 1) % m][1] - P[k][1])
                 for k in range(m)]
 
@@ -483,11 +504,18 @@ def feet_removal(value, stroke_width=82.0, max_foot_ratio=1.6,
     contours = _split_contours(value)
     out = []
     for kind, start, segs in contours:
-        n = len(segs)
+        n_stmt = len(segs)
+        n = n_stmt + sum(len([q for q in a if q is not None]) for _o, a in segs)
         if n < 4:
             out.extend(_rebuild(kind, start, segs))
             continue
-        P = [start] + [args[-1] for _, args in segs]
+        # P94: TrueType 的 qCurveTo 打包多点，必须展开全部点
+        _pts = []
+        for _op, _args in segs:
+            for _a in _args:
+                if _a is not None:
+                    _pts.append(_a)
+        P = [start] + _pts
         m = len(P)
         if m > 1 and math.hypot(P[0][0] - P[-1][0], P[0][1] - P[-1][1]) < 1.0:
             P = P[:-1]; m -= 1
@@ -625,7 +653,13 @@ def dot_normalize(value, stroke_width=82.0, max_dim_ratio=2.6, ratio=1.0,
         if len(segs) != 4:
             out.extend(_rebuild(kind, start, segs))
             continue
-        P = [start] + [args[-1] for _, args in segs]
+        # P94: TrueType 的 qCurveTo 打包多点，必须展开全部点
+        _pts = []
+        for _op, _args in segs:
+            for _a in _args:
+                if _a is not None:
+                    _pts.append(_a)
+        P = [start] + _pts
         if len(P) > 1 and math.hypot(P[0][0] - P[-1][0], P[0][1] - P[-1][1]) < 1.0:
             P = P[:-1]
         if len(P) != 4:

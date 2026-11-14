@@ -233,3 +233,27 @@ OK   七档WOFF2 7.48-7.93  -> 7.48-7.93（VF 20.01 单列）
 | A5「曲线拉直」 | 曲线占比 **37.9% = 37.9%** |
 | A6「半角假名偷懒」 | 真半宽 **500 / 1000 = 0.5** |
 | A8 CodePage | 0x602E0107 **与 Noto 差异位 0**（继承，非疏漏）|
+
+## P112 · 拉丁 advance 基准错配（真实修复）
+
+- 症状：拉丁 advance 在 7 档字重间完全不变
+- 根因1：gvar phantom point delta 全为 0（依赖 HVAR，但 HVAR 无拉丁数据）
+- 根因2：轮廓取自 Mona 400，advance 却取自 Mona 默认字重 200 的 hmtx
+- 修法：pp2.x 写入 advance 差值；hmtx 改用 Mona 400 实例值
+- 验证：250/400/900 三档 advance 与 Mona 逐项相同（H=757/764/782）
+- 文档：docs/P112-LATIN-ADVANCE-BASE-MISMATCH.md
+- 状态：**已修复并部署**
+
+## P113 · GPOS lookup 类型"损坏"（误判，已撤回）
+
+- 原判断：palt/vpal 从 type 9 降为 type 1 = 数据损坏
+- **实际：这是 fontTools 对 Extension(type 9) 的合法解包**
+  - Noto 的 palt 是 type 9 包装 SinglePos，仅为突破 16 位偏移上限
+  - 解包后为 type 1 + 11 个子表，语义完全等价，子表数不变
+- 我的"修复"（整表移植 GPOS+GDEF）反而弄坏字体：
+  GDEF 含 ItemVariationStore，静态档无 fvar → OTS 14/15 失败
+- 对比：v5(未修) OTS 15/15 通过；v6(我修) OTS 1/15 通过
+- 教训：内部表示 ≠ 文件表示；判据应是子表语义与渲染结果，
+  而非 lookup 类型号逐字相同；移植整表前必须检查表间依赖
+- 文档：docs/P113-GPOS-LOOKUP-TYPE-CORRUPTION.md（已标注撤回）
+- 状态：**已撤回，v5 保持为正确版本**
