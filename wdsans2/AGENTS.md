@@ -29,7 +29,8 @@ masters_MOD17 MOD16 + metrics/fsSelection 修正         已部署
 masters_MOD18 MOD17 + name 表修正                     已部署
 masters_MOD19 MOD18 + OS/2 UnicodeRange 修正           已部署
 masters_MOD20 MOD19 + 时间冒号居中 (calt)              已部署
-masters_MOD22 MOD20 + 数字特性 sups/subs/sinf         构建中 ← 当前链尾
+masters_MOD22 MOD20 + 数字特性 sups/subs/sinf         已部署
+masters_MOD23 MOD22 + 特性 pnum/numr/dnom             构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -114,6 +115,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_os2range` | 按实际 cmap 重算 OS/2 ulUnicodeRange | 21 位 × 3 档 | 已并入 MOD19 |
 | `m_coloncenter` | 时间场景冒号居中 (数字间 calt) | 2 字符 × 3 档 | 已并入 MOD20 |
 | `m_numfeats` | 数字特性 sups/subs/sinf + 上下标字符 | 20 字形 × 3 档 | 已并入 MOD22 |
+| `m_numfeats2` | pnum 比例数字 + numr/dnom 分子分母 | 20 字形 × 3 档 | 已并入 MOD23 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -591,6 +593,27 @@ mapping = {
 
 **tnum 是冗余的**（本字体默认已等宽，无需 tnum）。
 真正缺的是 **pnum**（比例数字），留给后续。
+
+### m_numfeats2 判据（pnum / numr / dnom）
+```
+pnum: locl 的 tabular 映射反向 -> 恢复比例数字
+      glyph63166~63175 -> zero~nine
+      (默认等宽, pnum 开启后变比例)
+
+numr: 默认数字缩放 60% + 上移 33%em
+dnom: 默认数字缩放 60% + 下移 10%em
+```
+
+**验证（HarfBuzz）**
+```
+默认 123:  gid63167 adv 521   （等宽，locl 生效）
+pnum 123:  gid18    adv 363   （比例，恢复默认数字）
+numr 123:  gid61925 adv 217   （分子）
+dnom 123:  gid61940 adv 217   （分母）
+```
+
+**累计数字特性（MOD23）**: sups / subs / sinf / pnum / numr / dnom 共 6 个
+OPPO/HOS 都有 8 个，还差 frac（分数）与 tnum（我们默认已等宽，冗余）
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
