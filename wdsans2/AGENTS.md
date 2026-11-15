@@ -26,7 +26,9 @@ masters_MOD14 MOD13 + latinext2 48字符              已部署
 masters_MOD15 MOD14 + kerning 77,294对               已部署
 masters_MOD16 MOD15 + mark/mkmk 重建                 已部署
 masters_MOD17 MOD16 + metrics/fsSelection 修正         已部署
-masters_MOD18 MOD17 + name 表修正                     构建中 ← 当前链尾
+masters_MOD18 MOD17 + name 表修正                     已部署
+masters_MOD19 MOD18 + OS/2 UnicodeRange 修正           已部署
+masters_MOD20 MOD19 + 时间冒号居中 (calt)              构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -108,6 +110,8 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_markpos` | 重建 mark + mkmk 定位表 | 22 符号 / 442 基字母 | 已并入 MOD16 |
 | `m_metrics` | 修正 fsSelection 标志 | 3 档 | 已并入 MOD17 |
 | `m_nametable` | 修正 name 表：中文名/版权/OFL 声明/VF 元数据 | 3 档 | 已并入 MOD18 |
+| `m_os2range` | 按实际 cmap 重算 OS/2 ulUnicodeRange | 21 位 × 3 档 | 已并入 MOD19 |
+| `m_coloncenter` | 时间场景冒号居中 (数字间 calt) | 2 字符 × 3 档 | 已并入 MOD20 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -475,6 +479,76 @@ python modules/post_vf_name.py /workspace/static/wdsans/WDesignSans-VF.otf
 2. fsSelection / 垂直度量（master 改了会被继承，但需确认）
 3. **name 表 langIDs（必须在 master 基础上补回 zh-CN）**
 4. 预览子集重新生成
+
+### m_os2range 判据（OS/2 字符分类位）
+```
+问题: 我们补了 143 个 Latin Ext 字符，但 OS/2 ulUnicodeRange 位仍是 SHS 原版的值。
+      系统/应用依赖这些位判断字体是否支持某字符范围，位没置就等于「不支持」。
+
+实测缺失 14 个位（最关键的）:
+  bit2   Latin Extended-A        125/128
+  bit70  Halfwidth And Fullwidth 225/240
+  bit3   Latin Extended-B         30/208
+  bit6   Combining Diacrit        22/112
+  bit33  Letterlike Symbols       17/80
+```
+
+**修复**: 按 OpenType 规范定义的码位区间，逐位检查 cmap 是否有字符，有则置位。
+三档均新增 **21 个位**:
+```
+[2,3,4,5,6,9,30,31,32,33,34,35,37,38,40,41,46,47,62,70,86]
+
+验证每个位都有字符支撑:
+  bit2   Latin Ext-A      125 字符
+  bit40  Enclosed Alphanum 160 字符
+  bit41  Box Drawing      128 字符
+  bit70  Halfwidth/Full   225 字符
+  bit86  CJK Ideograph  20992 字符
+```
+
+**同时修正 ulCodePageRange**: 新增 bit50(936 简体中文) / bit52(950 繁体中文)。
+
+**教训**: 字符集扩张后必须重算 OS/2 分类位，否则字形存在但系统认为不支持。
+
+### m_coloncenter 判据（时间场景冒号居中）
+```
+问题（用户指出）: 横排时间 12:34 的冒号明显偏低。
+  实测: zero 中心 +364, colon 中心 +258, 差 -106
+  参考: OPPO colon.centered / HOS colon.ss03 都居中（差 -1）
+  -> SHS 没修，两家国内厂商都修了
+
+方案: 复制冒号轮廓上移到数字中心 -> 未映射槽位 -> 数字间 calt 替换
+```
+
+**效果（HarfBuzz）**: 12:34 -> gid117（居中）；a:b -> gid27（基线）
+
+#### 🔴 三次失败的过程（代价极大，务必避坑）
+```
+失败1: feaLib 的 addOpenTypeFeaturesFromString **替换整个 GSUB**
+  MOD19: 16 features / 52 lookups (ccmp 271, vert 99, vrt2 37...)
+  MOD20:  1 feature  /  2 lookups (只剩 calt)
+  -> vert/vrt2/ccmp 全丢，预览子集 4.13MB 掉到 1.96MB
+
+失败2: 备份+反向合并 -> 破坏 locl 的 script 映射
+  症状: — … 在竖/横排丢 script 特定变体
+  原因: GSUB 有 147 个内部 lookup 引用，只追加 lookup 不改引用会错位
+
+失败3: 手写 ot.Coverage() / ot.ChainContextSubst()
+  -> 读回来 Coverage Format=None，HarfBuzz 静默跳过，calt 完全不触发
+  （注: feaLib 原生编译的 Format 也是 None，所以 Format 不是判断依据）
+```
+
+#### ✅ 可行方案：只追加 subtable 到已接线的 calt lookup
+```python
+# latn 的 calt = feature#68 -> lookup#30（已接线，勿动 FeatureList/ScriptList）
+# 1) 隔离编译拿 feaLib 正确生成的 ChainContext subtable
+# 2) 把 SingleSubst 追加到 LookupList 末尾
+# 3) 把 ChainContext subtable 追加到 lookup#30.SubTable
+# 4) 修正 SubstLookupRecord.LookupListIndex 指向新 SingleSubst
+```
+**关键**: FeatureList / ScriptList 完全不动 -> 所有原有特性零风险。
+验证: lookups 52->54, lookup#30 subtable 1->3, 16 种 feature 全部在位。
+竖排回归测试： — … 「 与 MOD19 完全一致。
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
