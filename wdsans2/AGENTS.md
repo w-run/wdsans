@@ -28,7 +28,8 @@ masters_MOD16 MOD15 + mark/mkmk 重建                 已部署
 masters_MOD17 MOD16 + metrics/fsSelection 修正         已部署
 masters_MOD18 MOD17 + name 表修正                     已部署
 masters_MOD19 MOD18 + OS/2 UnicodeRange 修正           已部署
-masters_MOD20 MOD19 + 时间冒号居中 (calt)              构建中 ← 当前链尾
+masters_MOD20 MOD19 + 时间冒号居中 (calt)              已部署
+masters_MOD22 MOD20 + 数字特性 sups/subs/sinf         构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -112,6 +113,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_nametable` | 修正 name 表：中文名/版权/OFL 声明/VF 元数据 | 3 档 | 已并入 MOD18 |
 | `m_os2range` | 按实际 cmap 重算 OS/2 ulUnicodeRange | 21 位 × 3 档 | 已并入 MOD19 |
 | `m_coloncenter` | 时间场景冒号居中 (数字间 calt) | 2 字符 × 3 档 | 已并入 MOD20 |
+| `m_numfeats` | 数字特性 sups/subs/sinf + 上下标字符 | 20 字形 × 3 档 | 已并入 MOD22 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -549,6 +551,46 @@ python modules/post_vf_name.py /workspace/static/wdsans/WDesignSans-VF.otf
 **关键**: FeatureList / ScriptList 完全不动 -> 所有原有特性零风险。
 验证: lookups 52->54, lookup#30 subtable 1->3, 16 种 feature 全部在位。
 竖排回归测试： — … 「 与 MOD19 完全一致。
+
+### m_numfeats 判据（数字排版特性）
+```
+对比四个字体的数字特性:
+  SHS    （无）
+  我们    （无）  <- 继承 SHS 的空白
+  OPPO   tnum pnum frac subs sups sinf numr dnom
+  HOS    tnum pnum frac subs sups sinf numr dnom
+
+同时发现字符缺失:
+  上标 U+2070-2079: 缺 6 个（⁰⁵⁶⁷⁸⁹）
+  下标 U+2080-2089: 全缺 10 个（₀-₉）
+```
+
+**已实现: sups / subs / sinf**
+```
+上下标字形 = 默认数字缩放 62%，上移 34%em / 下移 16%em
+特性映射 = SingleSubst 到新字形
+cmap 补齐 = U+2070-2079 填 7 个, U+2080-2089 填 10 个
+```
+
+**🔴 关键坑: 我们的字体默认数字是等宽的！**
+SHS 的 locl 特性（lookup#42, latn script）会把 `zero` 换成 `glyph63166`。
+```
+默认:      gid63166~63175  adv 全部 521  （等宽）
+locl=False: gid17~26        adv 640/363/530... （比例）
+```
+所以 sups/subs 的 mapping **必须同时覆盖两套 input**:
+```python
+# 只写 zero -> 上标 是不够的，因为 locl 已把 zero 换了
+mapping = {
+    'zero': 'sup_zero', 'one': 'sup_one', ...   # 未走 locl 时
+    'glyph63166': 'sup_zero', ...               # locl 之后
+}
+```
+> 实测: 只写默认数字时 sups 完全不触发（gid 不变）；
+>       扩充后 sups: gid63167(521) -> gid36712(225) ✓
+
+**tnum 是冗余的**（本字体默认已等宽，无需 tnum）。
+真正缺的是 **pnum**（比例数字），留给后续。
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
