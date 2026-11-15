@@ -30,7 +30,8 @@ masters_MOD18 MOD17 + name 表修正                     已部署
 masters_MOD19 MOD18 + OS/2 UnicodeRange 修正           已部署
 masters_MOD20 MOD19 + 时间冒号居中 (calt)              已部署
 masters_MOD22 MOD20 + 数字特性 sups/subs/sinf         已部署
-masters_MOD23 MOD22 + 特性 pnum/numr/dnom             构建中 ← 当前链尾
+masters_MOD23 MOD22 + 特性 pnum/numr/dnom             已部署
+masters_MOD24 MOD23 + frac 分数特性                   构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -116,6 +117,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_coloncenter` | 时间场景冒号居中 (数字间 calt) | 2 字符 × 3 档 | 已并入 MOD20 |
 | `m_numfeats` | 数字特性 sups/subs/sinf + 上下标字符 | 20 字形 × 3 档 | 已并入 MOD22 |
 | `m_numfeats2` | pnum 比例数字 + numr/dnom 分子分母 | 20 字形 × 3 档 | 已并入 MOD23 |
+| `m_frac` | frac 分数特性（含 ChainContext） | 3 档 | 已并入 MOD24 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -614,6 +616,34 @@ dnom 123:  gid61940 adv 217   （分母）
 
 **累计数字特性（MOD23）**: sups / subs / sinf / pnum / numr / dnom 共 6 个
 OPPO/HOS 都有 8 个，还差 frac（分数）与 tnum（我们默认已等宽，冗余）
+
+### m_frac 判据（分数特性）
+```
+机制（3 步 + ChainContext）:
+  1) slash -> fraction          (U+2044 分数线)
+  2) zero~nine -> *.numr        (分子字形，MOD23 已建)
+  3) ChainContext: [fraction] numr' -> dnom
+     [dnom] numr' -> dnom       (多位数分数)
+```
+
+**验证（HarfBuzz）**
+```
+frac 1/2:   [(61925,217), (4744,120), (61927,318)]
+             分子        分数线      分母
+frac 12/34: [(61925,217),(61927,318),(4744,120),(61928,336),(61931,367)]
+```
+
+**🔴 同一个 locl 坑（第三次踩到）**
+`locl` 先把 zero~nine 换成 glyph6316x，所以:
+- lookup 的 input 写 `one` 匹配不上，要写 `glyph63167`
+- mapping 必须同时覆盖两套 input
+> 第一次: m_numfeats 的 sups（已修）
+> 第二次: m_numfeats2 的 numr/dnom（已修）
+> 第三次: m_frac 的 numr（已修）
+**规律: 任何以数字为 input 的 feature，mapping 都要叠加 locl_tab。**
+
+**数字特性完成度 7/8**: pnum sups subs sinf numr dnom frac
+（tnum 冗余 —— 本字体 default 已等宽）
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
