@@ -22,7 +22,8 @@ masters_MOD9c MOD8 + taper_v2 17,405字               已部署
 masters_MOD10 MOD9c + residue 清理 186字             已部署
 masters_MOD12 MOD10 + latinmat 371字形               已部署
 masters_MOD13 MOD12 + latinext 95字符               已部署
-masters_MOD14 MOD13 + latinext2 48字符              构建中 ← 当前链尾
+masters_MOD14 MOD13 + latinext2 48字符              已部署
+masters_MOD15 MOD14 + kerning 77,294对               构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -100,6 +101,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_taper_v2` | 撇捺末端收窄（termface 后重跑） | 17,405 字 / 56,839 段 | 已并入 MOD9c |
 | `m_latinmat` | 拉丁横向缩放匹配 CJK 笔干 | 371 字形 | 已并入 MOD12 |
 | `m_latinext` | 从 Mona 补入 Latin Extended-A | 95 字符 | 已并入 MOD13 |
+| `m_kerning` | 从 Mona 移植拉丁 kerning | 77,294 对 | 已并入 MOD15 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -272,6 +274,43 @@ MiSans 版权: Copyright (c) 2020-2025 Beijing Xiaomi Mobile Software Co.,Ltd.
 **参考 vs 取用的边界**:
   OPPO/HOS/MiSans 用于**风格参考**（测量比例、观察笔画形态）是合理的；
   把它们的**字形轮廓复制进我们的字体**则超出许可范围。
+
+### m_kerning 判据（移植拉丁 kerning）
+```
+问题: 我们 VF 的 kern 配对只有 845 个，Mona 有 3,261 个（少 74%）
+      → 字距整体过宽，A/V、A/Y 等经典配对未收紧
+
+实测（72px 位图墨宽）:
+  配对   改前  Mona   差值
+  AV      91    81    +10
+  AY      90    81     +9
+  WA     114   107     +7
+  VA      92    82    +10
+
+方案:
+  1. 从 Mona GPOS 提取全量 kern（含 class-based Format2 展开）
+     → 展开后 151,815 对
+  2. 按字形名映射（双方交集 543 个字形）→ 77,294 对可用
+  3. 用 buildPairPosGlyphs 生成新 PairPos lookup，追加到 kern feature
+```
+
+**关键: kerning 强度需缩放 KERN_SCALE=0.65**
+Mona 的 kern 值基于其自身字宽；我们经 `m_latinmat` 缩放到 0.943 后字更窄，
+直接全量移植会让本已合适的配对变过紧。
+```
+系数  与 Mona 平均偏差   评价
+1.00      3.19 px        AT/LT/To/T- 变过紧
+0.65      2.44 px        最优
+0.50      2.88 px        偏松
+改前      5.62 px        —
+```
+
+**API 坑**: `buildPairPosGlyphs` 三个参数细节
+- 第1参数是 dict: `{(g1,g2): (ValueRecord_or_None, ValueRecord_or_None)}`
+- `buildValue()` 只接受一个 dict: `buildValue({'XAdvance': v})`
+- 返回的是 **subtables list**，需自行包 `ot.Lookup()` 并设 LookupType=2
+> 连续踩三次: 传 list → 'list has no items'; 传 dict 值 → 'dict has no getFormat';
+>              buildValue(xAdvance=v) → 'unexpected keyword argument'
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
