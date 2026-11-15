@@ -20,7 +20,8 @@ masters_MOD7  MOD6 + zerocont 45字                  已部署
 masters_MOD8  MOD7 + termface_v2 6,583字            已部署
 masters_MOD9c MOD8 + taper_v2 17,405字               已部署
 masters_MOD10 MOD9c + residue 清理 186字             已部署
-masters_MOD12 MOD10 + latinmat 371字形               构建中 ← 当前链尾
+masters_MOD12 MOD10 + latinmat 371字形               已部署
+masters_MOD13 MOD12 + latinext 95字符               构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -97,6 +98,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_termface_v2` | 端面拉直阈值放宽 0.10→0.16 | 6,583 字 / 10,155 段 | 已并入 MOD8 |
 | `m_taper_v2` | 撇捺末端收窄（termface 后重跑） | 17,405 字 / 56,839 段 | 已并入 MOD9c |
 | `m_latinmat` | 拉丁横向缩放匹配 CJK 笔干 | 371 字形 | 已并入 MOD12 |
+| `m_latinext` | 从 Mona 补入 Latin Extended-A | 95 字符 | 已并入 MOD13 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -220,6 +222,29 @@ CJK 取样 `口日田目`，拉丁取样 `HnIEL`。多字号交叉验证确保�
 实测效果（k=0.943）: 比例 1.201 -> 1.137（OPPO 1.136）。
 覆盖范围: Basic Latin + Latin-1 + Latin Ext-A/B + IPA + Latin Ext Additional
           + General Punctuation + Currency Symbols（371 字形）
+
+### m_latinext 判据（补入 Latin Extended-A）
+```
+问题: Latin Ext-A 只有 30/128，Mona 有 123 个
+      缺的是捷克/波兰/匈牙利/土耳其等语言的必需字符 ĄąĆćĘęŁłŐőŘřŠšŹźŽž
+
+硬约束: VF 已达 65,535 字形上限，无空余槽位
+        但有 21,189 个未映射字形（glyph#####），未被 GSUB/GPOS 引用，可安全复用
+
+方案: 1) 从 Mona VF 按 250/400/900 实例化（wght 轴）
+      2) 取缺失字符轮廓，注入未映射槽位
+      3) 添加 cmap 映射 + advance width
+      三档用同一批槽位 -> 结构自动一致
+```
+**关键坑: 必须用 `DecomposingRecordingPen`**
+Mona 的 Latin Ext-A 多为复合字形（基字母 + 变音符号）。
+`RecordingPen` 对复合字形只返回 1~2 个组件引用，拿不到真实轮廓。
+> 实测: 用 RecordingPen 只成功注入 12/95 个（其余轮廓为空被跳过）
+>       改用 DecomposingRecordingPen 后 95/95 全部成功
+>       例: Ą Recording=2 ops / Decomposing=27 ops
+
+效果: Latin Ext-A 30 -> 125/128，cmap 44,853 -> 44,948
+抽查宽度: ą=598（与 a 一致）Ć=763（与 C 一致）
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
