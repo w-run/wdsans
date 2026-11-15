@@ -37,8 +37,8 @@ SRC = os.environ.get('WDS_SRC', '/workspace/wdsans2/build/masters_MOD26')
 OUTD = os.environ.get('WDS_OUT', '/workspace/wdsans2/build/masters_MOD29')
 FN = {'250': 'master-ExtraLight-250.otf', '400': 'master-Regular-400.otf',
       '900': 'master-Heavy-900.otf'}
-TARGET_MARGIN = {'250': 35.0, '400': 90.0, '900': 175.0}
-MIN_RATIO = 3.5         # 宽/高 至少 3.5 才算横笔
+TARGET_MARGIN = {'250': 35.0, '400': 90.0, '900': 110.0}
+MIN_RATIO = 2.8         # 宽/高 至少 2.8（900档横笔 h 可达 127，比例自然降至 3.3）
 MAX_H = {'250': 60.0, '400': 200.0, '900': 300.0}
 
 
