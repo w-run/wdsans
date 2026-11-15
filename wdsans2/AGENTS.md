@@ -1,232 +1,317 @@
-# AGENTS.md — w-box 工作区约定
+# AGENTS.md — WDesign Sans 字形改造工程规范
 
-本文件供 AI Agent 在本机（w-box）操作 `/workspace` 时遵守。
+> 给所有参与本项目的智能体/协作者。**动手前必读**。
+> 项目：WDesign Sans（个人使用），基于 Source Han Sans 2.005 改造成 OPPO Sans 风格。
 
 ---
 
-## 1. 磁盘分工（核心规则）
+## 0. 绝对原则
 
-本机有两块盘，**用途严格区分**：
+### 0.1 基座纪律
+- **当前基座 = `build/masters_MOD3`**（见下方链）。任何新模块从最新链尾出发。
+```
+masters_T6    SHS + taper + step-align + 乙乞        已部署
+masters_MOD   T6 + m_barple 6,595字                  已部署
+masters_MOD2  MOD + termface 19,546字                已部署
+masters_MOD4  MOD2 + bardiag 3,077字 (修好版)        已部署
+masters_MOD5  MOD4 + yanrad 62字                     已部署
+masters_MOD6  MOD5 + shortl 3,369字                 已部署
+masters_MOD7  MOD6 + zerocont 45字                  已部署
+masters_MOD8  MOD7 + termface_v2 6,583字            已部署
+masters_MOD9c MOD8 + taper_v2 17,405字               已部署
+masters_MOD10 MOD9c + residue 清理 186字             构建中 ← 当前链尾
+```
+- 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
+- **T7 已污染**（含被改坏的 `永`），禁止作为基座。
+- 每轮修改输出到**新目录**（`masters_MOD` 等），不要原地覆盖。
 
-| 盘 | 挂载点 | 类型 | 容量 | 可用 | 用途 |
-|---|---|---|---|---|---|
-| SSD（KINGSTON SA400，SATA） | `/` | xfs | 69G | ~43G | **代码、服务、工具链** |
-| HDD（ST3500418AS，2009 年） | `/data` | ext4 | 458G | ~434G | **可重建的大体积产物** |
+### 0.2 三档同步铁律
+VF 构建要求 250/400/900 三档的**段数与操作符完全一致**，否则报
+`VarLibCFFPointTypeMergeError`。
 
-**判断依据不是“哪个大”，而是“丢了会怎样”：**
+**正确做法（400 档驱动）：**
+```bash
+python modules/run_module.py <模块> all
+# 内部: detect(400) -> 索引JSON -> apply 三档
+```
 
-- 丢了要重写 / 服务会挂 → 放 `/`（SSD）
-- 丢了能重新生成 / 不影响服务 → 放 `/data`（HDD）
+**禁止做法：** 三档各自独立检测。粗档笔画宽会让阈值失衡，命中集不同 → 构建失败。
+> 2026-11-14 实测：独立检测导致 `亨`/`今`/`延` 三档结构不一致。
 
-### 为什么不能把所有东西都搬到 /data
+### 0.3 验证门禁（缺一不可）
+1. 单字渲染确认（用 `glyphview.py`，不用临时脚本）
+2. **三档操作符签名校验**（全库 20992 字，不一致必须为 0）
+3. VF 构建成功
+4. 部署后审计（改动字数 = 索引字数，边界突变 = 0）
 
-实测数据（本机）：
+---
 
-| 项目 | SSD | HDD |
+## 1. 渲染工具（**唯一入口**）
+
+```bash
+# 整字对比（多字体）
+python modules/glyphview.py --chars 永今亨 --fonts A.otf:当前 B.otf:OPPO -o /tmp/x.png
+
+# 局部放大 + 坐标网格
+python modules/glyphview.py --chars 延 --fonts A.otf:当前 B.otf:OPPO \
+    --win 0,420,-150,650 --grid 50 -o /tmp/y.png
+
+# 可变字体指定字重
+python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /tmp/z.png
+```
+
+- `--win x0,x1,y0,y1`：em 坐标矩形裁剪，**y 向上为正**
+- `--grid N`：网格间距（em 单位），带坐标标注
+- 字体 spec：`path:标签[:wght]`
+
+### ⛔ 严禁自己写渲染脚本
+`probe/` 下已有 22 个历史渲染脚本，且都可能有 QM/CFF 曲线处理缺陷。
+**统一用 `modules/glyphview.py`**（内部走 `SVGPathPen`，曲线零解析）。
+
+> 2026-11-14 教训：我临时写了 20+ 个残缺渲染脚本，`QM`（多二次曲线）段处理错误，
+> 导致多次误判字形。用户明确指出："脚本里应该有很多渲染脚本吧，为什么每次都要重新写一个？"
+
+### 渲染的常见错误
+| 错误 | 现象 | 正确做法 |
 |---|---|---|
-| 顺序读 | — | 128 MB/s |
-| 冷读 5000 个小文件 | **0.222s** | **0.325s**（慢 46%） |
-
-`/data` 是老机械盘，**随机访问小文件明显更慢**，且属于**单点故障源**（SMART 数据有重置痕迹、固件 CC34 属希捷固件门批次）。因此凡是“代码”和“服务运行路径”，一律不放 `/data`。
+| `endp(s) = s[-1]` 不处理 QM | `ValueError: inhomogeneous shape` | 用 `SVGPathPen` |
+| SVG `scale(sx,sy)` 传 4 参数 | 渲染空白 | `scale(k,-k)` 只两参数 |
+| `translate(-x0,-y1)` | 字形被推出画布 | `translate(-x0,-y0)` |
+| 裁剪窗口凭猜 | 只截到局部或空白 | 先用 `--grid` 看全字定位 |
 
 ---
 
-## 2. 允许、应当指向 /data 的内容
+## 2. 已验证的改造模块
 
-以下属于**可重建产物**，高占用，应放到 `/data`：
+| 模块 | 作用 | 规模 | 状态 |
+|---|---|---|---|
+| `m_taper.py` | 撇/提/捺末端收窄 NARROW=0.95 | 45,611 处 | 已部署 T6 |
+| `m_stepalign.py` | 相邻轮廓台阶对齐 | 2,947 处 | 已部署 T6 |
+| `m_barple.py` | 横线右端对齐撇右界 + 落点下移 + 删回折段 | 6,595 字 | 已部署 (MOD) |
+| `m_termface.py` | 笔端面微弧拉直 (C→L) | 19,546 字 | 已并入 MOD2 |
+| `m_bardiag.py` | 横线右端延伸到斜边外缘 (消台阶) | 3,077 字 | 已并入 MOD4 |
+| `m_yanrad.py` | 廴/辶旁顶端尖角消除 | 62 字 | 已并入 MOD5 |
+| `m_shortl.py` | 删除曲线间冗余短直线段 | 3,369 字 / 4,966 段 | 已并入 MOD6 |
+| `m_zerocont.py` | 删除零面积退化轮廓 | 45 处 | 已并入 MOD7 |
+| `m_termface_v2` | 端面拉直阈值放宽 0.10→0.16 | 6,583 字 / 10,155 段 | 已并入 MOD8 |
+| `m_taper_v2` | 撇捺末端收窄（termface 后重跑） | 17,405 字 / 56,839 段 | 已并入 MOD9c |
 
-| 类型 | 典型目录 | 建议位置 |
+### m_termface 判据（端面改直）
+```
+命中: 段长 L ∈ [0.8, 1.5] × SW  且  弯曲偏离比值 dev/L < 0.10
+修复: 该 C 段 → L 直线
+```
+**关键：必须检查弯曲度比值**，否则会误伤竖钩等有弧度的短段。
+> 实测：`永` 的竖钩 seg7 L=93.9 ratio=0.252，只按长度会误改；端面 ratio≈0.04。
+
+### m_termface v2（阈值放宽 0.10 → 0.16）
+```
+命中: 段长 [0.8, 1.5]*SW  且  弯曲偏离比值 dev/L < 0.16
+修复: C -> L
+```
+**为什么可以放宽**: 弯曲度分布有天然分界
+```
+ratio 0.04~0.10:    747 段   (原 v1 已处理)
+ratio 0.12~0.16:  13,723 段  <- v2 新增，端面微弧集中区
+ratio 0.18~0.28:   9,228 段  <- 明显弯曲，不动
+ratio 0.30+ :      8,000 段  <- 真实弧线
+```
+实际在 MOD7 上扫描: 6,583 字 / 10,155 段，安全阀零跳过。
+抽查 局/儳/夠/莲/闖 的命中段，全部位于字形边缘、朝向向外，确认为端面。
+
+### m_bardiag 判据（横线未达斜边）
+```
+bar : 3段纯L，宽≥1.0×SW，高≤2.5×SW
+diag: 同字内与 bar 的 y 区间重叠的轮廓
+缺陷: 0.05×SW ≤ (diag外缘x − bar右端x) ≤ 0.60×SW
+修复: bar 两个右端点各自 → diag 在该 y 处的外缘 x
+```
+验证：`建` 左上横折 C5 292→315/307（消 23 单位台阶）；`延`、`永` 同类。
+
+### m_yanrad 判据（廴旁顶端尖角）
+```
+识别: 9段轮廓, 签名 CLCLLLCCL (建/延/健/庭/廷/挺 六字实测一致)
+      a4=seg2终点(斜边顶)  a5=seg3终点(尖角)  a6=seg4终点  a7=seg5终点
+匹配: 同字内 3段纯L 横线, 右端在 a4 的 [-0.6, 1.2] SW 内, y 区间覆盖 a4
+修复: a4 -> (bar.xR, bar.yBot)   斜边顶收到横线右下角
+      a5 -> (bar.xR, bar.yTop)   尖角收到横线右上角 (形成垂直新边)
+      a7 -> 由新 seg2 法向偏移 w0 决定, w0 = 原 a7 到原 seg2 的法向距离  <- 保斜边宽
+      a6 -> a7 沿原 a6->a7 反向
+```
+**关键: a7 必须用「法向偏移保宽」算法**, 否则斜边会被压窄。
+> 实测: 直接沿用 a5->a6 方向内收, 延 顶端厚度 78 -> 44 (-35)。
+
+全库: 含该签名 63 字, 命中 62 字 (98%)。抽查 扬/杨/场/汤/艇 无误报。
+
+### m_shortl 判据（曲线间冗余短直线段）
+```
+命中: L 段, 长度 0.3 ~ min(15, 0.20*SW), 且前后段都是 C(曲线)
+修复: 直接删除该段 (前后曲线端点自然衔接)
+```
+**为什么安全**: 短直线段夹在两条曲线之间，是台阶对齐的残留。
+删除后两条曲线端点重合，几何形状不变。
+
+全库短L段分类: C-L-C 3523 处(可删) / L-L-C 2776 / L-L-L 3011 / C-L-L 373。
+**只处理 C-L-C**，其余类型会破坏结构。
+> 实测: 3,369 字 4,966 段，安全阀(零长度段不增)跳过 0 字。
+
+### m_zerocont 判据（零面积退化轮廓）
+```
+命中: 轮廓面积(鞋带公式) < 50 em²
+典型形态: A->B->B->A 往返直线 / 3段共线 L 围成
+修复: 整个轮廓删除 (保证至少留 1 个轮廓)
+```
+**为什么安全**: 零面积轮廓不产生任何视觉内容，只浪费数据。
+> 实测: 全库 20,992 CJK 中 45 处，全部段数=3 共线三角形。
+> 例: 匣 C5 (951,-14)->(141,-14)->(141,-14)->(951,-14) 叉积 0.0000
+
+### 模块饱和度检查（2026-11-15）
+在 MOD9c 上重跑全部模块的 find()，看还有多少可改：
+```
+barple       1 字     1 处   已饱和
+stepalign  188 字   192 处   有 residue
+bardiag     29 字    30 处   有 residue
+yanrad       0 字     0 处   已饱和
+termface     0 字     0 处   已饱和
+shortl       0 字     0 处   已饱和
+zerocont     0 字     0 处   已饱和
+```
+residue 来源: 前面模块改动几何后，产生了新的可处理项。
+MOD10 依次应用 barple → stepalign → bardiag，得到 186 字 218 步。
+> 仍有 30 字跳过（索引段号在其它档越界），属正常边界情况。
+
+### ❌ 已否决: m_zeroseg（删除零长度段）
+```
+现象: 250档 2478处 / 400档 17处 / 900档 23处 零长度段
+尝试: 每档独立检测并删除
+结果: 门禁 G3 报 1199 字三档不一致 FAIL，禁止部署
+```
+**为什么不能删**: 在 250 档是零长度的位置，在 900 档是真实短边
+```
+250档零长度的 2478 个位置，在其他档的实际段长:
+  400档: 中位 5.00,  >5单位占 29.3%
+  900档: 中位 13.00, >5单位占 97.9%   <- 完全是正常笔画边
+```
+若从 250 档删掉，400/900 档对应位置仍有段，三档段数不同 → VF 无法插值。
+
+**正解**: varLib 构建 VF 时本来就会静默丢弃零长度段，
+且当前 MOD10 能成功构建且三档一致 —— 说明 varLib 已正确处理。
+**结论: 零长度段不需人工清理。**
+
+### m_barple 参数（用户确认 RATIO=0）
+```
+1. bar 右端 → xR                    横线右对齐到撇右界
+2. body 倒数第2段终点 → (xR, bar.bottom)   落点下移到横线右下角
+3. 删除回折段
+（不做根部收窄 —— E3 验证确认 ratio=0 效果最佳）
+```
+
+验证字：永 今 亨 夕 多 了 互 乳 亂 延 各（11/11 改善，0 副作用）
+
+---
+
+## 3. 踩坑清单（**必读，每条都付过代价**）
+
+### 3.1 结构识别
+1. **落点取倒数第 2 段终点**，不是末段。
+   末段是「回折段」（绕回起点），取其终点会让 `dx/dy` 全超范围 → 整字漏检。
+   > 实测：`永` 用末段算出 dx=3、dy=73（全超），用倒数第2段 dx=52、dy=52（命中）。
+
+2. **左边界 `j` 必须排除末段，且取最短者**。
+   否则被回折段覆盖 → `cap` 变负 → 补偿完全失效。
+   > 实测：`永` 的 j 被循环末尾覆盖成 seg5，cap = (329-392)×0.85 = -53.5。
+
+3. **容差按横线高度，不按 SW**。
+   `0.25×SW` 在 250 档（SW=30）只有 7.5，过严。
+   用 `max(0.25×SW, 0.40×横线高)`。
+
+### 3.2 修改动作
+4. **不要移动主边终点** —— 会拉细笔画。
+   > 实测：`了` 字移动主边终点后竖弯钩明显变细。只做横线对齐 + 落点下移。
+5. **不要对短边做「根部收窄」** —— 试过 25%/30%/35%/60%/85%，全部不如 ratio=0。
+6. **删除段必须真删，不能退化成零长度** —— varLib 会静默丢弃零长度段，导致三档段数不一致。
+
+### 3.2b 模块间依赖（m_taper 必须在 termface 之后跑）
+7b. **`m_taper` 的判据要求「前段 C + 本段 L」，但 SHS 原始撇捺末端是 C 段**
+    → 在 T6 时期 taper 几乎命中不到；必须先跑 `m_termface`（C→L）才有目标。
+    → 2026-11-15 在 MOD8 上重跑 taper，命中 17,405 字 / 56,839 段（T6 时期几乎为 0）。
+
+7c. **`m_taper` 的索引必须是完整 `(ci, k, j)` 三元组，且只能 400 档检测**
+    `find()` 返回 `(ci, k, j)`：ci=轮廓，k=端面段，j=相邻曲线段；
+    `apply()` 三者都要用（j 的控制点要向中点拉 C2PULL）。
+    > 实测错误: 只存 [ci,k] 丢 j → apply 静默无效，只应用 56 字。
+    > 实测错误: 三档各自 `T.find(C, SW[tag])` → 900 档 SW=150 使段长判据变成 [82.5,217.5]，
+    >           漏掉 5,582 字，三档实际改动 17380/17405/11823 严重不一致。
+
+7d. **`m_taper` 不可重复运行 —— 判据不收敛**
+    判据用段长 `[0.55,1.45]×SW`；而 NARROW=0.95 只让端点各向中点收 5%，
+    段长 84.0 → 79.8，仍在判据范围内 → 每次运行都会继续削细 1.5~2 单位。
+    > 实测: 连续 apply 两次，第二次仍命中同样位置（人 1处 / 入 3处 / 八 2处）。
+    > 约束: `m_taper` 在一条基座链上**只能跑一次**。若需重跑，必须从该模块之前的基座重新开始。
+
+### 3.3 工作方法
+7. **基座必须是原始状态**。用已改过的文件当基座推导判据，会让判据只在「已修」状态成立。
+   > 实测：拿 T7（`永` 已改）当基座，判据 `|E.x − bar.right| ≤ 0.15SW` 对原版 `永`（dx=52）完全不成立。
+8. **截图窗口必须先确认覆盖目标区域**。凭猜裁剪 → 看到空白或错误局部 → 误判。
+   先 `--grid` 渲染整字定位，再裁剪。
+9. **缩略图不可用于判断**。必须放大到 ≥600px 宽并看结构化数据。
+10. **不要凭「看起来像」下结论**。先用 `glyphview.py` 精确渲染 + 数值测量。
+
+### 3.4 用户沟通
+11. **「看不出差异」时先检查自己的渲染/裁剪是否正确**，而不是断言无差异。
+12. **不确定就问**。猜错方向的代价远大于问一句。
+    > 本会话曾连续 5 轮改错边（S 右移 / Pend 下移 / 端面收缩 / 删台阶 / 闭合缺口），全部因为没确认。
+
+---
+
+## 4. 字体机制事实
+
+- SHS 2.005：CFF2，upm 1000，**65,535 字形（硬上限）**，cmap 44,853，CJK 20,992
+- CFF 段格式：`['L',(x,y)]` / `['C',c1,c2,end]` / `['Q',ctrl,end]` / `['QM',[pts...]]`
+- 写入：`csT[gn] = make_charstring(NEW, old.private, old.globalSubrs)`
+- 保存前必须：`post.formatType=3.0`、`post.glyphOrder=None`
+- OPPO 用二次曲线（Q/QM），SHS 用三次（C）—— **不可直接比较坐标**
+- 可变字体构建约 **312 秒**，RSS ~1.7GB
+
+---
+
+## 5. 长任务与部署
+
+```bash
+# 长任务（VF 构建、全库扫描）
+setsid nohup <cmd> > /tmp/x.log 2>&1 < /dev/null &
+# 轮询间隔 250~320 秒
+```
+
+```bash
+# VF 构建
+python /tmp/bvf_mod.py     # designspace -> /workspace/static/wdsans/WDesignSans-VF.otf
+# 更新预览子集
+python probe/make_subset.py <VF> /workspace/static/wdsans/wd-preview.woff2
+# 验证
+curl -s -o /dev/null -w "%{http_code} %{size_download}\n" http://127.0.0.1:8020/wdsans/WDesignSans-VF.otf
+```
+
+---
+
+## 6. 文件同步
+
+本地开发 → `ssh_upload` 上传。**不要用 base64 管道写文件**（会静默失败，文件不更新）。
+
+```js
+await tools.ssh_upload({ alias: 'w-box',
+  localPath: 'D:\\Project\\WDesign\\wdsans-modules\\m_x.py',
+  remotePath: '/workspace/wdsans2/modules/m_x.py' });
+```
+
+---
+
+## 7. 未解决问题（待攻）
+
+| 类 | 代表字 | 状态 |
 |---|---|---|
-| Rust 构建产物 | `target/` | `/data/build-cache/<项目名>-target/` |
-| Node 依赖 | `node_modules/` | `/data/build-cache/<项目名>-node_modules/` |
-| 打包输出 | `dist/`、`build/`、`out/` | `/data/build-cache/<项目名>-dist/` |
-| 容器镜像缓存 | — | `/data/cache/` |
-| 临时同步 / 中间数据 | — | `/data/scratch/` |
-| 大数据集、参考源码 | — | `/data/meuos/reference/` 等既有目录 |
-
-**统一放在 `/data/build-cache/` 下，按项目名建子目录。**
-
----
-
-## 3. 禁止放到 /data 的内容
-
-**绝对不要把以下内容指向 `/data`：**
-
-| 内容 | 原因 |
-|---|---|
-| 任何 git 工作区 / 源码 | 掉盘会导致代码丢失、git 操作失败 |
-| `.nvm/versions/`（node 本体） | `box-webroot`、`easyrouter` 等**生产服务**运行时依赖它 |
-| `.rustup/toolchains/`（编译器） | 掉盘后所有 Rust 构建直接失败 |
-| `.cargo/bin/` | 在 PATH 中，是 rustup 代理入口，移走会断链 |
-| `/workspace/static/` | 公网 web root（`box.w-run.net`），服务依赖 |
-| 任何 systemd 服务 ExecStart/WorkingDirectory 指向的路径 | 掉盘即服务中断 |
-
-> 判断口径：**路径是否出现在 `/etc/systemd/system/*.service` 里，或是否在 `$PATH` 中。** 是则留 SSD。
-
----
-
-## 4. 如何正确重定向构建产物
-
-### ✅ 推荐：`CARGO_TARGET_DIR` 或项目内 `.cargo/config.toml`
-
-```bash
-# 方式 A：环境变量（临时/脚本内）
-CARGO_TARGET_DIR=/data/build-cache/<项目名>-target cargo build
-
-# 方式 B：项目内持久化（推荐，写进项目后 agent 后续自动生效）
-mkdir -p .cargo
-printf '[build]\ntarget-dir = "/data/build-cache/<项目名>-target"\n' > .cargo/config.toml
-```
-
-### ❌ 不要用软链接指 target
-
-**实测结论（本机验证）：`cargo clean` 会删掉 `target` 软链接本身**，之后构建**静默回落到本地盘**，占满根分区且无任何报错：
-
-```
-$ cargo clean
-$ ls -ld target      # 软链接已消失
-$ cargo build        # 产物静默写回本地盘 → 根分区被占满
-```
-
-`CARGO_TARGET_DIR` 和 `.cargo/config.toml` 不存在此问题：`clean` 后路径依然有效，产物始终落在指定位置。
-
-### Node 项目
-
-`pnpm` / `npm` **没有**官方的 `node_modules` 位置重定向。推荐做法：把 **store**（真正的包实体、最占空间的部分）放到 `/data`，`node_modules` 本体留在项目内用硬链接复用——既省空间，又不影响工具链解析。
-
-**可靠方式（本机验证）：在项目根目录写 `.npmrc`**
-
-```bash
-printf 'store-dir=/data/cache/pnpm-store\n' >> .npmrc
-pnpm config get store-dir     # 应输出 /data/cache/pnpm-store
-```
-
-> ⚠️ 不要用 `pnpm config set store-dir ... --global`：本机全局 bin 目录 `/root/.local/share/pnpm/bin` 不在 `PATH` 中，该命令会直接报错。
-
----
-
-## 5. 空间占用检查（操作前必做）
-
-创建大数据目录前，先确认目标盘余量：
-
-```bash
-df -h / /data
-du -sh --exclude=target --exclude=node_modules /workspace/*   # 真实代码体积
-```
-
-**当前水位参考**：`/` 26G/69G（38%），`/data` 25G/458G（6%）。
-
-若发现 `/` 使用率超过 **70%**，应先排查高占用来源：
-
-```bash
-du -x -sh /* 2>/dev/null | sort -rh | head -10
-du -sh /tmp/* 2>/dev/null | sort -rh | head -10
-```
-
----
-
-## 6. 清理前的强制检查
-
-**删除任何目录前，必须按顺序确认：**
-
-1. **是否已被 git 记录？**
-   ```bash
-   git -C <path> status --porcelain        # 有输出 = 有未提交改动，禁止直接删
-   git -C <path> log --oneline @{u}..      # 有输出 = 有未推送提交
-   ```
-
-2. **是否是无远端的本地仓？**
-   ```bash
-   git -C <path> remote get-url origin     # 报错 = 无远端，删了无法恢复
-   ```
-
-3. **是否为可重新获取的第三方内容？**
-   第三方源码（有 `.git` 且有远端）、官方 tarball、包缓存 → 可删，记住来源即可。
-
-4. **删除超过 1G 的内容，先归档再删：**
-   ```bash
-   tar czf /data/archive/<名称>-$(date +%Y%m%d).tar.gz -C <父目录> <目录>
-   gzip -t /data/archive/<名称>-*.tar.gz && echo OK   # 校验通过再删
-   ```
-
----
-
-## 7. 本机已知的历史坑（避免重复踩）
-
-| 坑 | 教训 |
-|---|---|
-| U 盘做数据盘 | 之前 `/data` 是 aigo U330，**会掉盘**，曾专门写过 udev + timer 自动重挂脚本。现已换内置 SATA 盘，相关机制已停用并归档在 `/root/archive-udisk-automount/` |
-| 软链接指 target | `cargo clean` 会删软链接 → 静默回落本地盘（见 §4） |
-| 孤儿 git 工作树 | `/data/meuos/worktrees` 曾有 128 个目录，`.git` 指向的目标早已不存在，白占 12G。已归档清理。**用 `git worktree list` 核实，不要凭目录名猜** |
-| 打包时误含密钥 | 曾把 `/root/.ssh` 下 7 个私钥打进备份包上传云盘。**打包必须显式排除 `id_*`、`ssh_*`、`*.pem`、`*.key`、`credentials*`** |
-| 备份放在同一块盘 | 归档文件不要只留在 `/data`，那块盘坏了会一起丢。重要归档应上传云盘（`aliyunpan upload <file> /w-box`） |
-
----
-
-## 8. 服务清单（改动路径前必读）
-
-以下服务**开机自启且正在运行**，路径硬编码在 unit 文件里，**不要移动它们指向的目录**：
-
-| 服务 | 路径 |
-|---|---|
-| `box-webroot` | `/workspace/static`（公网 web root） |
-| `tui-dash` | `/workspace/tui-dash` |
-| `esimd` / `smsd` | `/workspace/sms/esimd` |
-| `ml307-atport` / `ml307r-netlock` | `/workspace/sms/bin` |
-
-改动前先查：
-
-```bash
-grep -rl "/workspace\|/data" /etc/systemd/system/*.service
-systemctl is-enabled <服务名>    # 确认是否自启
-```
-
-改动后必须验证：
-
-```bash
-systemctl --failed --no-legend    # 应为空
-```
-
----
-
-## 9. 备份出口
-
-云盘已登录（13.77TB，已用 3.39TB），CLI 为 `aliyunpan`：
-
-```bash
-aliyunpan ls /w-box                        # 查看已有备份
-aliyunpan upload <本地文件> /w-box          # 上传
-```
-
-**大文件上传务必脱离 SSH 会话**，否则连接中断会导致上传失败：
-
-```bash
-setsid nohup aliyunpan upload <文件> /w-box > /tmp/up.log 2>&1 < /dev/null &
-```
-
----
-
-## 10. 磁盘健康检查
-
-```bash
-smartctl -d sat -H -A /dev/sdb      # 机械盘健康
-smartctl -d sat -A /dev/sda         # 系统 SSD（SSD_Life_Left、Reallocated_Event_Count）
-```
-
-**关注指标**：`Reallocated_Sector_Ct`、`Current_Pending_Sector`、`Offline_Uncorrectable`、`UDMA_CRC_Error_Count` 应恒为 0；任一非 0 或增长需警惕。
-
-⚠️ `/dev/sdb` 的 SMART `Power_On_Hours` 曾被重置（与 `Head_Flying_Hours`、`Total_LBAs_Read` 数值矛盾），**不能据此判断盘的新旧**，只能靠故障计数判断健康度。
-
----
-
-## 附：快速决策表
-
-新产生一个目录/文件时，问自己：
-
-```
-是代码或 git 仓库吗？          → 是 → /（SSD）
-是服务运行依赖的路径吗？        → 是 → /（SSD）
-能靠一条命令重新生成吗？        → 是 → /data（HDD）
-体积 > 500MB 吗？              → 是 → /data（HDD）
-以上都不确定                  → 留 /（SSD），并记录到此处
-```
+| 横折出头（厶/廴 结构） | 丝 延 各 | 判据未定 |
+| 永字左下 7 形拐角 | 永 | 待分析 |
+| 纟旁拐角 | 丝 红 | 待分析 |
+| 建字左侧部首 | 建 | 待分析 |
+| 多字拐角 | 多 | 待分析 |
