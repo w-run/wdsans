@@ -19,7 +19,8 @@ masters_MOD6  MOD5 + shortl 3,369字                 已部署
 masters_MOD7  MOD6 + zerocont 45字                  已部署
 masters_MOD8  MOD7 + termface_v2 6,583字            已部署
 masters_MOD9c MOD8 + taper_v2 17,405字               已部署
-masters_MOD10 MOD9c + residue 清理 186字             构建中 ← 当前链尾
+masters_MOD10 MOD9c + residue 清理 186字             已部署
+masters_MOD12 MOD10 + latinmat 371字形               构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -95,6 +96,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_zerocont.py` | 删除零面积退化轮廓 | 45 处 | 已并入 MOD7 |
 | `m_termface_v2` | 端面拉直阈值放宽 0.10→0.16 | 6,583 字 / 10,155 段 | 已并入 MOD8 |
 | `m_taper_v2` | 撇捺末端收窄（termface 后重跑） | 17,405 字 / 56,839 段 | 已并入 MOD9c |
+| `m_latinmat` | 拉丁横向缩放匹配 CJK 笔干 | 371 字形 | 已并入 MOD12 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -197,6 +199,27 @@ MOD10 依次应用 barple → stepalign → bardiag，得到 186 字 218 步。
 **正解**: varLib 构建 VF 时本来就会静默丢弃零长度段，
 且当前 MOD10 能成功构建且三档一致 —— 说明 varLib 已正确处理。
 **结论: 零长度段不需人工清理。**
+
+### m_latinmat 判据（拉丁笔干匹配 CJK）
+```
+位图实测（200px 字号, 多字号交叉验证）:
+              字号100  150    200    300    400    平均
+  我们(MOD10)  1.241  1.191  1.187  1.209  1.207  1.201
+  OPPO Sans    1.143  1.135  1.139  1.136  1.135  1.136
+  -> 我们的拉丁竖干相对 CJK 过粗 5.7%
+
+修复: 拉丁字形所有轮廓点沿 x 绕字形中心缩放 k=0.943
+      advance width 不变；缩放不改段数与操作符 -> 三档自动一致
+```
+**测量方法**：PIL 渲染 200px 位图，取字形高度 30%~70% 区间每行墨段宽度众数（笔干），
+CJK 取样 `口日田目`，拉丁取样 `HnIEL`。多字号交叉验证确保稳定。
+
+**为什么用横向缩放而非换字重**：Mona Sans 是 VF，换字重需重建整条 10 阶段链；
+横向缩放只改最终 masters，4~6% 缩放在视觉上几乎不可察。
+
+实测效果（k=0.943）: 比例 1.201 -> 1.137（OPPO 1.136）。
+覆盖范围: Basic Latin + Latin-1 + Latin Ext-A/B + IPA + Latin Ext Additional
+          + General Punctuation + Currency Symbols（371 字形）
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
