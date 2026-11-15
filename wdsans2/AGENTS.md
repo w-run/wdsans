@@ -24,7 +24,8 @@ masters_MOD12 MOD10 + latinmat 371字形               已部署
 masters_MOD13 MOD12 + latinext 95字符               已部署
 masters_MOD14 MOD13 + latinext2 48字符              已部署
 masters_MOD15 MOD14 + kerning 77,294对               已部署
-masters_MOD16 MOD15 + mark/mkmk 重建                 构建中 ← 当前链尾
+masters_MOD16 MOD15 + mark/mkmk 重建                 已部署
+masters_MOD17 MOD16 + metrics/fsSelection 修正         构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -104,6 +105,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_latinext` | 从 Mona 补入 Latin Extended-A | 95 字符 | 已并入 MOD13 |
 | `m_kerning` | 从 Mona 移植拉丁 kerning | 77,294 对 | 已并入 MOD15 |
 | `m_markpos` | 重建 mark + mkmk 定位表 | 22 符号 / 442 基字母 | 已并入 MOD16 |
+| `m_metrics` | 修正 fsSelection 标志 | 3 档 | 已并入 MOD17 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -392,6 +394,30 @@ HOS 与我们几乎完全一致（宽+9 高+1 中心y-3）。
 
 **GSUB 特性完整性**: ccmp(271 subtables) / liga / calt / locl / aalt / hist
                         / fwid / hwid / pwid / ljmo / tjmo / vjmo / vert / vrt2 全部存在。
+
+### m_metrics 判据（fsSelection 与垂直度量）
+```
+对比四个字体的垂直度量:
+字体    fsSelection  typo          win
+SHS     0x0040       [ 880,-120]   [1160,288]
+OPPO    0x0040       [ 850,-150]   [1048,271]
+HOS     0x0140       [1056,-271]   [1056,271]   (+ WWS)
+我们    0x0000  <-    [ 880,-120]   [1160,288]
+```
+
+**缺陷 1: fsSelection = 0x0000，缺 REGULAR(bit6=0x40)**
+三个参考字体都设了 0x0040。缺此标志可能导致某些应用无法识别常规字重。
+-> 已修正为 0x0040（三档统一）。
+
+**缺陷 2（未修）: usWin 未覆盖 4 个竖排功能字形**
+```
+〱〲  y[-549,1323]   usWin=[-288,1160]   超界 261/163
+〪〭  y[-304,-118]                      超界 16
+SHS 原版同样超界 -> 上游缺陷
+```
+**为什么不修**: 提高 usWin 到 [549,1325] 会让行高增加 29.4%，代价过大。
+这 4 个字形主要用于竖排场景，横排裁切影响很小。
+三个参考字体也都没解决这个问题（SHS/OPPO 用 win 度量、HOS 用 typo 但 typo 也未覆盖）。
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
