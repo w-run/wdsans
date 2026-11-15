@@ -23,7 +23,8 @@ masters_MOD10 MOD9c + residue 清理 186字             已部署
 masters_MOD12 MOD10 + latinmat 371字形               已部署
 masters_MOD13 MOD12 + latinext 95字符               已部署
 masters_MOD14 MOD13 + latinext2 48字符              已部署
-masters_MOD15 MOD14 + kerning 77,294对               构建中 ← 当前链尾
+masters_MOD15 MOD14 + kerning 77,294对               已部署
+masters_MOD16 MOD15 + mark/mkmk 重建                 构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -102,6 +103,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_latinmat` | 拉丁横向缩放匹配 CJK 笔干 | 371 字形 | 已并入 MOD12 |
 | `m_latinext` | 从 Mona 补入 Latin Extended-A | 95 字符 | 已并入 MOD13 |
 | `m_kerning` | 从 Mona 移植拉丁 kerning | 77,294 对 | 已并入 MOD15 |
+| `m_markpos` | 重建 mark + mkmk 定位表 | 22 符号 / 442 基字母 | 已并入 MOD16 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -311,6 +313,35 @@ Mona 的 kern 值基于其自身字宽；我们经 `m_latinmat` 缩放到 0.943 
 - 返回的是 **subtables list**，需自行包 `ot.Lookup()` 并设 LookupType=2
 > 连续踩三次: 传 list → 'list has no items'; 传 dict 值 → 'dict has no getFormat';
 >              buildValue(xAdvance=v) → 'unexpected keyword argument'
+
+### m_markpos 判据（重建 mark + mkmk）
+```
+问题: 我们 mark feature 只覆盖 6 个组合符号（共 22 个），mkmk 完全缺失
+      → 多符号横向并排而非垂直叠加
+
+实测（80px 位图）:
+  组合                改前宽度  修复后  Mona
+  a+acute+tilde         69      32     34
+  o+diaeresis+macron    55      38     37
+  e+circ+acute          39      39     35
+
+方案（不依赖 Mona — 它的 mkmk 只覆盖 23+2 个符号，太窄）:
+  1. 组合符号锚点 = 底部包围盒中心 (x_mid, y_min)
+  2. 基字母锚点   = 顶部包围盒中心 (x_mid, y_max)
+  3. 生成 MarkBasePos (mark, type 4) + MarkMarkPos (mkmk, type 6)
+  覆盖: 22 组合符号 × 442 基字母
+```
+
+**关键坑: Coverage 必须按 glyph id 排序，不能按字形名**
+```python
+# 错误: sorted(marks.keys())        -> 按字符串排序
+# 正确: sorted(marks.keys(), key=lambda g: gidmap.get(g, 999999))
+```
+> 实测: 按字形名排序时，三档的 Coverage 顺序不同 →
+>       VF 构建报 `InconsistentGlyphOrder: GPOS.table.LookupList.Lookup[12][0]`
+>       改为按 glyph id 排序后正常。
+> 教训: 任何新建的 Coverage/ClassDef 都必须按 glyph id 排序，
+>       因为三档的字形名顺序可能不同，但 glyph id 顺序在三档是一致的。
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
