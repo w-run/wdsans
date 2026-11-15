@@ -25,7 +25,8 @@ masters_MOD13 MOD12 + latinext 95字符               已部署
 masters_MOD14 MOD13 + latinext2 48字符              已部署
 masters_MOD15 MOD14 + kerning 77,294对               已部署
 masters_MOD16 MOD15 + mark/mkmk 重建                 已部署
-masters_MOD17 MOD16 + metrics/fsSelection 修正         构建中 ← 当前链尾
+masters_MOD17 MOD16 + metrics/fsSelection 修正         已部署
+masters_MOD18 MOD17 + name 表修正                     构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -106,6 +107,7 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_kerning` | 从 Mona 移植拉丁 kerning | 77,294 对 | 已并入 MOD15 |
 | `m_markpos` | 重建 mark + mkmk 定位表 | 22 符号 / 442 基字母 | 已并入 MOD16 |
 | `m_metrics` | 修正 fsSelection 标志 | 3 档 | 已并入 MOD17 |
+| `m_nametable` | 修正 name 表：中文名/版权/OFL 声明/VF 元数据 | 3 档 | 已并入 MOD18 |
 
 ### m_termface 判据（端面改直）
 ```
@@ -418,6 +420,38 @@ SHS 原版同样超界 -> 上游缺陷
 **为什么不修**: 提高 usWin 到 [549,1325] 会让行高增加 29.4%，代价过大。
 这 4 个字形主要用于竖排场景，横排裁切影响很小。
 三个参考字体也都没解决这个问题（SHS/OPPO 用 win 度量、HOS 用 typo 但 typo 也未覆盖）。
+
+### m_nametable 判据（name 表合规与本地化）
+```
+发现的问题:
+1) 无中文名称 -> 中文系统显示英文，不符合中文字体定位
+2) nameID 0 版权只写 "© 2014-2025 Adobe"，缺 WDesign 修改声明
+   OFL 1.1 要求衍生作品标明已修改
+3) nameID 8 Manufacturer 仍是 "Adobe"
+4) nameID 11 Vendor URL 仍是 adobe.com/type/
+5) nameID 25 (Variations PSNamePrefix) 缺失 — VF 标准要求
+6) nameID 5 版本号仍是上游 "Version 2.005"
+```
+
+**修复后的 name 表**:
+```
+Copyright   : Copyright 2026 WDesign. Derived from Noto Sans CJK (...) and
+              Mona Sans (...). This derivative uses neither reserved name
+              and is licensed under SIL Open Font License 1.1.
+Family      : WDesign Sans (en-US + zh-CN)
+FullName    : WDesign Sans (en-US + zh-CN)
+Version     : Version 1.000
+Trademark   : WDesign Sans is a modified version of Noto Sans CJK and Mona Sans
+Manufacturer: WDesign
+VendorURL   : https://github.com/w-run/wdsans
+VFPrefix    : WDesignSans (nameID 25)
+```
+
+**OFL 合规要点（重要）**:
+- SHS 的 Reserved Font Name 是 **'Source'**，Mona 的是 **'Mona'**
+- 我们用的是 'WDesign Sans'，未占用这两个保留名 -> 合规
+- OFL 要求衍生作品**标明已修改** -> nameID 0/7 现在都有明确声明
+- name 表是唯一随字体文件走的版权信息，必须写对
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
