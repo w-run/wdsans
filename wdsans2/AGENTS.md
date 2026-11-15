@@ -363,6 +363,36 @@ HOS 与我们几乎完全一致（宽+9 高+1 中心y-3）。
 
 **字面率异常检查**: 20,992 字中，宽或高 >1000 的 0 个，宽高均 <420 的 0 个。
 
+### 拉丁完整性验证（2026-11-15）
+```
+1) 新注入 Latin Ext 纵向对齐
+   A: 我们 y[0,729]  Mona y[0,729]   dy=+0/+0   ✓
+   （Ą/Ć/Ł/ő/Š 等有变音符号的，y 范围自然更大，属正常）
+
+2) Ẁ 宽度 953 不是异常
+   Mona@400:  W adv=994 ink x[43,953]
+               Ẁ adv=994 ink x[43,953]   ← 与 W 完全一致
+   之前误判是因为拿 Ẁ(953) 和 A(649) 比。
+
+3) advance 混用 SHS/Mona 但整体协调
+   78 个字符换成 Mona，17 个保留 SHS（i, ", ` 等）
+   实测文本墨宽:
+     文本              我们    SHS     Mona
+     il                24     28      18
+     ll                22     27      16
+     Hamburgefonstiv  501    509     494
+     minimum          269    280     260
+     Illinois         183    190     170
+   -> 我们与 SHS 偏差 3~8，Mona 因笔画细而明显更窄。
+   -> m_latinmat 的 0.943 缩放产生了正确效果。
+```
+
+**注意**: 不要盲目把 advance 也乘 0.943 —— 实测会让与 Mona 的偏差从 8.1 恶化到 39.4。
+因为我们的 advance 本就基于 SHS 体系，缩放轮廓已足够。
+
+**GSUB 特性完整性**: ccmp(271 subtables) / liga / calt / locl / aalt / hist
+                        / fwid / hwid / pwid / ljmo / tjmo / vjmo / vert / vrt2 全部存在。
+
 ### m_barple 参数（用户确认 RATIO=0）
 ```
 1. bar 右端 → xR                    横线右对齐到撇右界
