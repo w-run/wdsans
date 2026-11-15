@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WDesign Sans · 可变字体预览</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --w:400;
+  --bg:#f5f5f7; --card:#fff; --ink:#111; --sub:#6b7280; --line:#e5e5ea;
+  --blue:#0071e3; --green:#1a7f45; --chip:#f0f0f5;
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:clamp(14px,2.6vw,32px);padding-bottom:clamp(30px,6vw,64px);
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ===== 字体 ===== */
+@font-face{font-family:'WDesign';src:url('wd-preview.woff2') format('woff2');
+  font-weight:250 900;font-style:normal;font-display:block}
+@font-face{font-family:'CmpOPPO';src:url('oppo.woff2') format('woff2');
+  font-weight:250 900;font-style:normal;font-display:swap}
+@font-face{font-family:'CmpSHS';src:url('shs-master.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+
+/* 关键：用 font-variation-settings 驱动，变量 --w 统一控制 */
+.wd,.cmp-oppo,.cmp-shs{
+  font-variation-settings:'wght' var(--w,400);
+  font-weight:var(--w,400);
+}
+.wd{font-family:'WDesign'}
+.cmp-oppo{font-family:'CmpOPPO'}
+.cmp-shs{font-family:'CmpSHS';font-variation-settings:normal}
+
+/* ===== 布局 ===== */
+h1{font-size:clamp(18px,3.4vw,24px);margin:0 0 6px;font-weight:600;letter-spacing:-.014em}
+.sub{font-size:13px;color:var(--sub);margin:0 0 20px;line-height:1.7}
+.sub a{color:var(--blue);text-decoration:none}
+.sub a:hover{text-decoration:underline}
+.panel{
+  background:var(--card);border-radius:14px;padding:16px 18px;margin-bottom:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.04);
+}
+.panel h2{
+  font-size:11.5px;margin:0 0 13px;color:var(--sub);font-weight:500;
+  text-transform:uppercase;letter-spacing:.05em;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+}
+.tag{font-size:10px;padding:2px 8px;border-radius:5px;background:var(--chip);
+  color:#515154;font-weight:500;text-transform:none;letter-spacing:0;white-space:nowrap}
+.tag.g{background:#e8f7ee;color:var(--green)}
+.tag.b{background:#e8f0fe;color:#1a56db}
+
+/* ===== 输入 ===== */
+input[type=text]{
+  width:100%;padding:12px 15px;font-size:16px;line-height:1.4;
+  border:1px solid #d2d2d7;border-radius:10px;outline:0;transition:.15s;
+  font-family:inherit;background:#fff;
+}
+input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+
+/* ===== 字重控制 ===== */
+.wctl{margin-top:16px;display:flex;flex-direction:column;gap:11px}
+.wrow-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.wlabel{font-size:12.5px;color:#515154;font-weight:500}
+.wval{font-size:22px;font-weight:600;color:var(--blue);font-variant-numeric:tabular-nums;
+  line-height:1;letter-spacing:-.01em}
+.wval small{font-size:12px;color:var(--sub);font-weight:500;margin-left:6px;letter-spacing:0}
+
+/* 滑块：加大触控区，显著进度条 */
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:30px;
+  background:transparent;cursor:pointer;margin:0;touch-action:pan-y;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:5px;border-radius:999px;
+  background:linear-gradient(90deg,var(--blue) var(--fill,0%),#d8d8de var(--fill,0%));
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;
+  background:#fff;border:.5px solid rgba(0,0,0,.12);
+  box-shadow:0 1px 4px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.06);
+  margin-top:-8.5px;transition:transform .12s;
+}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]::-moz-range-track{height:5px;border-radius:999px;background:#d8d8de}
+input[type=range]::-moz-range-progress{height:5px;border-radius:999px;background:var(--blue)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border:0;border-radius:50%;
+  background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:999px}
+
+/* 命名实例快选 */
+.presets{display:flex;gap:7px;flex-wrap:wrap}
+.presets button{
+  font:inherit;font-size:11.5px;padding:6px 11px;border-radius:8px;cursor:pointer;
+  border:1px solid #dcdce1;background:#fff;color:#3c3c43;
+  transition:.14s;white-space:nowrap;
+}
+.presets button:hover{background:#f5f5f7;border-color:#c7c7cc}
+.presets button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+
+/* ===== 主预览 ===== */
+.stage{
+  margin-top:16px;padding:22px 18px;border-radius:11px;background:#fafafa;
+  min-height:140px;display:flex;align-items:center;
+}
+.stage p{
+  margin:0;font-size:clamp(28px,6vw,52px);line-height:1.32;
+  word-break:break-word;letter-spacing:-.01em;
+}
+.stage p:empty::before{content:'在上方输入文字…';color:#c0c0c8;font-size:20px}
+
+/* ===== 字重阶梯 ===== */
+.steps{display:flex;flex-direction:column}
+.step{display:flex;align-items:baseline;gap:14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step .k{font-size:11px;color:var(--sub);width:76px;flex:none;
+  font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.step .k b{display:block;font-weight:600;color:#3c3c43;font-size:12px}
+.step .t{font-size:clamp(19px,3.6vw,26px);line-height:1.4;flex:1;word-break:break-word;
+  font-variation-settings:'wght' var(--w)}
+
+/* ===== 三方对比 ===== */
+.cmp{display:grid;gap:0}
+.cmp-row{display:grid;grid-template-columns:82px 1fr;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+.cmp-row:last-child{border-bottom:0}
+.cmp-row .nm{font-size:11px;color:var(--sub);line-height:1.4}
+.cmp-row .nm b{display:block;font-weight:600;color:#3c3c43;font-size:12px}
+.cmp-row .g{font-size:clamp(24px,4.6vw,34px);line-height:1.35;word-break:break-word;
+  font-variation-settings:'wght' var(--w)}
+
+/* ===== 特性演示 ===== */
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:9px}
+.feat .item{background:#fafafa;border-radius:9px;padding:10px 12px}
+.feat .n{font-size:10.5px;color:var(--sub);margin-bottom:6px;letter-spacing:.02em}
+.feat .n code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10px;background:#ececf1;padding:1px 5px;border-radius:4px;color:#3c3c43}
+.feat .d{font-size:19px;line-height:1.4;word-break:break-word;
+  font-variation-settings:'wght' 400}
+
+/* ===== 规格 ===== */
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}
+.spec div{background:#fafafa;border-radius:9px;padding:10px 12px}
+.spec .k2{font-size:10.5px;color:var(--sub);margin-bottom:4px;
+  text-transform:uppercase;letter-spacing:.04em}
+.spec .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+
+.dl{display:inline-flex;align-items:center;gap:7px;background:var(--blue);color:#fff;
+  padding:10px 18px;border-radius:9px;text-decoration:none;font-size:13.5px;
+  font-weight:500;transition:.15s}
+.dl:hover{opacity:.88}
+.note{font-size:11.5px;color:var(--sub);margin-top:11px;line-height:1.7}
+
+@media (max-width:520px){
+  .cmp-row{grid-template-columns:60px 1fr;gap:10px}
+  .step{gap:10px}
+  .step .k{width:60px}
+  .presets button{padding:7px 10px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<h1>WDesign Sans</h1>
+<p class="sub">
+  基于 Source Han Sans 构建的 OPPO 风格中文可变字体 · 65,535 字形 · wght 250–900<br>
+  <a href="WDesignSans-VF.otf" download>下载完整 OTF（41 MB）</a> ·
+  本页使用 3,886 字 Web 子集（4.1 MB）实时渲染
+</p>
+
+<!-- 主预览 -->
+<div class="panel">
+  <input type="text" id="inp" value="永国字体设计 WDesign 2026" spellcheck="false" autocomplete="off">
+
+  <div class="wctl">
+    <div class="wrow-top">
+      <span class="wlabel">字重</span>
+      <span class="wval"><span id="wv">400</span><small id="wn">Regular</small></span>
+    </div>
+    <input type="range" id="wg" min="250" max="900" step="5" value="400" aria-label="字重">
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="stage">
+    <p class="wd" id="pv">永国字体设计 WDesign 2026</p>
+  </div>
+</div>
+
+<!-- 字重阶梯 -->
+<div class="panel">
+  <h2>字重阶梯 <span class="tag b">9 档命名实例</span></h2>
+  <div class="steps" id="steps"></div>
+</div>
+
+<!-- 三方对比 -->
+<div class="panel">
+  <h2>同字重对比 <span class="tag">跟随上方字重</span></h2>
+  <div class="cmp">
+    <div class="cmp-row">
+      <div class="nm"><b>WDesign</b>本字体</div>
+      <div class="g wd" id="c-ours">永国字体设计 边这 Transform</div>
+    </div>
+    <div class="cmp-row">
+      <div class="nm"><b>OPPO</b>Sans</div>
+      <div class="g cmp-oppo" id="c-oppo">永国字体设计 边这 Transform</div>
+    </div>
+    <div class="cmp-row">
+      <div class="nm"><b>思源</b>Source Han</div>
+      <div class="g cmp-shs" id="c-shs">永国字体设计 边这 Transform</div>
+    </div>
+  </div>
+  <p class="note">
+    OPPO Sans 与思源黑体仅用于视觉比对，未采样任何字形轮廓。思源仅有 400 一档。
+  </p>
+</div>
+
+<!-- 排版特性 -->
+<div class="panel">
+  <h2>OpenType 特性 <span class="tag g">23 种</span></h2>
+  <div class="feat">
+    <div class="item"><div class="n">时间冒号 <code>calt</code></div><div class="d wd">12:34 &nbsp; 08:05</div></div>
+    <div class="item"><div class="n">比例数字 <code>pnum</code></div><div class="d wd" style="font-feature-settings:'pnum' 1">0123456789</div></div>
+    <div class="item"><div class="n">等宽数字 <code>tnum</code> 默认</div><div class="d wd">0123456789</div></div>
+    <div class="item"><div class="n">分数 <code>frac</code></div><div class="d wd" style="font-feature-settings:'frac' 1">1/2 3/4 12/34</div></div>
+    <div class="item"><div class="n">上标 <code>sups</code></div><div class="d wd" style="font-feature-settings:'sups' 1">0123456789</div></div>
+    <div class="item"><div class="n">下标 <code>subs</code></div><div class="d wd" style="font-feature-settings:'subs' 1">0123456789</div></div>
+  </div>
+  <p class="note">以上特性由本字体自身实现，非浏览器合成。</p>
+</div>
+
+<!-- 正文排版 -->
+<div class="panel">
+  <h2>正文排版 <span class="tag g">实际使用</span></h2>
+  <p class="wd" style="font-size:16px;line-height:1.75;margin:0 0 12px">
+    WDesign Sans 是一款基于思源黑体构建的中文可变字体，目标是在保留完整字形覆盖的前提下，逼近 OPPO Sans 的笔画风格。
+  </p>
+  <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0 0 12px">
+    核心技术包括：笔画粗细均匀化、笔末平切、台阶拉平、部首垂直居中，以及撇捺曲率压平。全库 20,992 个 CJK 字形与 45,012 个字符位经过完整性审计。
+  </p>
+  <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0">
+    The quick brown fox jumps over the lazy dog. 0123456789 —
+    中文标点：，。、；：？！“”‘’（）【】《》——……
+  </p>
+</div>
+
+<!-- 规格 -->
+<div class="panel">
+  <h2>字体规格</h2>
+  <div class="spec">
+    <div><div class="k2">字形总数</div><div class="v">65,535</div></div>
+    <div><div class="k2">cmap 字符位</div><div class="v">45,012</div></div>
+    <div><div class="k2">CJK 汉字</div><div class="v">20,992</div></div>
+    <div><div class="k2">字重轴</div><div class="v">250 – 900</div></div>
+    <div><div class="k2">命名实例</div><div class="v">9</div></div>
+    <div><div class="k2">格式</div><div class="v">CFF2 VF</div></div>
+  </div>
+  <p class="note">
+    字形来源：Source Han Sans VF 2.005（SIL OFL 1.1）· 拉丁：Mona Sans（OFL 1.1，RFN 合规）。<br>
+    参考字体 OPPO Sans / HarmonyOS Sans / MiSans 仅用于测量与视觉比对，未采样任何字形轮廓。
+  </p>
+  <div style="margin-top:14px"><a class="dl" href="WDesignSans-VF.otf" download>↓ 下载 WDesignSans-VF.otf</a></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var PRESETS = [
+    [250,'ExtraLight'],[300,'Light'],[350,'Normal'],[400,'Regular'],
+    [500,'Medium'],[600,'SemiBold'],[700,'Bold'],[800,'ExtraBold'],[900,'Heavy']
+  ];
+  var TEXT = '永国字体设计 WDesign 2026';
+  var CMPTEXT = '永国字体设计 边这 Transform';
+
+  var inp   = document.getElementById('inp');
+  var wg    = document.getElementById('wg');
+  var wv    = document.getElementById('wv');
+  var wn    = document.getElementById('wn');
+  var pv    = document.getElementById('pv');
+  var pbox  = document.getElementById('presets');
+  var steps = document.getElementById('steps');
+
+  function nameOf(w){
+    w = Number(w);
+    var best = PRESETS[3];
+    for (var i=0;i<PRESETS.length;i++){
+      if (Math.abs(PRESETS[i][0]-w) < Math.abs(best[0]-w)) best = PRESETS[i];
+    }
+    return Math.abs(best[0]-w) <= 6 ? best[1] : best[1] + '±';
+  }
+
+  // ==== 字重阶梯（预生成，一次）====
+  var sh = '';
+  for (var i=0;i<PRESETS.length;i++){
+    var w = PRESETS[i][0], nm = PRESETS[i][1];
+    sh += '<div class="step">'
+        +   '<div class="k">'+w+'<b>'+nm+'</b></div>'
+        +   '<div class="t wd" style="--w:'+w+'">永国字体 Aa 0123</div>'
+        + '</div>';
+  }
+  steps.innerHTML = sh;
+
+  // ==== 命名实例按钮 ====
+  var ph = '';
+  for (var j=0;j<PRESETS.length;j++){
+    ph += '<button type="button" data-w="'+PRESETS[j][0]+'">'+PRESETS[j][1]+'</button>';
+  }
+  pbox.innerHTML = ph;
+
+  // ==== 核心：统一设字重 ====
+  function applyWeight(w){
+    w = Number(w);
+    // 用 CSS 变量驱动所有 font-variation-settings
+    document.documentElement.style.setProperty('--w', w);
+    wv.textContent = w;
+    wn.textContent = nameOf(w);
+    // 进度条填充比例
+    var pct = (w - 250) / (900 - 250) * 100;
+    wg.style.setProperty('--fill', pct.toFixed(1) + '%');
+    // 高亮最近的命名实例
+    var btns = pbox.querySelectorAll('button');
+    for (var i=0;i<btns.length;i++){
+      var bw = Number(btns[i].dataset.w);
+      btns[i].classList.toggle('on', Math.abs(bw - w) <= 6);
+    }
+  }
+
+  wg.addEventListener('input', function(){ applyWeight(wg.value); });
+
+  pbox.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    wg.value = b.dataset.w;
+    applyWeight(b.dataset.w);
+  });
+
+  inp.addEventListener('input', function(){
+    var v = inp.value;
+    pv.textContent = v;
+    document.getElementById('c-ours').textContent = v;
+    document.getElementById('c-oppo').textContent = v;
+    document.getElementById('c-shs').textContent  = v;
+  });
+
+  // 初始化
+  applyWeight(400);
+
+  // 字体就绪后重排一次（避免首屏 fallback 宽度抖动）
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ applyWeight(wg.value); });
+  }
+})();
+</script>
+</body>
+</html>
