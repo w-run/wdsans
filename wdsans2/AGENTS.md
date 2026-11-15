@@ -842,6 +842,71 @@ HOS        17.1     23.4     50.2
 **6 项中 5 项已达标或确认无差异，唯一剩余是顶点平顶**
 （需合并轮廓 = 拓扑重构，属重绘级别）。
 
+### 🔬 m_apexmerge 技术验证（2026-11-15，方向对但 VF 不兼容）
+
+用专业图形库（skia-pathops 0.9.2）尝试合并「人」形两笔做平顶。
+
+#### ✅ 视觉效果完全达成
+```
+pathops.simplify(轮廓自并集) 后:
+  轮廓数 5 -> 3（与 HOS 的 3 个一致）
+  顶端从单尖点变为两个同高点 -> 真平顶
+
+顶部墨宽/峰宽:
+        改前          改后          OPPO    HOS
+  今     2/76 = 3%    63/88 = 72%   59%     59%
+  合     2/69 = 3%    64/76 = 84%   59%     60%
+
+顶宽绝对值（em）:
+  改前 2   改后 80   OPPO 69   HOS 76
+  (目标 78 实现为 80，误差 2.5%)
+```
+
+#### 🔴 硬阻塞：simplify 在三档产生不同拓扑，VF 无法插值
+```
+同一字形 uni5F29 的 simplify 结果:
+  250: 5 轮廓  签名 LCLCCCLCLCLLCLLLLL|...
+  400: 6 轮廓  签名 LCLCLCCCLCLCLLCLLLLL|...
+  900: 4 轮廓  签名 LCLCLLLCLCCLCCLLCCLCCLLLLLLCCCCL|...
+
+全库统计（4,900 字三档都能切平）:
+  签名不一致: 4,888 字（99.7%）
+```
+**原因**: 布尔运算的交点位置随笔画粗细变化，
+不同字重会切出不同数量的边与不同的段型组合。
+这是 skia-pathops 的本质行为，无法通过调参解决。
+
+#### 尝试过的缓解方案（均失败）
+```
+1. 三档预筛（任一档失败则整字跳过）
+   -> 仍有 99.7% 签名不一致
+2. 只要求顶点两侧是 L 段（放宽判据）
+   -> 覆盖率从 1 字提升到 5,835 字，但不解决签名问题
+3. 目标宽度按字重缩放（39/72/130）
+   -> 宽度对齐了，签名仍不一致
+```
+
+#### 结论
+```
+视觉方案正确且已验证，但**与可变字体插值不兼容**。
+除非改为「单档 VF + 不插值」或「三档各自独立字体」，
+否则顶点平顶无法在 VF 架构下实现。
+
+这是 6 项笔画风格指标中唯一未达成项，且是架构级限制。
+```
+
+#### 可复用的技术资产
+```python
+import pathops
+p = pathops.Path(); glyphset[gn].draw(p.getPen())
+p2 = pathops.simplify(p, fix_winding=True)   # 自并集，消除重叠
+rp = RecordingPen(); p2.draw(rp)
+contours = contours_from_pen(rp.value)
+```
+**注意 API 坑**: `pathops.union([p], outpen, ...)` 的 outpen 需要 pen 对象，
+传 Path 会报 `moveTo() takes exactly 2 positional arguments`。
+用 `pathops.simplify(path)` 返回新 Path 最简。
+
 ### m_barple 参数（用户确认 RATIO=0）
 ```
 1. bar 右端 → xR                    横线右对齐到撇右界
