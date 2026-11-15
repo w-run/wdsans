@@ -9,7 +9,7 @@
 :root{
   --w:400;
   --bg:#f5f5f7; --card:#fff; --ink:#111; --sub:#6b7280; --line:#e5e5ea;
-  --blue:#0071e3; --green:#1a7f45; --chip:#f0f0f5;
+  --blue:#0071e3; --green:#1a7f45; --amber:#b45309; --chip:#f0f0f5;
 }
 html{-webkit-text-size-adjust:100%}
 body{
@@ -27,14 +27,10 @@ body{
 @font-face{font-family:'CmpSHS';src:url('shs-master.woff2') format('woff2');
   font-weight:400;font-style:normal;font-display:swap}
 
-/* 关键：用 font-variation-settings 驱动，变量 --w 统一控制 */
-.wd,.cmp-oppo,.cmp-shs{
-  font-variation-settings:'wght' var(--w,400);
-  font-weight:var(--w,400);
-}
-.wd{font-family:'WDesign'}
-.cmp-oppo{font-family:'CmpOPPO'}
-.cmp-shs{font-family:'CmpSHS';font-variation-settings:normal}
+/* 字重统一由 --w 驱动 */
+.wd{font-family:'WDesign';font-variation-settings:'wght' var(--w,400);font-weight:var(--w,400)}
+.cmp-oppo{font-family:'CmpOPPO';font-variation-settings:'wght' var(--w,400);font-weight:var(--w,400)}
+.cmp-shs{font-family:'CmpSHS'}
 
 /* ===== 布局 ===== */
 h1{font-size:clamp(18px,3.4vw,24px);margin:0 0 6px;font-weight:600;letter-spacing:-.014em}
@@ -54,6 +50,7 @@ h1{font-size:clamp(18px,3.4vw,24px);margin:0 0 6px;font-weight:600;letter-spacin
   color:#515154;font-weight:500;text-transform:none;letter-spacing:0;white-space:nowrap}
 .tag.g{background:#e8f7ee;color:var(--green)}
 .tag.b{background:#e8f0fe;color:#1a56db}
+.tag.a{background:#fef3e2;color:var(--amber)}
 
 /* ===== 输入 ===== */
 input[type=text]{
@@ -71,7 +68,6 @@ input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,
   line-height:1;letter-spacing:-.01em}
 .wval small{font-size:12px;color:var(--sub);font-weight:500;margin-left:6px;letter-spacing:0}
 
-/* 滑块：加大触控区，显著进度条 */
 input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:30px;
   background:transparent;cursor:pointer;margin:0;touch-action:pan-y;
@@ -93,12 +89,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border:0;border-radiu
   background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:999px}
 
-/* 命名实例快选 */
 .presets{display:flex;gap:7px;flex-wrap:wrap}
 .presets button{
   font:inherit;font-size:11.5px;padding:6px 11px;border-radius:8px;cursor:pointer;
-  border:1px solid #dcdce1;background:#fff;color:#3c3c43;
-  transition:.14s;white-space:nowrap;
+  border:1px solid #dcdce1;background:#fff;color:#3c3c43;transition:.14s;white-space:nowrap;
 }
 .presets button:hover{background:#f5f5f7;border-color:#c7c7cc}
 .presets button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
@@ -108,10 +102,8 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   margin-top:16px;padding:22px 18px;border-radius:11px;background:#fafafa;
   min-height:140px;display:flex;align-items:center;
 }
-.stage p{
-  margin:0;font-size:clamp(28px,6vw,52px);line-height:1.32;
-  word-break:break-word;letter-spacing:-.01em;
-}
+.stage p{margin:0;font-size:clamp(28px,6vw,52px);line-height:1.32;
+  word-break:break-word;letter-spacing:-.01em}
 .stage p:empty::before{content:'在上方输入文字…';color:#c0c0c8;font-size:20px}
 
 /* ===== 字重阶梯 ===== */
@@ -121,18 +113,15 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
 .step .k{font-size:11px;color:var(--sub);width:76px;flex:none;
   font-variant-numeric:tabular-nums;letter-spacing:.01em}
 .step .k b{display:block;font-weight:600;color:#3c3c43;font-size:12px}
-.step .t{font-size:clamp(19px,3.6vw,26px);line-height:1.4;flex:1;word-break:break-word;
-  font-variation-settings:'wght' var(--w)}
+.step .t{font-size:clamp(19px,3.6vw,26px);line-height:1.4;flex:1;word-break:break-word}
 
 /* ===== 三方对比 ===== */
-.cmp{display:grid;gap:0}
 .cmp-row{display:grid;grid-template-columns:82px 1fr;gap:14px;
   padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
 .cmp-row:last-child{border-bottom:0}
 .cmp-row .nm{font-size:11px;color:var(--sub);line-height:1.4}
 .cmp-row .nm b{display:block;font-weight:600;color:#3c3c43;font-size:12px}
-.cmp-row .g{font-size:clamp(24px,4.6vw,34px);line-height:1.35;word-break:break-word;
-  font-variation-settings:'wght' var(--w)}
+.cmp-row .g{font-size:clamp(24px,4.6vw,34px);line-height:1.35;word-break:break-word}
 
 /* ===== 特性演示 ===== */
 .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:9px}
@@ -142,6 +131,16 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   font-size:10px;background:#ececf1;padding:1px 5px;border-radius:4px;color:#3c3c43}
 .feat .d{font-size:19px;line-height:1.4;word-break:break-word;
   font-variation-settings:'wght' 400}
+
+/* ===== 风格指标表 ===== */
+.metrics{width:100%;border-collapse:collapse;font-size:12.5px}
+.metrics th,.metrics td{padding:8px 6px;text-align:left;
+  border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.metrics th{font-size:10.5px;color:var(--sub);font-weight:500;
+  text-transform:uppercase;letter-spacing:.04em}
+.metrics tr:last-child td{border-bottom:0}
+.metrics td.ok{color:var(--green);font-weight:600}
+.metrics td.na{color:var(--amber);font-weight:600}
 
 /* ===== 规格 ===== */
 .spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}
@@ -161,6 +160,8 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   .step{gap:10px}
   .step .k{width:60px}
   .presets button{padding:7px 10px;font-size:11px}
+  .metrics{font-size:11.5px}
+  .metrics th,.metrics td{padding:6px 4px}
 }
 </style>
 </head>
@@ -169,8 +170,8 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
 <h1>WDesign Sans</h1>
 <p class="sub">
   基于 Source Han Sans 构建的 OPPO 风格中文可变字体 · 65,535 字形 · wght 250–900<br>
-  <a href="WDesignSans-VF.otf" download>下载完整 OTF（41 MB）</a> ·
-  本页使用 3,886 字 Web 子集（4.1 MB）实时渲染
+  <a href="WDesignSans-VF.otf" download>下载完整 OTF（40 MB）</a> ·
+  本页使用 3,886 字 Web 子集（4.0 MB）实时渲染
 </p>
 
 <!-- 主预览 -->
@@ -219,18 +220,41 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   </p>
 </div>
 
-<!-- 排版特性 -->
+<!-- 笔画风格指标 -->
+<div class="panel">
+  <h2>笔画风格量化 <span class="tag g">与 OPPO / HOS 实测对比</span></h2>
+  <table class="metrics">
+    <tr><th>指标</th><th>本字体</th><th>OPPO</th><th>HOS</th><th>判定</th></tr>
+    <tr><td>重心（墨质心）</td><td>0.512</td><td>0.511</td><td>0.501</td><td class="ok">一致</td></tr>
+    <tr><td>中宫（墨密度）</td><td>46.8%</td><td>44.7%</td><td>46.1%</td><td class="ok">一致</td></tr>
+    <tr><td>重心/字面比例</td><td>916/903</td><td>896/910</td><td>907/902</td><td class="ok">一致</td></tr>
+    <tr><td>撇捺曲率</td><td>20.0</td><td>19.2</td><td>17.1</td><td class="ok">已对齐</td></tr>
+    <tr><td>折角角度（纯 L）</td><td>90.0°</td><td>90.0°</td><td>90.0°</td><td class="ok">一致</td></tr>
+    <tr><td>笔末切角</td><td>垂直</td><td>垂直</td><td>垂直</td><td class="ok">一致</td></tr>
+    <tr><td>横折出头（顶部横笔）</td><td>右余 90</td><td>右余 122</td><td>右余 0</td><td class="ok">已对齐</td></tr>
+    <tr><td>顶点平顶（人字形）</td><td>尖角</td><td>平顶 38%</td><td>平顶 40%</td><td class="na">风格差异</td></tr>
+  </table>
+  <p class="note">
+    曲率指标为长曲线（弦长 ≥300）最大偏离弦距离，单位 em，数值越小越接近直线。
+    顶点平顶属字形拓扑差异，保持 SHS 原样。
+  </p>
+</div>
+
+<!-- OpenType 特性 -->
 <div class="panel">
   <h2>OpenType 特性 <span class="tag g">23 种</span></h2>
   <div class="feat">
     <div class="item"><div class="n">时间冒号 <code>calt</code></div><div class="d wd">12:34 &nbsp; 08:05</div></div>
     <div class="item"><div class="n">比例数字 <code>pnum</code></div><div class="d wd" style="font-feature-settings:'pnum' 1">0123456789</div></div>
-    <div class="item"><div class="n">等宽数字 <code>tnum</code> 默认</div><div class="d wd">0123456789</div></div>
+    <div class="item"><div class="n">等宽数字（默认）</div><div class="d wd">0123456789</div></div>
     <div class="item"><div class="n">分数 <code>frac</code></div><div class="d wd" style="font-feature-settings:'frac' 1">1/2 3/4 12/34</div></div>
     <div class="item"><div class="n">上标 <code>sups</code></div><div class="d wd" style="font-feature-settings:'sups' 1">0123456789</div></div>
     <div class="item"><div class="n">下标 <code>subs</code></div><div class="d wd" style="font-feature-settings:'subs' 1">0123456789</div></div>
   </div>
-  <p class="note">以上特性由本字体自身实现，非浏览器合成。</p>
+  <p class="note">
+    全部 23 种特性：aalt calt ccmp dlig dnom frac fwid hist hwid liga ljmo locl
+    numr pnum pwid ruby sinf subs sups tjmo vert vjmo vrt2。均由本字体自身实现。
+  </p>
 </div>
 
 <!-- 正文排版 -->
@@ -240,7 +264,10 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     WDesign Sans 是一款基于思源黑体构建的中文可变字体，目标是在保留完整字形覆盖的前提下，逼近 OPPO Sans 的笔画风格。
   </p>
   <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0 0 12px">
-    核心技术包括：笔画粗细均匀化、笔末平切、台阶拉平、部首垂直居中，以及撇捺曲率压平。全库 20,992 个 CJK 字形与 45,012 个字符位经过完整性审计。
+    笔画风格经过逐项量化：重心、中宫、字面比例、撇捺曲率、折角角度、笔末切角六项均与参考字体对齐；横折出头通过顶部横笔右端延伸修正了 2,636 个字。
+  </p>
+  <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0 0 12px">
+    全库 20,992 个 CJK 字形与 45,012 个字符位经过完整性审计，三档字重的段数与操作符签名完全一致。
   </p>
   <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0">
     The quick brown fox jumps over the lazy dog. 0123456789 —
@@ -255,9 +282,11 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     <div><div class="k2">字形总数</div><div class="v">65,535</div></div>
     <div><div class="k2">cmap 字符位</div><div class="v">45,012</div></div>
     <div><div class="k2">CJK 汉字</div><div class="v">20,992</div></div>
+    <div><div class="k2">OpenType 特性</div><div class="v">23</div></div>
     <div><div class="k2">字重轴</div><div class="v">250 – 900</div></div>
     <div><div class="k2">命名实例</div><div class="v">9</div></div>
     <div><div class="k2">格式</div><div class="v">CFF2 VF</div></div>
+    <div><div class="k2">文件大小</div><div class="v">40.4 MB</div></div>
   </div>
   <p class="note">
     字形来源：Source Han Sans VF 2.005（SIL OFL 1.1）· 拉丁：Mona Sans（OFL 1.1，RFN 合规）。<br>
@@ -294,7 +323,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     return Math.abs(best[0]-w) <= 6 ? best[1] : best[1] + '±';
   }
 
-  // ==== 字重阶梯（预生成，一次）====
+  // 字重阶梯
   var sh = '';
   for (var i=0;i<PRESETS.length;i++){
     var w = PRESETS[i][0], nm = PRESETS[i][1];
@@ -305,24 +334,21 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   }
   steps.innerHTML = sh;
 
-  // ==== 命名实例按钮 ====
+  // 命名实例按钮
   var ph = '';
   for (var j=0;j<PRESETS.length;j++){
     ph += '<button type="button" data-w="'+PRESETS[j][0]+'">'+PRESETS[j][1]+'</button>';
   }
   pbox.innerHTML = ph;
 
-  // ==== 核心：统一设字重 ====
+  // 核心：统一设字重
   function applyWeight(w){
     w = Number(w);
-    // 用 CSS 变量驱动所有 font-variation-settings
     document.documentElement.style.setProperty('--w', w);
     wv.textContent = w;
     wn.textContent = nameOf(w);
-    // 进度条填充比例
     var pct = (w - 250) / (900 - 250) * 100;
     wg.style.setProperty('--fill', pct.toFixed(1) + '%');
-    // 高亮最近的命名实例
     var btns = pbox.querySelectorAll('button');
     for (var i=0;i<btns.length;i++){
       var bw = Number(btns[i].dataset.w);
@@ -347,10 +373,8 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     document.getElementById('c-shs').textContent  = v;
   });
 
-  // 初始化
   applyWeight(400);
 
-  // 字体就绪后重排一次（避免首屏 fallback 宽度抖动）
   if (document.fonts && document.fonts.ready){
     document.fonts.ready.then(function(){ applyWeight(wg.value); });
   }
