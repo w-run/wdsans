@@ -21,7 +21,8 @@ masters_MOD8  MOD7 + termface_v2 6,583字            已部署
 masters_MOD9c MOD8 + taper_v2 17,405字               已部署
 masters_MOD10 MOD9c + residue 清理 186字             已部署
 masters_MOD12 MOD10 + latinmat 371字形               已部署
-masters_MOD13 MOD12 + latinext 95字符               构建中 ← 当前链尾
+masters_MOD13 MOD12 + latinext 95字符               已部署
+masters_MOD14 MOD13 + latinext2 48字符              构建中 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -245,6 +246,32 @@ Mona 的 Latin Ext-A 多为复合字形（基字母 + 变音符号）。
 
 效果: Latin Ext-A 30 -> 125/128，cmap 44,853 -> 44,948
 抽查宽度: ą=598（与 a 一致）Ć=763（与 C 一致）
+
+### 🔴 许可合规：只能从 OFL 源取字形
+```
+OPPO Sans 许可第2条:
+  "YOU may not make any modifications to OPPO Sans Fonts
+   or any of their individual components."
+  -> 明确禁止修改与再分发组件，不能取用其字形
+
+MiSans 版权: Copyright (c) 2020-2025 Beijing Xiaomi Mobile Software Co.,Ltd.
+  字体内部无 license 声明，许可不明 -> 保守不使用
+
+可用源（SIL OFL 1.1）:
+  Mona Sans  ref/mona/MonaSansVF.ttf    cmap 568   有 wght 轴
+  SHS         ref/shs/shs-400.otf       cmap 44,853
+  -> SHS 与我们基座同源，拉丁覆盖完全相同，补不了东西
+  -> 实际只能用 Mona
+```
+**教训**: 2026-11-15 曾用 MiSans(241)+OPPO(39) 补入 281 字符，
+贡献了 IPA +81 / Comb Diacrit +52 等显著覆盖，但**许可不合规，全部废弃**。
+合规的 Mona-only 只能补 48 个：Ext-B +7 / Spacing Mod +6 / Comb Diacrit +17
+                        / Ext Add +7 / Gen Punct +1 / Currency +5
+                        / Number Forms +4 / Letterlike +1
+
+**参考 vs 取用的边界**:
+  OPPO/HOS/MiSans 用于**风格参考**（测量比例、观察笔画形态）是合理的；
+  把它们的**字形轮廓复制进我们的字体**则超出许可范围。
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```

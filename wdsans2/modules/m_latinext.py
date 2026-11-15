@@ -33,7 +33,22 @@ def get_missing():
     F = '/workspace/wdsans2/build/masters_MOD12/master-Regular-400.otf'
     f = TTFont(F); cm = f.getBestCmap(); f.close()
     m = TTFont(MONA); cmm = m.getBestCmap(); m.close()
-    miss = [c for c in range(0x0100, 0x0180) if c not in cm and c in cmm]
+    RANGES = [
+        (0x0100, 0x017F),   # Latin Extended-A
+        (0x0180, 0x024F),   # Latin Extended-B
+        (0x02B0, 0x02FF),   # Spacing Modifier Letters
+        (0x0300, 0x036F),   # Combining Diacritical Marks
+        (0x1E00, 0x1EFF),   # Latin Extended Additional
+        (0x2000, 0x206F),   # General Punctuation
+        (0x20A0, 0x20CF),   # Currency Symbols
+        (0x2150, 0x218F),   # Number Forms
+        (0x2100, 0x214F),   # Letterlike Symbols
+    ]
+    miss = []
+    for lo, hi in RANGES:
+        for c in range(lo, hi + 1):
+            if c not in cm and c in cmm:
+                miss.append(c)
     return miss
 
 
@@ -68,8 +83,8 @@ def main():
     if not cps:
         return
 
-    BASE = os.environ.get('WDS_BASE', '/workspace/wdsans2/build/masters_MOD12')
-    OUTD = os.environ.get('WDS_OUT', '/workspace/wdsans2/build/masters_MOD13')
+    BASE = os.environ.get('WDS_BASE', '/workspace/wdsans2/build/masters_MOD13')
+    OUTD = os.environ.get('WDS_OUT', '/workspace/wdsans2/build/masters_MOD14')
     FN = {'250':'master-ExtraLight-250.otf', '400':'master-Regular-400.otf', '900':'master-Heavy-900.otf'}
     WGHT = {'250':200, '400':400, '900':900}
     os.makedirs(OUTD, exist_ok=True)
