@@ -30,7 +30,8 @@ UPM_SRC = None
 
 def get_missing():
     """列出 Latin Ext-A 中我们缺失、Mona 有的码位"""
-    F = '/workspace/wdsans2/build/masters_MOD12/master-Regular-400.otf'
+    # 🔴 必须从 WDS_SRC 读，不能用硬编码 MOD12（否则槽位与实际字体不一致，会覆盖 CJK）
+    F = os.environ.get('WDS_SRC', '/workspace/wdsans2/build/masters_MOD12') + '/master-Regular-400.otf'
     f = TTFont(F); cm = f.getBestCmap(); f.close()
     m = TTFont(MONA); cmm = m.getBestCmap(); m.close()
     RANGES = [
@@ -83,7 +84,7 @@ def main():
     if not cps:
         return
 
-    BASE = os.environ.get('WDS_BASE', '/workspace/wdsans2/build/masters_MOD13')
+    BASE = os.environ.get('WDS_SRC') or os.environ.get('WDS_BASE', '/workspace/wdsans2/build/masters_MOD13')
     OUTD = os.environ.get('WDS_OUT', '/workspace/wdsans2/build/masters_MOD14')
     FN = {'250':'master-ExtraLight-250.otf', '400':'master-Regular-400.otf', '900':'master-Heavy-900.otf'}
     WGHT = {'250':200, '400':400, '900':900}

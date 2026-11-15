@@ -34,7 +34,25 @@ masters_MOD23 MOD22 + 特性 pnum/numr/dnom             已部署
 masters_MOD24 MOD23 + frac 分数特性                   已部署
 masters_MOD26 MOD24 + 长曲线曲率压平                   已部署
 masters_MOD29 MOD26 + 顶部横笔右端延伸(横折出头) 1,182字 已部署
-masters_MOD30 MOD26 + 顶部横笔右端延伸 v2 2,636字     已部署 ← 当前链尾
+masters_MOD30 MOD26 + 顶部横笔右端延伸 v2 2,636字     ⚠️曲线已损坏，废弃
+
+# ⚠️ 现行链（2026-11-15 曲线事故后重建，跳过 termface）
+masters_R1  = MOD  + shortl      3,373字
+masters_R2  = R1   + zerocont       45字
+masters_R3  = R2   (yanrad 0命中)
+masters_R4  = R3   + bardiag     3,074字
+masters_R5  = R4   + latinmat     371字形
+masters_R6  = R5   + latinext     143字符
+masters_R7  = R6   + kerning   77,294对
+masters_R8  = R7   + markpos      22×442
+masters_R9  = R8   + metrics     fsSel 0x0040
+masters_R10 = R9   + nametable     31条
+masters_R11 = R10  + os2range      21位
+masters_R12 = R11  + coloncenter    2字符
+masters_R13 = R12  + numfeats      20字形
+masters_R14 = R13  + numfeats2     20字形
+masters_R15 = R14  + frac           3档
+masters_R16 = R15  + ledge      2,636字     已部署 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -1041,6 +1059,89 @@ TARGET_MARGIN['900']: 175 -> 110   # 900档右余本来就小(139)，175 会反�
 差异来自「王」部件顶部横笔位置不同导致的顶部 18% 窗口取样偏差。
 `夏` 的横笔右余 44 已小于目标 90（更靠右），不需要延伸。
 -> 这 4 字不属于 m_ledge 可解范围，也不构成缺陷。
+
+### 🔴🔴 重大事故修复：曲线全部丢失（2026-11-15）
+
+**用户反馈**: 「汉字字体所有曲线怎么都没了？」
+
+#### 实测确认
+```
+                曲线占比   永的段型
+SHS 原始        42.3%      LCLC / LLLCCCL / LCCCCLCCLLLLLCCCCC
+线上(事故版)     32.7%      LCLC / LCLC / LLLCCLCC / LCLC / LCLC   <- 全变直线
+```
+
+#### 两个罪魁祸首
+
+**1. `m_termface` (MOD2): C→L，全局砍掉 8% 曲线**
+```
+阶段      曲线%
+shs      38.2%
+MOD      38.0%
+MOD2     30.0%   <<< m_termface 突变 -8.0%
+```
+判据「段长 ∈ [0.8,1.5]×SW 且弯曲比 < 0.10」实际命中范围远超「笔端面」，
+把大量真实弧线也拉直了。
+
+**2. `m_latinext` (MOD6): 硬编码路径导致覆盖 CJK**
+```python
+# ❌ 错误: 读死 MOD12 的槽位，与实际基座不符
+F = '/workspace/wdsans2/build/masters_MOD12/master-Regular-400.otf'
+BASE = os.environ.get('WDS_BASE', ...)   # 不认 WDS_SRC
+
+# ✅ 修复
+F = os.environ.get('WDS_SRC', ...) + '/master-Regular-400.otf'
+BASE = os.environ.get('WDS_SRC') or os.environ.get('WDS_BASE', ...)
+```
+后果: 复用的「未映射槽位」在 R5 中已被 CJK 占用 → 直接覆盖 CJK 字形。
+
+#### 修复方案：从 MOD 重建整条链，跳过 termface
+
+**用户决定**: 「不要改曲线、之前的曲线就够」
+-> 保留 SHS 原始曲线，**放弃 m_termface / m_termface_v2**（端面拉直）
+-> 放弃 m_taper_v2（依赖 termface 的 C→L 后才能命中）
+
+新链（masters_R1..R16）:
+```
+R1  = MOD  + shortl      3,373 字
+R2  = R1   + zerocont      45 字
+R3  = R2   (yanrad 0 命中，跳过)
+R4  = R3   + bardiag    3,074 字
+R5  = R4   + latinmat     371 字形
+R6  = R5   + latinext     143 字符
+R7  = R6   + kerning   77,294 对
+R8  = R7   + markpos      22×442
+R9  = R8   + metrics     fsSelection 0x0040
+R10 = R9   + nametable     31 条 name
+R11 = R10  + os2range      21 位
+R12 = R11  + coloncenter    2 字符
+R13 = R12  + numfeats      20 字形
+R14 = R13  + numfeats2     20 字形
+R15 = R14  + frac           3 档
+R16 = R15  + ledge      2,636 字
+```
+
+**效果**：
+```
+曲线 32.7% -> 42.6%（SHS 42.3%）
+永: LCCC / LLLCCCCC / LLCCC  <- 曲线回来了
+VF 40.4MB -> 41.3MB（+0.9MB 正是曲线数据）
+门禁 G1/G2/G3 全通过
+特性 23 种、fsSelection 0x0040、name 31 条、cmap 45,012
+```
+
+#### 关键教训
+```
+1. 任何「C→L」类模块（termface）必须先在样本字上逐字验证，
+   不能只看命中数量。8% 的全局曲线损失 = 视觉可察觉的「变方」。
+
+2. 复用「未映射槽位」的模块必须从**当前基座**读槽位表，
+   硬编码历史目录会导致槽位与实际占用冲突 -> 覆盖真实字形。
+   所有模块应统一用 WDS_SRC / WDS_BASE 环境变量。
+
+3. 事故前建议做「曲线占比」作为门禁指标：
+   全库 C/Q/QM 段占比相对 SHS 的偏差不应超过 2%。
+```
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
