@@ -453,6 +453,29 @@ VFPrefix    : WDesignSans (nameID 25)
 - OFL 要求衍生作品**标明已修改** -> nameID 0/7 现在都有明确声明
 - name 表是唯一随字体文件走的版权信息，必须写对
 
+### ⚠️ VF 构建会丢弃多语言 name 记录（必须后处理）
+```
+实测:
+  masters_MOD18: 31 条 name, langIDs=[0x0, 0x409, 0x804], zh-CN 5 条
+  构建后 VF:     49 条 name, langIDs=[0x0, 0x409],        zh-CN 0 条
+```
+**原因**: varLib 构建 VF 时只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，
+其它语言记录（zh-CN 0x804 等）会被丢弃。
+
+**修复**: 用 `modules/post_vf_name.py` 在 VF 构建后补回:
+```bash
+python modules/post_vf_name.py /workspace/static/wdsans/WDesignSans-VF.otf
+# -> 从 masters_MOD18 复制 zh-CN 的 nameID 1/2/4/16/17
+```
+**注意**: ID17 (Subfamily) 必须固定为 'Regular'，不能直接复制 master 的
+（master 里写的是 ExtraLight，因为它是 250 档）。
+
+**VF 构建后的标准检查清单**:
+1. glyphs / cmap 数量
+2. fsSelection / 垂直度量（master 改了会被继承，但需确认）
+3. **name 表 langIDs（必须在 master 基础上补回 zh-CN）**
+4. 预览子集重新生成
+
 ### m_barple 参数（用户确认 RATIO=0）
 ```
 1. bar 右端 → xR                    横线右对齐到撇右界
