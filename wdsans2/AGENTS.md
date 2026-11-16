@@ -1243,6 +1243,88 @@ fvar wght 250-900 保留
 子集丢失 5 种特性（hist ljmo ruby tjmo vjmo）—— 韩文 Jamo 与注音专用，
 fontTools 会丢弃「目标字形不存在」的特性，前提页无影响。**中文竖排 9/9 正常。**
 
+### 🎉 顶点平顶已在单档静态版实现（2026-11-16）
+
+**这是 6 项笔画风格指标中唯一未达成项的突破。**
+
+#### 为什么单档可以、多档 VF 不行
+```
+多档 VF: pathops 布尔运算在三档切出不同拓扑（99.7% 签名不一致）
+         -> VarLibCFFPointTypeMergeError，无解
+单档静态: 没有插值约束，可以做
+```
+
+#### 参考字体的做法
+```
+HOS  今: qCurveTo(464,839) -> lineTo(540,839)   平顶宽 76
+OPPO 今: qCurveTo(460,824) -> lineTo(528,824)   平顶宽 68
+我们 今: 两个独立尖点，顶宽 0
+```
+
+#### 关键判据（走了 5 版才对）
+```
+❌ v1-v3 只做 pathops 合并 -> 两个尖点变成一个尖点，顶宽仍 0
+❌ v4   判据缺「顶部轮廓要窄」-> 误伤 甲/田（把横画当顶点）
+❌ v5   MAX_TOPW=300 用「全轮廓 bbox 宽度」-> 人字形两笔各占半字宽(499/532)，全被排除，命中 0
+✅ v6   改用「顶部 3% 高度带内的墨宽」作为判据，正确区分:
+         今  c2 顶宽 1   c3 顶宽 0    <- 双尖点，命中
+         甲  c0 顶宽 79  c1 顶宽 751  <- 竖笔端面+横画，跳过
+         田  c2 顶宽 810 c3 顶宽 76   <- 横画+竖笔端面，跳过
+```
+
+#### 🔴 pathops API 三个致命坑
+```python
+# 坑1: difference 需要「轮廓列表」不是 Path 对象
+pathops.difference(merged, cutter, out.getPen())        # ❌ 'tuple' has no attribute 'draw'
+pathops.difference(list(merged.contours), list(cutter.contours), out.getPen())  # ✅
+
+# 坑2: path.contours 是生成器，必须 list() 转换
+len(merged.contours)   # ❌ generator has no len()
+list(merged.contours)  # ✅
+
+# 坑3: difference 是三个位置参数 (subject, clip, outpen)
+pathops.difference([pa, pb], out.getPen())   # ❌ _do() missing 'outpen'
+```
+
+#### 实现（`modules/m_apexflat.py`）
+```python
+APEX_WIN   = 70     # 顶部窗口
+FLAT_DEPTH = 28     # 截平深度（决定平顶宽度）
+MAX_TOPW   = 40     # 顶部墨宽上限（区分尖点与横画）
+
+# 1. 找顶部 70 单位内、顶宽都 <40 的两个轮廓
+# 2. pathops.union 合并
+# 3. 构造顶部切刀矩形（y > gmax - FLAT_DEPTH）
+# 4. pathops.difference(合并轮廓, 切刀) 得到平顶
+```
+
+#### 效果（400 档，`FLAT_DEPTH=28`）
+```
+字   改前    改后    HOS    OPPO
+今   0/5 →  79/4    76/3   68/3   ✓
+合   0/5 →  82/4    75/4   71/4   ✓
+会   0/7 →  91/6    77/3   66/5
+含   0/7 →  78/6    76/4   66/5   ✓
+令   0/6 →  77/5    77/3   69/4   ✓ 精确命中
+全   0/6 →  83/6    75/1   69/5
+金   0/8 →  89/7    76/4   66/7
+余   0/7 →  81/6    84/4   74/6   ✓
+介   0/4 →  58/3    76/3   67/3
+企   0/6 →  84/5    76/2   67/5
+
+规模: 1804 字，跳过 0
+对照组 10/10 零误伤: 口回十中申甲田日国目
+```
+
+#### 部署
+```
+静态版: /workspace/static/wdsans/WDesignSans-FlatApex-Regular.otf  (17.8 MB)
+name:   WDesign Sans FlatApex Regular
+VF 版保留不变（平顶与多档插值不兼容）
+```
+
+两个版本并存: 日常使用 VF（250-900 全字重），需要平顶风格时用静态版。
+
 ### m_barple 参数（用户确认 RATIO=0）
 ```
 1. bar 右端 → xR                    横线右对齐到撇右界
@@ -1355,7 +1437,7 @@ await tools.ssh_upload({ alias: 'w-box',
 
 | 类 | 代表字 | 状态 |
 |---|---|---|
-| 顶点平顶（人字形） | 今 合 会 含 令 | 风格差异，用户已接受；技术上需拓扑重构且与 VF 不兼容 |
+| 顶点平顶（人字形） | 今 合 会 含 令 | ✅ 已在单档静态版实现（1804字），VF 版不可用 |
 | 横折出头（厶/廴 结构） | 丝 延 各 | 顶部横笔已解决（m_ledge 2,636字）；其余形态待攻 |
 | 永字左下 7 形拐角 | 永 | 待分析 |
 | 纟旁拐角 | 丝 红 | 待分析 |
