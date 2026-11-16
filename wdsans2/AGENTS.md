@@ -54,7 +54,10 @@ masters_R14 = R13  + numfeats2     20字形
 masters_R15 = R14  + frac           3档
 masters_R16 = R15  + ledge      2,636字
 masters_R17 = R16  + latinwidth   （无效：advance 本已等于 Mona@400）
-masters_R18 = R16  + latinreset   486字形宽恢复   已部署 ← 当前链尾
+masters_R18 = R16  + latinreset   486字形宽恢复
+masters_R19 = R18  + featlang     7特性注册到全语言 已部署 ← 当前链尾
+masters_R20 = R19  + digitmono    （实验：中文数字强制等宽 -> 与 pnum 冲突，废弃）
+masters_R21 = R20  + pnumfix      （实验：pnum 与 locl 抵消，废弃）
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -1226,6 +1229,76 @@ fontTools 的 populate(text=...) 只保留文本里出现的字符，
 SHS:       LLLCCCCLCCC                      (9 段)
 ```
 SHS 原版就过度细分成 28 段曲线，非本项目引入。**保持原样不改。**
+
+### 🔴 数字排版特性在中文环境失效（2026-11-16）
+
+**用户反馈**: 「冒号特性啥的没有、看看原字体呢」（截图显示 sups 与默认数字相同）
+
+#### 根因：7 个特性只注册在 DFLT，中文 LangSys 里完全没有
+```
+hani(中文) 的 LangSys 分布:
+  DFLT : aalt calt ccmp dlig dnom frac fwid hist hwid liga numr pnum pwid ruby sinf subs sups vert vrt2
+  ZHS  : aalt calt ccmp dlig fwid hist hwid liga locl pwid ruby vert vrt2
+         ^^^^ 只有 13 个，缺 sups/subs/sinf/numr/dnom/pnum/frac
+
+关键规则: 某脚本一旦存在 LangSysRecord(ZHS/ZHH/ZHT/JAN/KOR)，
+          HarfBuzz/Chrome 就不再回退到 DefaultLangSys。
+          -> 中文环境下这 7 个特性完全失效
+```
+
+**实测对比**:
+```
+lang=en  (无 LangSysRecord) -> sups 123 = gid43272(241)  生效
+lang=zh-hans (ZHS)          -> sups 123 = gid18(390)     不生效
+```
+
+**修复 `m_featlang`**: 把这 7 个 FeatureRecord 索引追加到每个 LangSys 的 FeatureIndex。
+只改 ScriptList，不动 FeatureList/LookupList -> 零风险。三档各新增 210 处指向。
+```
+效果（lang=zh-hans）:
+  sups 123 -> gid43272(241) gid61877(337) gid61878(353)  ✓
+  subs 123 -> gid61910(241) gid61911(337) gid61914(353)  ✓
+  frac 1/2 -> gid61927(234) gid3265(128) gid61928(326)   ✓
+```
+
+**浏览器实测（headless Chrome 截图测墨量）**:
+```
+  默认  高43 宽310 墨4338
+  sups 高27 宽189 墨1538   <- 生效
+  subs 高26 宽189 墨1596   <- 生效
+  frac 高44 宽 37          <- 生效
+```
+
+#### 冒号居中其实一直是好的（重要纠错）
+```
+  colon         y[-14,529] 中心=258
+  glyph03346    y[ 92,635] 中心=364   <- calt 替换目标
+  zero          y[-11,738] 中心=364   <- 数字中心
+  one           y[  0,730] 中心=365
+
+12:34 输出 gid3346 = glyph03346 = 居中冒号，与数字中心完全一致。
+之前误判为「未生效」，是因为把 gid3346 当成了普通 colon(gid27)。
+```
+
+#### ❌ 已否决: m_digitmono / m_pnumfix（中文数字强制等宽）
+```
+动机: SHS 的 locl 只在 latn-DFLT 注册数字等宽映射 lookup#42;
+      指定语言后数字变回比例宽。看起来像 bug。
+
+但三家实测:
+  OPPO  adv=[620,383,548,558,616,585,598,540,589,596]  比例
+  HOS   adv=[570,570,...] 全相同                      等宽
+  SHS   adv=[555,555,...] 全相同                      等宽
+
+两家参考厂商本身不一致 -> 保持 SHS 原行为即可。
+
+更关键的硬阻塞: locl 与 pnum 在同一次 GSUB 传递中互相抵消
+  locl:  one -> glyph63167
+  pnum:  glyph63167 -> one      <- 又变回原样
+  实测 pnum + locl关 = gid18(390) 生效；pnum + locl开 = gid63167(555) 无效
+除非新建独立的「比例数字」字形（占 10 个槽位），否则 pnum 无法与 locl 共存。
+-> 放弃该方向，保持 SHS 原设计。
+```
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
