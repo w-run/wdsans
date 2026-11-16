@@ -222,19 +222,8 @@ diag: 同字内与 bar 的 y 区间重叠的轮廓
 > 例: 匣 C5 (951,-14)->(141,-14)->(141,-14)->(951,-14) 叉积 0.0000
 
 ### 模块饱和度检查（2026-11-15）
-在 MOD9c 上重跑全部模块的 find()，看还有多少可改：
-```
-barple       1 字     1 处   已饱和
-stepalign  188 字   192 处   有 residue
-bardiag     29 字    30 处   有 residue
-yanrad       0 字     0 处   已饱和
-termface     0 字     0 处   已饱和
-shortl       0 字     0 处   已饱和
-zerocont     0 字     0 处   已饱和
-```
-residue 来源: 前面模块改动几何后，产生了新的可处理项。
-MOD10 依次应用 barple → stepalign → bardiag，得到 186 字 218 步。
-> 仍有 30 字跳过（索引段号在其它档越界），属正常边界情况。
+barple 1字/stepalign 188字/bardiag 29字/yanrad+termface+shortl+zerocont 全 0。
+residue 由前面模块改几何产生，MOD10 依次跑 barple→stepalign→bardiag 得 186字。
 
 ### ❌ 已否决: m_zeroseg（删除零长度段）
 ```
@@ -404,29 +393,10 @@ Mona 的 kern 值基于其自身字宽；我们经 `m_latinmat` 缩放到 0.943 
 A 纵向对齐 y[0,729] = Mona y[0,729]；Ẁ 宽 953 与 W 一致（正常）。
 字形 GSUB: ccmp/liga/calt/locl/aalt/hist/fwid/hwid/pwid/ljmo/tjmo/vjmo/vert/vrt2 全部存在。
 
-### m_metrics 判据（fsSelection 与垂直度量）
-```
-对比四个字体的垂直度量:
-字体    fsSelection  typo          win
-SHS     0x0040       [ 880,-120]   [1160,288]
-OPPO    0x0040       [ 850,-150]   [1048,271]
-HOS     0x0140       [1056,-271]   [1056,271]   (+ WWS)
-我们    0x0000  <-    [ 880,-120]   [1160,288]
-```
-
-**缺陷 1: fsSelection = 0x0000，缺 REGULAR(bit6=0x40)**
-三个参考字体都设了 0x0040。缺此标志可能导致某些应用无法识别常规字重。
--> 已修正为 0x0040（三档统一）。
-
-**缺陷 2（未修）: usWin 未覆盖 4 个竖排功能字形**
-```
-〱〲  y[-549,1323]   usWin=[-288,1160]   超界 261/163
-〪〭  y[-304,-118]                      超界 16
-SHS 原版同样超界 -> 上游缺陷
-```
-**为什么不修**: 提高 usWin 到 [549,1325] 会让行高增加 29.4%，代价过大。
-这 4 个字形主要用于竖排场景，横排裁切影响很小。
-三个参考字体也都没解决这个问题（SHS/OPPO 用 win 度量、HOS 用 typo 但 typo 也未覆盖）。
+### m_metrics 判据
+fsSelection: 我们原 0x0000 -> 已修为 0x0040（三个参考字体都是 0x0040）。
+**未修**: usWin 未覆盖 〱〲〪〭 四个竖排字形（超界 261/163/16），
+SHS 原版同样超界 -> 上游缺陷。提高 usWin 会让行高 +29.4%，代价过大。
 
 ### m_nametable 判据（name 表合规与本地化）
 ```
@@ -460,28 +430,11 @@ VFPrefix    : WDesignSans (nameID 25)
 - OFL 要求衍生作品**标明已修改** -> nameID 0/7 现在都有明确声明
 - name 表是唯一随字体文件走的版权信息，必须写对
 
-### ⚠️ VF 构建会丢弃多语言 name 记录（必须后处理）
-```
-实测:
-  masters_MOD18: 31 条 name, langIDs=[0x0, 0x409, 0x804], zh-CN 5 条
-  构建后 VF:     49 条 name, langIDs=[0x0, 0x409],        zh-CN 0 条
-```
-**原因**: varLib 构建 VF 时只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，
-其它语言记录（zh-CN 0x804 等）会被丢弃。
-
-**修复**: 用 `modules/post_vf_name.py` 在 VF 构建后补回:
-```bash
-python modules/post_vf_name.py /workspace/static/wdsans/WDesignSans-VF.otf
-# -> 从 masters_MOD18 复制 zh-CN 的 nameID 1/2/4/16/17
-```
-**注意**: ID17 (Subfamily) 必须固定为 'Regular'，不能直接复制 master 的
-（master 里写的是 ExtraLight，因为它是 250 档）。
-
-**VF 构建后的标准检查清单**:
-1. glyphs / cmap 数量
-2. fsSelection / 垂直度量（master 改了会被继承，但需确认）
-3. **name 表 langIDs（必须在 master 基础上补回 zh-CN）**
-4. 预览子集重新生成
+### ⚠️ VF 构建会丢弃多语言 name 记录
+varLib 只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，zh-CN(0x804) 全丢。
+**修复**: `python modules/post_vf_name2.py <VF>`（WDS_MASTER 指定当前链尾 master）。
+🔴 ID17 (Subfamily) 必须强制固定为 'Regular'（master 里是 ExtraLight）。
+验证: langIDs 应含 0x804。审计项 `nametable.zh` 会检查这一点。
 
 ### m_os2range 判据（OS/2 字符分类位）
 ```
@@ -641,9 +594,6 @@ frac 12/34: [(61925,217),(61927,318),(4744,120),(61928,336),(61931,367)]
 
 **数字特性完成度 7/8**: pnum sups subs sinf numr dnom frac
 （tnum 冗余 —— 本字体 default 已等宽）
-
-### 6 项笔画风格指标
-见下方回归套件与各专项章节。
 
 ### ❌ 已废弃: m_curvflat
 **不要使用。** OPPO/HOS 只有 350 条长曲线，我们有 2853 条；
@@ -1407,31 +1357,82 @@ VF 重建 320s / 41.3MB
 预览子集重建 2.21MB / 7600 字形 / GSUB 缺失 0
 ```
 
-#### 🔴 强制检查清单（重建链后必须逐项确认）
+### ✅ 全模块效果审计系统（2026-11-16）
+
+**每次重建链 / 每次部署前必须跑一遍。**
+
+```bash
+cd /workspace/wdsans2 && python modules/audit.py
+# exit 0 = 全部通过；exit 1 = 有 FAIL
 ```
-原链已部署的全部几何模块，按顺序核对（缺一不可）:
-  1. m_barple      (T6 -> MOD)
-  2. m_shortl      (R1)
-  3. m_zerocont    (R2)
-  4. m_bardiag     (R4)
-  5. m_latinmat    (R5)
-  6. m_latinext    (R6)
-  7. m_kerning     (R7)
-  8. m_markpos     (R8)
-  9. m_metrics     (R9)
- 10. m_nametable   (R10)
- 11. m_os2range    (R11)
- 12. m_coloncenter (R12)
- 13. m_numfeats    (R13)
- 14. m_numfeats2   (R14)
- 15. m_frac        (R15)
- 16. m_ledge       (R16)
- 17. m_latinreset  (R18)   <- 两次被漏掉的就是这个
- 18. m_featlang    (R19)
- 19. m_punctscale  (R24a)
+
+#### 为什么需要它
 ```
-**最容易漏的是纯几何模块（latinreset / punctscale / ledge），**
-因为它们不改拓扑，构建不会报错，也不会触发三档一致性门禁。
+连续两轮出现「重建链漏模块」:
+  第40轮漏 m_curvflat   -> 撇捺被压得过直
+  第41轮漏 m_latinreset -> 拉丁变窄 5.7%
+两者都是纯几何模块: 不改拓扑 -> 三档一致性与 VF 构建都不报错,
+门禁也全通过, 只能靠视觉或指标测量发现。
+```
+
+#### 审计项（表与特性 17 项 + 几何 13 项）
+```
+表与特性 (audit_all.py):
+  latin 宽        与 Mona@400 比应为 1.000 (阈 ±1.5%)  <- 抓 latinreset 遗漏
+  shortl          全库无 C-L-C 短段残留
+  zerocont        无零面积轮廓
+  metrics         fsSelection = 0x0040
+  nametable       nameID 1/2 = WDesign Sans / Regular
+  nametable.zh    langIDs 含 0x804  <- 抓 post_vf_name 遗漏
+  os2range        ulUnicodeRange1 位已置
+  numfeats        sups/subs/sinf 在 GSUB
+  numfeats2       pnum/numr/dnom 在 GSUB
+  frac            frac 在 GSUB
+  coloncenter     calt 在 GSUB
+  kerning         kern 在 GPOS
+  markpos         mark + mkmk 都在 GPOS
+
+几何与排版 (audit_geom.py):
+  ledge           顶部横笔平均右余 <= 130 (目标 90)
+  latinext        Latin Ext-A >= 120/128
+  punct。、，：；  五个句读标点尺寸与目标偏差 < 8%
+  featlang.*      sups/subs/sinf/numr/dnom 在 zh-Hans 下生效
+  featlang.pnum   SKIP —— pnum 被 locl 抵消是已知正确行为
+  coloncenter     12:34 的冒号 gid != a:b 的冒号 gid
+```
+
+#### 审计脚本自身的两个坑（都踩过）
+```python
+# 坑1: Mona 是 VF，必须实例化到 wght=400 才能比
+fm = TTFont(MONA, lazy=True)
+fm = instantiateVariableFont(fm, {'wght': 400}, inplace=True)   # ✅
+# 不实例化会得到 1.082 的假 FAIL
+
+# 坑2: 标点偏差要分别对宽和高算，不能拿高度差去比宽度目标
+dw = abs(w - tw) / tw * 100
+dh = abs(h - th) / th * 100
+# 之前写成 abs(h - tgt)/tgt -> ：124x533 报「偏-330%」的假 FAIL
+```
+
+#### 2026-11-16 实测结果（R25b 部署版）
+```
+表与特性: PASS 17 / FAIL 0 / WARN 0
+几何:     PASS 13 / FAIL 0 / SKIP 1
+全部审计通过
+```
+
+#### 顺带修好的问题：中文 name 记录缺失
+```
+VF 构建会丢弃 zh-CN(0x804) 记录，必须后处理:
+  旧: modules/post_vf_name.py 的 MASTER 硬编码指向 masters_MOD18
+  新: modules/post_vf_name2.py 支持 WDS_MASTER 环境变量，
+      默认指向当前链尾 masters_R25b
+
+🔴 ID17 (Subfamily) 在 master 里是 'ExtraLight'（因为 master 是 250 档），
+   复制到 VF 时必须强制改为 'Regular'。
+
+效果: langIDs ['0x0','0x409'] -> ['0x0','0x409','0x804']
+```
 
 ### m_barple 参数（用户确认 RATIO=0）
 ```
