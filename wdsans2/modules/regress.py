@@ -8,7 +8,7 @@
   1. 重心     墨质心在 bbox 内的相对位置 (0=顶 1=底)
   2. 中宫     墨面积 / bbox 面积
   3. 比例     CJK bbox 宽/高均值
-  4. 撇捺曲率 长曲线(chord>=300)最大偏离弦距离
+  4. 撇捺展开 下半区(60%/70%/80%)墨迹跨度（比绝对曲率更可靠）
   5. 折角     纯 L 折角角度中位
   6. 顶点平顶 顶部第一行墨宽/峰值墨宽
 """
@@ -118,6 +118,36 @@ def m_gravity(path):
     return np.median(vals) if vals else None
 
 
+
+def m_spread(path):
+    """撇捺展开幅度：下半区 60/70/80% 处的墨迹跨度（归一化）
+    比「长曲线绝对偏离」可靠 —— OPPO/HOS 只有 350 条长曲线，
+    我们有 2853 条，绝对曲率指标对它们根本不适用。
+    """
+    CH = '永今合会人入八大天夫火木水之这延建乃奶'
+    SIZE = 1400
+    try:
+        ft = ImageFont.truetype(path, SIZE)
+    except Exception:
+        return None
+    v = [[], [], []]
+    for ch in CH:
+        img = Image.new('L', (SIZE * 2, SIZE * 2), 0)
+        ImageDraw.Draw(img).text((SIZE // 2, SIZE // 2), ch, fill=255, font=ft)
+        a = np.array(img) > 128
+        rows = np.where(a.any(axis=1))[0]
+        cols = np.where(a.any(axis=0))[0]
+        if len(rows) == 0:
+            continue
+        y0, y1 = rows[0], rows[-1]
+        x0, x1 = cols[0], cols[-1]
+        for i, f in enumerate([0.60, 0.70, 0.80]):
+            y = int(y0 + (y1 - y0) * f)
+            xs = np.where(a[y])[0]
+            if len(xs):
+                v[i].append((xs[-1] - xs[0]) / (x1 - x0))
+    return [np.mean(x) for x in v] if v[0] else None
+
 def m_curv(path):
     """撇捺曲率：长曲线最大偏离"""
     f = TTFont(path, lazy=True)
@@ -198,21 +228,21 @@ def m_corner(path):
 
 
 print('%-6s %-10s %-10s %-14s %-12s %-8s' %
-      ('字体', '比例W/H', '中宫%', '重心', '曲率中位/P90', '折角°'))
+      ('字体', '比例W/H', '中宫%', '重心', '撇捺展开60/70/80', '折角°'))
 print('-' * 74)
 for lbl, p in FONTS:
     try:
         w, h = m_prop(p)
         zg = m_zhonggong(p)
         gr = m_gravity(p)
-        cm_, cp90 = m_curv(p)
+        sp = m_spread(p)
         co = m_corner(p)
         print('%-6s %-10s %-10s %-14s %-12s %-8s' % (
             lbl,
             '%.0f/%.0f' % (w, h),
             '%.1f' % zg if zg else '-',
             '%.3f' % gr if gr is not None else '-',
-            '%.1f/%.1f' % (cm_, cp90) if cm_ else '-',
+            '%.3f/%.3f/%.3f' % tuple(sp) if sp else '-',
             '%.1f' % co if co else '-'))
     except Exception as e:
         print('%-6s ERR %s' % (lbl, str(e)[:40]))
