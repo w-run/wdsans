@@ -20,12 +20,14 @@ body{
 }
 
 /* ===== 字体 ===== */
-@font-face{font-family:'WDesign';src:url('wd-preview.woff2') format('woff2');
+@font-face{font-family:'WDesign';src:url('wd-preview.woff2?v=202611172113') format('woff2');
   font-weight:250 900;font-style:normal;font-display:block}
-@font-face{font-family:'CmpOPPO';src:url('oppo.woff2') format('woff2');
+@font-face{font-family:'CmpOPPO';src:url('oppo.woff2?v=202611172113') format('woff2');
   font-weight:250 900;font-style:normal;font-display:swap}
-@font-face{font-family:'CmpSHS';src:url('shs-master.woff2') format('woff2');
+@font-face{font-family:'CmpSHS';src:url('shs-master.woff2?v=202611172113') format('woff2');
   font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'WDesignFlat';src:url('WDesignSans-FlatApex-Regular.otf?v=202611172113') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:'CmpHOS';src:url('hos-compare.woff2?v=202611172113') format('woff2');font-weight:400;font-display:swap}
 
 /* 字重统一由 --w 驱动 */
 .wd{font-family:'WDesign';font-variation-settings:'wght' var(--w,400);font-weight:var(--w,400)}
@@ -163,6 +165,15 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   .metrics{font-size:11.5px}
   .metrics th,.metrics td{padding:6px 4px}
 }
+.apex-cmp{display:flex;flex-direction:column;gap:10px;background:var(--bg2,#fafafa);padding:16px;border-radius:10px}
+.ac-row{display:flex;align-items:baseline;gap:16px}
+.ac-lbl{flex:0 0 132px;font-size:13px;color:#666}
+.ac-wf,.ac-wv,.ac-op,.ac-ho{font-size:44px;line-height:1.15;letter-spacing:.01em}
+.ac-wf{font-family:'WDesignFlat'}
+.ac-wv{font-family:'WDesign';font-weight:400}
+.ac-op{font-family:'CmpOPPO'}
+.ac-ho{font-family:'CmpHOS',system-ui}
+
 </style>
 </head>
 <body>
@@ -225,19 +236,43 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   <h2>笔画风格量化 <span class="tag g">与 OPPO / HOS 实测对比</span></h2>
   <table class="metrics">
     <tr><th>指标</th><th>本字体</th><th>OPPO</th><th>HOS</th><th>判定</th></tr>
-    <tr><td>重心（墨质心）</td><td>0.512</td><td>0.511</td><td>0.501</td><td class="ok">一致</td></tr>
-    <tr><td>中宫（墨密度）</td><td>46.8%</td><td>44.7%</td><td>46.1%</td><td class="ok">一致</td></tr>
-    <tr><td>重心/字面比例</td><td>916/903</td><td>896/910</td><td>907/902</td><td class="ok">一致</td></tr>
-    <tr><td>撇捺曲率</td><td>20.0</td><td>19.2</td><td>17.1</td><td class="ok">已对齐</td></tr>
-    <tr><td>折角角度（纯 L）</td><td>90.0°</td><td>90.0°</td><td>90.0°</td><td class="ok">一致</td></tr>
+    <tr><td>重心（墨质心）</td><td>0.499</td><td>0.497</td><td>0.476</td><td class="ok">一致</td></tr>
+    <tr><td>中宫（墨密度）</td><td>43.2%</td><td>42.1%</td><td>42.4%</td><td class="ok">一致</td></tr>
+    <tr><td>字面比例 宽/高</td><td>915/911</td><td>894/914</td><td>906/908</td><td class="ok">一致</td></tr>
+    <tr><td>撇捺展开 60/70/80%</td><td>0.524/0.535/0.610</td><td>0.530/0.554/0.626</td><td>0.538/0.553/0.645</td><td class="ok">一致</td></tr>
+    <tr><td>折角角度（纯 L）</td><td>90.0°</td><td>90.0°</td><td>90.0°</td><td class="ok">完全一致</td></tr>
     <tr><td>笔末切角</td><td>垂直</td><td>垂直</td><td>垂直</td><td class="ok">一致</td></tr>
     <tr><td>横折出头（顶部横笔）</td><td>右余 90</td><td>右余 122</td><td>右余 0</td><td class="ok">已对齐</td></tr>
-    <tr><td>顶点平顶（人字形）</td><td>尖角</td><td>平顶 38%</td><td>平顶 40%</td><td class="na">风格差异</td></tr>
+    <tr><td>顶点平顶（人字形）</td><td>79 em</td><td>68 em</td><td>76 em</td><td class="ok">已实现</td></tr>
   </table>
   <p class="note">
-    曲率指标为长曲线（弦长 ≥300）最大偏离弦距离，单位 em，数值越小越接近直线。
-    顶点平顶属字形拓扑差异，保持 SHS 原样。
+    撇捺展开为下半区 60/70/80% 高度处的墨迹跨度。顶点平顶见下方专项对比。
   </p>
+</div>
+
+<!-- 顶点平顶专项 -->
+<div class="panel">
+  <h2>顶点平顶 <span class="tag g">人字形笔画 · 仅静态版</span></h2>
+  <p class="note" style="margin:0 0 14px">
+    OPPO / HOS 的「今」「合」等字顶部为水平截平（平顶），思源黑体为尖角。
+    多档可变字体的布尔运算会在三档产生不同拓扑，无法插值，
+    因此该特性单独提供 <strong>静态 400 单字重版</strong>。
+  </p>
+  <div class="apex-cmp">
+    <div class="ac-row"><span class="ac-lbl">本字体 · 静态版</span><span class="ac-wf">今合会含令全金余介企</span></div>
+    <div class="ac-row"><span class="ac-lbl">本字体 · 可变版</span><span class="ac-wv">今合会含令全金余介企</span></div>
+    <div class="ac-row"><span class="ac-lbl">OPPO Sans</span><span class="ac-op">今合会含令全金余介企</span></div>
+    <div class="ac-row"><span class="ac-lbl">HOS</span><span class="ac-ho">今合会含令全金余介企</span></div>
+  </div>
+  <table class="metrics" style="margin-top:16px">
+    <tr><th>字</th><th>平顶前</th><th>平顶后</th><th>OPPO</th><th>HOS</th></tr>
+    <tr><td>今</td><td class="na">0</td><td class="ok">79</td><td>68</td><td>76</td></tr>
+    <tr><td>合</td><td class="na">0</td><td class="ok">82</td><td>71</td><td>75</td></tr>
+    <tr><td>令</td><td class="na">0</td><td class="ok">77</td><td>69</td><td>77</td></tr>
+    <tr><td>含</td><td class="na">0</td><td class="ok">78</td><td>66</td><td>76</td></tr>
+    <tr><td>全</td><td class="na">0</td><td class="ok">83</td><td>69</td><td>75</td></tr>
+  </table>
+  <p class="note">覆盖 1,804 字，对照组「口回十中申甲田日国目」零误伤。单位 em。</p>
 </div>
 
 <!-- OpenType 特性 -->
