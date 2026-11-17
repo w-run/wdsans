@@ -41,50 +41,10 @@ def bbox(ch):
 
 print('=== 几何模块 ===')
 
-# m_ledge: 顶部横笔右余应为 ~90（400档）
-ms = []
-for ch in '冬备务各条':
-    b = bbox(ch)
-    if not b:
-        continue
-    # 用位图法太慢, 这里用简化判据: 横笔右端应接近字面右界
-    rp = RecordingPen()
-    gs[cm[ord(ch)]].draw(rp)
-    cs = []
-    cur = None
-    for op, args in rp.value:
-        if op == "moveTo":
-            if cur: cs.append(cur)
-            cur = [args[0]]
-        elif op == "lineTo":
-            cur.append(args[0])
-        elif op in ("curveTo","qCurveTo"):
-            cur.extend(list(args))
-        elif op == "closePath":
-            if cur: cs.append(cur)
-            cur = None
-    if cur: cs.append(cur)
-    gx1 = max(p[0] for c in cs for p in c)
-    gmax = max(p[1] for c in cs for p in c)
-    best = None
-    for c in cs:
-        xs = [p[0] for p in c]; ys = [p[1] for p in c]
-        w = max(xs)-min(xs); h = max(ys)-min(ys)
-        if w < 300 or w/max(h,1) < 2.5:
-            continue
-        if max(ys) < gmax - 320:
-            continue
-        m = gx1 - max(xs)
-        if best is None or m < best:
-            best = m
-    if best is not None:
-        ms.append(best)
-if ms:
-    avg = np.mean(ms)
-    rec('ledge', 'PASS' if avg <= 130 else 'FAIL',
-        '顶部横笔平均右余 %.0f (目标90, n=%d)' % (avg, len(ms)))
-else:
-    rec('ledge', 'SKIP', '未找到可测横笔')
+# m_ledge: DEPRECATED - removed from chain in R29 (see AGENTS.md)
+#   v1 1182 chars / v2 2636 chars / v3 1511 chars but damaged 1456 glyphs
+#   root cause: cannot distinguish whole-glyph top bar from left-radical bar
+rec('ledge', 'SKIP', 'deprecated: m_ledge damaged 1456 glyphs, removed in R29')
 
 # m_latinext: Latin Ext-A 覆盖
 exta = sum(1 for cp in cm if 0x0100 <= cp <= 0x017F)
