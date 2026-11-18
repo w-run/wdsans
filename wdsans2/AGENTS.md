@@ -72,7 +72,10 @@ masters_R27  = R26 + m_digitnine  数字9 换 Mona
 # 2026-11-17 晚：m_ledge 误伤 1,456 字，彻底移除
 masters_R29  = R15 + punctscale + featlang + latinreset + digitnine + chufoot
 masters_R30  = R29 + m_spikefix6   眼字艮部撇尖 11字
-masters_R31  = R30 + m_seamfix3    全库 20,479 字闭合缝隙 已部署 ← 当前链尾
+masters_R31  = R30 + m_seamfix3    全库 20,479 字闭合缝隙
+masters_R32  = R31 + m_by0align    326 字 bar/body 接合点 y 跟随本档
+masters_R33  = R32 + m_boxrad     1,040 字 闭口偏旁垂直居中+拉高
+masters_R34  = R33 + m_radfoot       11 字 部首出脚  已部署 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -165,6 +168,9 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
 | `m_digitnine` | 数字 9 换成 Mona 版本 | 1 字形 | 已并入 R29 |
 | `m_spikefix6` | 修复撇端点被抬高成尖刺 | 11 字 | 已并入 R30 |
 | `m_seamfix3` | 闭合轮廓首末点缝隙 | 20,479 字 | 已并入 R31 |
+| `m_by0align` | bar/body 接合点 y 跟随本档 | 326 字 | 已并入 R32 |
+| `m_boxrad` | 闭口偏旁垂直居中+拉高 | 1,040 字 | 已并入 R33 |
+| `m_radfoot` | 左偏旁底部出脚 | 11 字 | 已并入 R34 |
 
 ### ❌ 已废弃: m_termface / m_termface_v2（C→L 端面拉直）
 ```
@@ -173,30 +179,14 @@ python modules/glyphview.py --chars 永 --fonts VF.otf:w700:700 --grid 100 -o /t
           全库曲线占比 38.2% -> 30.0%（-8%），视觉上明显「变方」。
 详见「重大事故：曲线全部丢失」。不要重新启用。
 ```
-### m_bardiag 判据（横线未达斜边）
+### m_bardiag / m_yanrad 判据
 ```
-bar : 3段纯L，宽≥1.0×SW，高≤2.5×SW
-diag: 同字内与 bar 的 y 区间重叠的轮廓
-缺陷: 0.05×SW ≤ (diag外缘x − bar右端x) ≤ 0.60×SW
-修复: bar 两个右端点各自 → diag 在该 y 处的外缘 x
+bardiag: bar(3段纯L,宽>=1.0SW,高<=2.5SW) 右端未达斜边外缘 0.05~0.60SW -> 拉到外缘
+  「建」C5 292->315/307 (消 23 单位台阶)
+yanrad: 9段轮廓签名 CLCLLLCCL (建延健庭廷挺), a5=尖角收到横线右上角
+  关键: a7 用「法向偏移保宽」, 否则斜边被压窄 (实测 延 78->44)
+  全库含该签名 63 字, 命中 62
 ```
-验证：`建` 左上横折 C5 292→315/307（消 23 单位台阶）；`延`、`永` 同类。
-
-### m_yanrad 判据（廴旁顶端尖角）
-```
-识别: 9段轮廓, 签名 CLCLLLCCL (建/延/健/庭/廷/挺 六字实测一致)
-      a4=seg2终点(斜边顶)  a5=seg3终点(尖角)  a6=seg4终点  a7=seg5终点
-匹配: 同字内 3段纯L 横线, 右端在 a4 的 [-0.6, 1.2] SW 内, y 区间覆盖 a4
-修复: a4 -> (bar.xR, bar.yBot)   斜边顶收到横线右下角
-      a5 -> (bar.xR, bar.yTop)   尖角收到横线右上角 (形成垂直新边)
-      a7 -> 由新 seg2 法向偏移 w0 决定, w0 = 原 a7 到原 seg2 的法向距离  <- 保斜边宽
-      a6 -> a7 沿原 a6->a7 反向
-```
-**关键: a7 必须用「法向偏移保宽」算法**, 否则斜边会被压窄。
-> 实测: 直接沿用 a5->a6 方向内收, 延 顶端厚度 78 -> 44 (-35)。
-
-全库: 含该签名 63 字, 命中 62 字 (98%)。抽查 扬/杨/场/汤/艇 无误报。
-
 ### m_shortl 判据（曲线间冗余短直线段）
 ```
 命中: L 段, 长度 0.3 ~ min(15, 0.20*SW), 且前后段都是 C(曲线)
@@ -275,72 +265,14 @@ MiSans 版权: Copyright (c) 2020-2025 Beijing Xiaomi Mobile Software Co.,Ltd.
   OPPO/HOS/MiSans 用于**风格参考**（测量比例、观察笔画形态）是合理的；
   把它们的**字形轮廓复制进我们的字体**则超出许可范围。
 
-### m_kerning 判据（移植拉丁 kerning）
+### m_kerning / m_markpos 判据
 ```
-问题: 我们 VF 的 kern 配对只有 845 个，Mona 有 3,261 个（少 74%）
-      → 字距整体过宽，A/V、A/Y 等经典配对未收紧
-
-实测（72px 位图墨宽）:
-  配对   改前  Mona   差值
-  AV      91    81    +10
-  AY      90    81     +9
-  WA     114   107     +7
-  VA      92    82    +10
-
-方案:
-  1. 从 Mona GPOS 提取全量 kern（含 class-based Format2 展开）
-     → 展开后 151,815 对
-  2. 按字形名映射（双方交集 543 个字形）→ 77,294 对可用
-  3. 用 buildPairPosGlyphs 生成新 PairPos lookup，追加到 kern feature
+kerning: 从 Mona 提取 77,294 对, KERN_SCALE=0.65
+  未缩放时 AT/LT/To 过紧; 0.65 时与 Mona 平均偏差 2.44px 最优
+  坑: buildPairPosGlyphs 第1参数是 dict, 返回 subtables list 需自行包 Lookup
+markpos: 22 组合符号 x 442 基字母, 生成 MarkBasePos + MarkMarkPos
+  🔴 Coverage 必须按 glyph id 排序, 按字形名排序会导致三档顺序不同 -> VF 构建报错
 ```
-
-**关键: kerning 强度需缩放 KERN_SCALE=0.65**
-Mona 的 kern 值基于其自身字宽；我们经 `m_latinmat` 缩放到 0.943 后字更窄，
-直接全量移植会让本已合适的配对变过紧。
-```
-系数  与 Mona 平均偏差   评价
-1.00      3.19 px        AT/LT/To/T- 变过紧
-0.65      2.44 px        最优
-0.50      2.88 px        偏松
-改前      5.62 px        —
-```
-
-**API 坑**: `buildPairPosGlyphs` 三个参数细节
-- 第1参数是 dict: `{(g1,g2): (ValueRecord_or_None, ValueRecord_or_None)}`
-- `buildValue()` 只接受一个 dict: `buildValue({'XAdvance': v})`
-- 返回的是 **subtables list**，需自行包 `ot.Lookup()` 并设 LookupType=2
-> 连续踩三次: 传 list → 'list has no items'; 传 dict 值 → 'dict has no getFormat';
->              buildValue(xAdvance=v) → 'unexpected keyword argument'
-
-### m_markpos 判据（重建 mark + mkmk）
-```
-问题: 我们 mark feature 只覆盖 6 个组合符号（共 22 个），mkmk 完全缺失
-      → 多符号横向并排而非垂直叠加
-
-实测（80px 位图）:
-  组合                改前宽度  修复后  Mona
-  a+acute+tilde         69      32     34
-  o+diaeresis+macron    55      38     37
-  e+circ+acute          39      39     35
-
-方案（不依赖 Mona — 它的 mkmk 只覆盖 23+2 个符号，太窄）:
-  1. 组合符号锚点 = 底部包围盒中心 (x_mid, y_min)
-  2. 基字母锚点   = 顶部包围盒中心 (x_mid, y_max)
-  3. 生成 MarkBasePos (mark, type 4) + MarkMarkPos (mkmk, type 6)
-  覆盖: 22 组合符号 × 442 基字母
-```
-
-**关键坑: Coverage 必须按 glyph id 排序，不能按字形名**
-```python
-# 错误: sorted(marks.keys())        -> 按字符串排序
-# 正确: sorted(marks.keys(), key=lambda g: gidmap.get(g, 999999))
-```
-> 实测: 按字形名排序时，三档的 Coverage 顺序不同 →
->       VF 构建报 `InconsistentGlyphOrder: GPOS.table.LookupList.Lookup[12][0]`
->       改为按 glyph id 排序后正常。
-> 教训: 任何新建的 Coverage/ClassDef 都必须按 glyph id 排序，
->       因为三档的字形名顺序可能不同，但 glyph id 顺序在三档是一致的。
-
 ### 字形比例（最新值见 regress.py）
 ```
 指标        我们    OPPO    HOS
@@ -442,12 +374,10 @@ varLib 只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，zh-CN(0x804) 全
 
 #### 🔴 三次失败（务必避坑）
 ```
-1. feaLib addOpenTypeFeaturesFromString 会替换整个 GSUB
-   -> 16 features 掉到 1 个，vert/vrt2/ccmp 全丢
+1. feaLib addOpenTypeFeaturesFromString 会替换整个 GSUB -> 16 features 掉到 1 个
 2. 备份+反向合并会破坏 locl 的 script 映射
 3. 手写 ot.Coverage() 读回 Format=None，HarfBuzz 静默跳过
 ```
-
 #### ✅ 可行方案：只追加 subtable 到已接线的 calt lookup
 ```python
 # latn 的 calt = feature#68 -> lookup#30（已接线，勿动 FeatureList/ScriptList）
@@ -460,95 +390,27 @@ varLib 只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，zh-CN(0x804) 全
 验证: lookups 52->54, lookup#30 subtable 1->3, 16 种 feature 全部在位。
 竖排回归测试： — … 「 与 MOD19 完全一致。
 
-### m_numfeats 判据（数字排版特性）
+### m_numfeats / numfeats2 / frac 判据（数字排版特性）
 ```
-对比四个字体的数字特性:
-  SHS    （无）
-  我们    （无）  <- 继承 SHS 的空白
-  OPPO   tnum pnum frac subs sups sinf numr dnom
-  HOS    tnum pnum frac subs sups sinf numr dnom
+OPPO/HOS 有 8 个: tnum pnum frac subs sups sinf numr dnom
+我们实现 7 个: pnum sups subs sinf numr dnom frac  (tnum 冗余, 本字体默认已等宽)
 
-同时发现字符缺失:
-  上标 U+2070-2079: 缺 6 个（⁰⁵⁶⁷⁸⁹）
-  下标 U+2080-2089: 全缺 10 个（₀-₉）
-```
+sups/subs/sinf = 默认数字缩放62%, 上移34%em / 下移16%em
+pnum = locl 的 tabular 映射反向 -> 恢复比例数字
+numr = 缩放60% 上移33%em   dnom = 缩放60% 下移10%em
+frac = slash->fraction + zero~nine->*.numr + ChainContext [fraction]numr'->dnom
 
-**已实现: sups / subs / sinf**
-```
-上下标字形 = 默认数字缩放 62%，上移 34%em / 下移 16%em
-特性映射 = SingleSubst 到新字形
-cmap 补齐 = U+2070-2079 填 7 个, U+2080-2089 填 10 个
-```
+cmap 补齐: U+2070-2079 填7个, U+2080-2089 填10个
 
-**🔴 关键坑: 我们的字体默认数字是等宽的！**
-SHS 的 locl 特性（lookup#42, latn script）会把 `zero` 换成 `glyph63166`。
-```
-默认:      gid63166~63175  adv 全部 521  （等宽）
-locl=False: gid17~26        adv 640/363/530... （比例）
-```
-所以 sups/subs 的 mapping **必须同时覆盖两套 input**:
-```python
-# 只写 zero -> 上标 是不够的，因为 locl 已把 zero 换了
-mapping = {
-    'zero': 'sup_zero', 'one': 'sup_one', ...   # 未走 locl 时
-    'glyph63166': 'sup_zero', ...               # locl 之后
-}
-```
-> 实测: 只写默认数字时 sups 完全不触发（gid 不变）；
->       扩充后 sups: gid63167(521) -> gid36712(225) ✓
+#### 🔴 同一个 locl 坑（踩了三次）
+locl 先把 zero~nine 换成 glyph63166~63175 (等宽)，所以:
+  lookup input 写 one 匹配不上，要写 glyph63167
+  mapping 必须同时覆盖两套 input
+规律: 任何以数字为 input 的 feature，mapping 都要叠加 locl_tab。
 
-**tnum 是冗余的**（本字体默认已等宽，无需 tnum）。
-真正缺的是 **pnum**（比例数字），留给后续。
-
-### m_numfeats2 判据（pnum / numr / dnom）
+验证(HarfBuzz): 默认123=gid63167(521)  sups=gid43272(241)
+  pnum=gid18(363)  numr=gid61925(217)  frac 1/2=[61925,4744,61927]
 ```
-pnum: locl 的 tabular 映射反向 -> 恢复比例数字
-      glyph63166~63175 -> zero~nine
-      (默认等宽, pnum 开启后变比例)
-
-numr: 默认数字缩放 60% + 上移 33%em
-dnom: 默认数字缩放 60% + 下移 10%em
-```
-
-**验证（HarfBuzz）**
-```
-默认 123:  gid63167 adv 521   （等宽，locl 生效）
-pnum 123:  gid18    adv 363   （比例，恢复默认数字）
-numr 123:  gid61925 adv 217   （分子）
-dnom 123:  gid61940 adv 217   （分母）
-```
-
-**累计数字特性（MOD23）**: sups / subs / sinf / pnum / numr / dnom 共 6 个
-OPPO/HOS 都有 8 个，还差 frac（分数）与 tnum（我们默认已等宽，冗余）
-
-### m_frac 判据（分数特性）
-```
-机制（3 步 + ChainContext）:
-  1) slash -> fraction          (U+2044 分数线)
-  2) zero~nine -> *.numr        (分子字形，MOD23 已建)
-  3) ChainContext: [fraction] numr' -> dnom
-     [dnom] numr' -> dnom       (多位数分数)
-```
-
-**验证（HarfBuzz）**
-```
-frac 1/2:   [(61925,217), (4744,120), (61927,318)]
-             分子        分数线      分母
-frac 12/34: [(61925,217),(61927,318),(4744,120),(61928,336),(61931,367)]
-```
-
-**🔴 同一个 locl 坑（第三次踩到）**
-`locl` 先把 zero~nine 换成 glyph6316x，所以:
-- lookup 的 input 写 `one` 匹配不上，要写 `glyph63167`
-- mapping 必须同时覆盖两套 input
-> 第一次: m_numfeats 的 sups（已修）
-> 第二次: m_numfeats2 的 numr/dnom（已修）
-> 第三次: m_frac 的 numr（已修）
-**规律: 任何以数字为 input 的 feature，mapping 都要叠加 locl_tab。**
-
-**数字特性完成度 7/8**: pnum sups subs sinf numr dnom frac
-（tnum 冗余 —— 本字体 default 已等宽）
-
 ### ❌ 已废弃: m_curvflat
 **不要使用。** OPPO/HOS 只有 350 条长曲线，我们有 2853 条；
 该指标对参考字体不适用。强行压平使撇捺展开 0.531 -> 0.616~0.629（参考 0.531）。
@@ -778,6 +640,85 @@ MOD / R15 / R29 完全一致
 ```
 
 命中 11 字：眼 根 跟 很 恨 銀 银 限 艰 良 艮
+
+### m_boxrad 判据（闭口偏旁垂直居中 + 拉高）
+
+用户：「口日田目这些部首应该再拉高一些」「相对于右侧主体」居中
+
+#### 关键发现：不是位置偏，是偏旁被压扁了
+```
+轮廓级实测(400档，左偏旁轮廓组)：
+字   R32 左偏旁        SHS 左偏旁        顶差  底差
+叫   y[167,745] 578   y[ 79,749] 670    -4   +88
+叨   y[165,747] 582   y[ 86,748] 662    -1   +79
+叩   y[189,766] 577   y[ 96,766] 670     0   +93
+叱   y[182,737] 555   y[ 85,737] 652     0   +97
+昨   y[111,766] 655   y[ 30,762] 732    +4   +81
+晴   y[118,772] 654   y[ 36,771] 735    +1   +82
+-> 顶边几乎不动(-4~+4)，底边需下移 79~97(中位80)。是压矮了，需向下延伸。
+```
+
+#### 🔴 切分：x 间隙法失败，改用 y 范围聚类
+```
+x 间隙法的死穴：「口/日」由 U形主体+左竖组成，两者 x 投影重叠
+  「叶」c2 x[115,373] / c3 x[75,145]   115 < 145 -> 无间隙可切
+  只在 11/21 字上成功
+
+✅ y 范围聚类(20/21 成功)：同一偏旁的多个轮廓 y 范围完全相同
+  「叶」c2 y[173,734] c3 y[173,734]  完全相同
+  「昨」c5 y[111,765] c7 y[111,766]  差 1
+  做法：按 (y0,y1) 容差 4 聚类 -> 取 x_min 最左的簇
+  验证：与 SHS 的 x 范围误差 <=3 单位
+```
+
+#### 🔴 两个参数坑
+```
+1. 宽高比下限 0.45 -> 0.30
+   「日」旁宽267 高675，比值0.40，被0.45挡掉10个字
+2. 三档独立检测 -> 400档驱动
+   独立检测时250档少14字(生僻字笔画细) -> 签名不一致
+   改400档检测+三档套同一索引 -> 三档全1,040字
+```
+
+#### 效果（17/17 匹配，误差 ±22 单位）
+```
+叫 h658 c416/SHS h670 c414   昨 h735 c400/h732 c396   晖 h734 c404/h735 c404
+叨 h662 c416/h662 c417       晴 h734 c406/h735 c404   昕 h740 c399/h737 c398
+叩 h657 c438/h670 c431       暗 h755 c392/h739 c398   叱 h635 c420/h652 c411
+```
+
+#### 数据源
+```
+cjkvi-ids（经 6629 代理下载）；IDS 数据放 /workspace/wdsans2/ref_ids/
+⿰ 左右结构 14,558 字 -> 左偏旁为封闭方框 1,075 字 -> 实际改动 1,040 字
+```
+
+### m_radfoot 判据（左偏旁底部出脚）
+
+用户：「都」左下的日字形底部右侧出脚还在、没被去掉
+
+```
+都 400档: c6 LLLLLL x[147,471] y[-16,374]  「日」外框
+         c7 LLL    x[442,514] y[-60,374]  「日」右竖，底低 44
+OPPO 该处完整闭合方框无出脚；SHS 同样有出脚（我们继承 SHS）
+
+判据(严格版)：
+1. 封闭方框：段数>=5, 宽高比0.35~2.8, 尺寸>=100, 右缘<=字宽55%
+2. 竖条：LLL/LLLL, 高>=150, 宽<=高*0.6
+3. 竖条 x 与方框右缘重叠
+4. 竖条顶端与方框顶齐
+5. 竖条底比方框底低 20~90
+
+对照组 12 字(仰似倒假做修代件住你他们) 全部 0 命中
+
+#### 🔴 放宽判据的陷阱
+放宽到「任意竖条底低于方框 20~120」-> 命中 571 字
+但含 命/可/哉/制/刷 等明显非同构的字
+-> 保留严格判据的 11 字：僘厥塑嵞朔槊磊蒴都鬬鬭
+结论：宁少勿滥。判据放宽到几百字时必然混入非同构字。
+
+效果：都的出脚 250档 52->0 / 400档 44->0 / 900档 34->0
+```
 
 ### 🔵 用户裁定：包围结构字面宽度差异属风格，不调整
 
@@ -1594,4 +1535,6 @@ await tools.ssh_upload({ alias: 'w-box',
 | 纟旁拐角 | 丝 红 | ✅ 已核查非缺陷 |
 | 建字左侧部首 | 建 | 已放弃（多轮 KD_/CT_/DX_ 等 10+ 方案全部回滚） |
 | 多字拐角 | 多 | ✅ 已核查非缺陷（短臂假折角，过滤后精确 90°） |
+| 闭口偏旁压扁上移 | 叫 昨 晴 暗 | ✅ 已修（m_boxrad，1,040 字，误差 ±22 单位） |
+| 左偏旁出脚 | 都 | ✅ 已修（m_radfoot，11 字，出脚归零） |
 | 缝隙/碎裂 | 嘴 眠 靡 廖 等 | ✅ 全库 3755 字扫描，墨量差全在 ±2.2% 内 |
