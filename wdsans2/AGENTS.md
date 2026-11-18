@@ -330,36 +330,21 @@ varLib 只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，zh-CN(0x804) 全
 
 **教训**: 字符集扩张后必须重算 OS/2 分类位，否则字形存在但系统认为不支持。
 
-### m_coloncenter 判据（时间场景冒号居中）
+### m_coloncenter 判据（时间冒号居中）
 ```
-问题（用户指出）: 横排时间 12:34 的冒号明显偏低。
-  实测: zero 中心 +364, colon 中心 +258, 差 -106
-  参考: OPPO colon.centered / HOS colon.ss03 都居中（差 -1）
-  -> SHS 没修，两家国内厂商都修了
+问题: 横排 12:34 的冒号偏低。实测 zero 中心 +364 / colon +258，差 -106。
+      OPPO colon.centered 与 HOS colon.ss03 都居中（差 -1）-> SHS 没修。
+方案: 复制冒号轮廓上移到数字中心 -> 未映射槽位 -> 数字间 calt 替换。
+效果: 12:34 -> gid117(居中)；a:b -> gid27(基线)。
 
-方案: 复制冒号轮廓上移到数字中心 -> 未映射槽位 -> 数字间 calt 替换
+🔴 三次失败:
+  1. feaLib addOpenTypeFeaturesFromString 替换整个 GSUB -> 16 features 掉到 1 个
+  2. 备份+反向合并破坏 locl 的 script 映射
+  3. 手写 ot.Coverage() 读回 Format=None，HarfBuzz 静默跳过
+✅ 可行方案: 只把 subtable 追加到已接线的 calt lookup#30（latn feature#68）
+  FeatureList/ScriptList 完全不动 -> 原有特性零风险。
+验证: lookups 52->54, lookup#30 subtable 1->3, 16 种 feature 全在位。
 ```
-
-**效果（HarfBuzz）**: 12:34 -> gid117（居中）；a:b -> gid27（基线）
-
-#### 🔴 三次失败（务必避坑）
-```
-1. feaLib addOpenTypeFeaturesFromString 会替换整个 GSUB -> 16 features 掉到 1 个
-2. 备份+反向合并会破坏 locl 的 script 映射
-3. 手写 ot.Coverage() 读回 Format=None，HarfBuzz 静默跳过
-```
-#### ✅ 可行方案：只追加 subtable 到已接线的 calt lookup
-```python
-# latn 的 calt = feature#68 -> lookup#30（已接线，勿动 FeatureList/ScriptList）
-# 1) 隔离编译拿 feaLib 正确生成的 ChainContext subtable
-# 2) 把 SingleSubst 追加到 LookupList 末尾
-# 3) 把 ChainContext subtable 追加到 lookup#30.SubTable
-# 4) 修正 SubstLookupRecord.LookupListIndex 指向新 SingleSubst
-```
-**关键**: FeatureList / ScriptList 完全不动 -> 所有原有特性零风险。
-验证: lookups 52->54, lookup#30 subtable 1->3, 16 种 feature 全部在位。
-竖排回归测试： — … 「 与 MOD19 完全一致。
-
 ### m_numfeats / numfeats2 / frac 判据（数字排版特性）
 ```
 OPPO/HOS 有 8 个: tnum pnum frac subs sups sinf numr dnom
@@ -649,6 +634,23 @@ HOS     358/359   37.2   0.499   0.664/0.684/0.678   90.0
   3. 交付前交叉核对「页面宣称」vs「AGENTS.md 真实状态」。
 ```
 
+### ✅ 交付物一致性审计 claim_audit.py（已并入主审计）
+```
+背景: 连续两轮发现展示层与真实状态不符（功能虚报+数字偏差），固化为脚本。
+检查 11 项: 文件大小 / 字符数 / 功能虚报 / HTML结构 / 平顶字数
+  功能虚报: 正则「关键词+已实现」，黑名单 顶横出头/横折出头；另查废弃 m_ledge2 的 2,636
+
+🔴 第一版正则漏洞（靠负向测试才发现）:
+  r"横折出头[^<]{0,40}已对齐" —— 实际 HTML 中间有 </td><td> 标签
+  [^<] 无法跨越 -> 注入虚报后仍 PASS（假阴性）
+  修正: r"横折出头.{0,300}?已对齐" + re.S
+
+🔴 负向测试（必做）: 注入虚报行 -> exit=1, FAIL 2；恢复后 exit=0, PASS 11
+
+教训: 1) 防虚报的脚本自己也要负向测试 2) 正则匹配HTML不能用[^<]
+      3) 已并入 audit.py SCRIPTS，成为第三组审计。
+```
+
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
@@ -722,18 +724,14 @@ Mona 仅剩 4 个可补（฿ + 2 笑脸 + 1 PUA）-> 实用性极低，不补�
 ```
 ### 🔴 拉丁宽度与预览子集修复（2026-11-15）
 ```
-拉丁被 m_latinmat 压窄 5.7% -> m_latinreset 反缩放恢复:
-  m_latinmat 把拉丁轮廓 x 缩放 0.943（基于「竖干比 CJK 粗 5.7%」的测量）
-  但常用拉丁已从 Mona 注入，Mona 本身已协调 -> 不该再压窄
-  m_latinreset 做 1/0.943 = 1.0604 反向缩放（486 字形）
+拉丁被 m_latinmat 压窄 5.7% -> m_latinreset 反缩放恢复（1/0.943=1.0604，486字形）
   效果 H 550->583 / A 597->635 / W 858->910（= Mona@400）
   两步骤是一对，重建链漏掉 latinreset 会让拉丁窄 5.7%
 
-预览子集裁掉特性目标字形:
-  populate(text=...) 只保留文本里出现的字符，不保留 GSUB 目标
-  修复: 收集 sups/subs/sinf/numr/dnom/frac/pnum/calt/liga/dlig 的 lookup 目标
-        + 展开 ChainContext 内部引用 + 排除 lookup#30（谚文 calt 2.4万目标）
-  结果 7,600 字形 / 4.23MB，GSUB 指向缺失字形 0 条
+预览子集需保留 GSUB 目标字形（populate 只保留文本字符）:
+  收集 sups/subs/sinf/numr/dnom/frac/pnum/calt/liga/dlig 的 lookup 目标
+  + 展开 ChainContext 内部引用 + 排除 lookup#30（谚文 calt 2.4万目标）
+  结果 GSUB 指向缺失字形 0 条
 ```
 ### 🔴 数字排版特性在中文环境失效（2026-11-16）
 
