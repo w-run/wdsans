@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>笔画 · 永字八法</title>
+<meta name="dsh-design" content="poster 1080x1350">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  html,body{ width:1080px; height:1350px; overflow:hidden; }
+  .sheet{ position:relative; width:1080px; height:1350px; background:var(--night); overflow:hidden; }
+  .sheet::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(239,234,222,.026) 0 1px, transparent 1px 6px),
+      repeating-linear-gradient(90deg, rgba(239,234,222,.018) 0 1px, transparent 1px 6px);
+  }
+  .top{ position:absolute; left:var(--safe); top:70px; width:720px; }
+  .kicker{ font-family:var(--f-label); font-size:12px; letter-spacing:.44em;
+    text-transform:uppercase; color:var(--night-muted); margin:0 0 22px; }
+  h2{ font-family:var(--f-cjk); font-weight:600; font-size:68px;
+    letter-spacing:.01em; line-height:1.14; margin:0; color:var(--night-text); }
+  h2 em{ font-style:normal; color:var(--accent-2); }
+  .sub{ font-size:15px; line-height:1.85; color:var(--night-muted);
+    margin:22px 0 0; max-width:600px; }
+  .sub b{ color:var(--night-text); font-weight:600; }
+  .mark-y{ position:absolute; right:62px; top:34px; width:180px; opacity:.14; }
+  .mark-y svg{ display:block; width:100%; }
+  .mark-y path{ fill:none; stroke:var(--accent-2); stroke-width:10; }
+
+  .grid8{ position:absolute; left:var(--safe); top:382px; width:936px;
+    display:grid; grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--night-line); }
+  .cell{ position:relative; padding:18px 0 14px; border-bottom:1px solid var(--night-line); }
+  .cell:not(:nth-child(4n))::after{
+    content:""; position:absolute; right:0; top:12px; bottom:12px;
+    width:1px; background:var(--night-line); }
+  .glyph{ height:126px; display:flex; align-items:center; justify-content:center; padding:0 18px; }
+  .glyph svg{ height:140px; width:100%; display:block; }
+  .glyph path{ fill:var(--night-text); }
+  .cap{ display:flex; align-items:baseline; gap:9px; margin-top:13px; padding-left:10px;
+    font-family:var(--f-label); font-size:12px; letter-spacing:.16em; color:var(--night-muted); }
+  .cap .num{ color:var(--accent-2); font-weight:600; letter-spacing:.06em; }
+  .cap .zi{ font-family:var(--f-cjk); font-size:var(--t-20); font-weight:600;
+    letter-spacing:.06em; color:var(--night-text); }
+  .tip{ padding-left:10px; margin-top:6px; font-size:12px; line-height:1.55;
+    color:var(--night-muted); letter-spacing:.02em; }
+
+  .foot{ position:absolute; left:var(--safe); right:var(--safe); bottom:56px;
+    display:flex; gap:48px; border-top:1px solid var(--night-line); padding-top:26px; }
+  .note{ flex:1; font-size:13px; line-height:1.85; color:var(--night-muted); }
+  .note b{ color:var(--night-text); font-weight:600; }
+  .note .h{ display:block; font-family:var(--f-label); font-size:12px;
+    letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent-2); margin-bottom:10px; }
+
+  /* 折角实测 */
+  .corner-band{ position:absolute; left:var(--safe); right:var(--safe); top:872px; }
+  .corner-hd{ display:flex; align-items:baseline; gap:16px; margin-bottom:16px; }
+  .corner-hd .t{ font-family:var(--f-cjk); font-size:var(--t-20); font-weight:600;
+    color:var(--night-text); letter-spacing:.04em; }
+  .corner-hd .d{ font-family:var(--f-label); font-size:12px; letter-spacing:.2em;
+    color:var(--night-muted); text-transform:uppercase; }
+  .corner-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+    border-top:1px solid var(--night-line); }
+  .cz{ position:relative; padding:18px 0 0; }
+  .cz:not(:last-child)::after{
+    content:""; position:absolute; right:0; top:14px; bottom:0;
+    width:1px; background:var(--night-line); }
+  .cz-g{ height:104px; display:flex; align-items:center; justify-content:center; padding:0 22px; }
+  .cz-g svg{ height:104px; width:100%; display:block; }
+  .cz-g path{ fill:none; stroke:var(--night-text); stroke-width:26; stroke-linejoin:miter; }
+  .cz-b{ display:flex; align-items:baseline; gap:12px; padding-left:14px; margin-top:8px; }
+  .cz-b .deg{ font-family:var(--f-latin); font-size:var(--t-25); font-weight:600;
+    color:var(--accent-2); letter-spacing:-.02em; line-height:1; }
+  .cz-b .lb{ font-size:12px; color:var(--night-muted); letter-spacing:.06em; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="mark-y">
+    <svg viewBox="0 0 1000 1000"><path d="M377 440H56V369H377ZM543 634H186V562H543ZM535 588 472 574C546 297 684 84 913 -15C925 5 949 35 966 50C743 134 603 337 537 588ZM932 513 865 561C796 486 667 367 597 326L647 285C735 342 858 459 929 514ZM543 17V634H463V18C463 2 458 -3 441 -4C424 -5 364 -5 304 -2C315 -23 327 -57 331 -78C415 -78 469 -77 502 -65C535 -52 546 -29 546 18ZM318 840 282 780C407 746 592 684 651 642L687 708C603 755 405 810 316 839ZM329 440H313V425C270 252 162 114 37 41C55 29 84 0 96 -17C224 66 340 216 377 369Z" transform="translate(0,880) scale(1,-1)"/></svg>
+  </div>
+  <div class="top">
+    <p class="kicker">Stroke Anatomy &nbsp;/&nbsp; 永字八法</p>
+    <h2>一笔一笔，<em>都对得上</em></h2>
+    <p class="sub">
+      黑体的性格全在<b>起收与转折</b>上。把「永」拆成八段放大：
+      笔干等粗、端面垂直、折角归正、收锋渐细——每一处都统一。
+    </p>
+  </div>
+  <div class="grid8">
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="217 8 535 261" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 318.0 840.0 L 282.0 780.0 C 407.0 746.0 592.0 684.0 651.0 642.0 L 687.0 708.0 C 603.0 755.0 405.0 810.0 316.0 839.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">01</span><span class="zi">点</span><span class="nm">侧</span></div>
+        <div class="tip">起笔轻落，收于尖</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="129 220 471 124" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 543.0 634.0 L 186.0 634.0 L 186.0 562.0 L 543.0 562.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">02</span><span class="zi">横</span><span class="nm">勒</span></div>
+        <div class="tip">笔干等粗，端面平齐</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="265 169 319 639" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 543.0 17.0 L 543.0 634.0 L 463.0 634.0 L 463.0 18.0 C 463.0 2.0 458.0 -3.0 441.0 -4.0 C 424.0 -5.0 364.0 -5.0 304.0 -2.0 C 315.0 -23.0 327.0 -57.0 331.0 -78.0 C 415.0 -78.0 469.0 -77.0 502.0 -65.0 C 535.0 -52.0 546.0 -29.0 546.0 18.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">03</span><span class="zi">竖</span><span class="nm">努</span></div>
+        <div class="tip">上下同宽，落地干净</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="265 612 319 393" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 543.0 17.0 L 543.0 634.0 L 463.0 634.0 L 463.0 18.0 C 463.0 2.0 458.0 -3.0 441.0 -4.0 C 424.0 -5.0 364.0 -5.0 304.0 -2.0 C 315.0 -23.0 327.0 -57.0 331.0 -78.0 C 415.0 -78.0 469.0 -77.0 502.0 -65.0 C 535.0 -52.0 546.0 -29.0 546.0 18.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">04</span><span class="zi">钩</span><span class="nm">趯</span></div>
+        <div class="tip">转角 90°，不拖泥</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="543 275 442 364" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 932.0 513.0 L 865.0 561.0 C 796.0 486.0 667.0 367.0 597.0 326.0 L 647.0 285.0 C 735.0 342.0 858.0 459.0 929.0 514.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">05</span><span class="zi">提</span><span class="nm">策</span></div>
+        <div class="tip">由粗到细，尾端平口</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="-17 367 449 603" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 329.0 440.0 L 313.0 440.0 L 313.0 425.0 C 270.0 252.0 162.0 114.0 37.0 41.0 C 55.0 29.0 84.0 0.0 96.0 -17.0 C 224.0 66.0 340.0 216.0 377.0 369.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">06</span><span class="zi">撇</span><span class="nm">掠</span></div>
+        <div class="tip">自然收锋，不锐</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="393 196 652 796" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 535.0 588.0 L 472.0 574.0 C 546.0 297.0 684.0 84.0 913.0 -15.0 C 925.0 5.0 949.0 35.0 966.0 50.0 C 743.0 134.0 603.0 337.0 537.0 588.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">07</span><span class="zi">捺</span><span class="nm">磔</span></div>
+        <div class="tip">一波三折，收在平口</div>
+      </div>
+      <div class="cell">
+        <div class="glyph">
+          <svg viewBox="5 414 424 123" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 377.0 440.0 L 56.0 440.0 L 56.0 369.0 L 377.0 369.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cap"><span class="num">08</span><span class="zi">短横</span><span class="nm">啄</span></div>
+        <div class="tip">短促有力，同端面</div>
+      </div>
+  </div>
+
+  <div class="corner-band">
+    <div class="corner-hd">
+      <span class="t">折角实测</span>
+      <span class="d">Corner angle &nbsp;·&nbsp; pure line segments</span>
+    </div>
+    <div class="corner-row">
+      <div class="cz">
+        <div class="cz-g">
+          <svg viewBox="700 80 240 240" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 877.0 735.0 L 127.0 735.0 L 127.0 -13.0 L 205.0 -13.0 L 205.0 655.0 L 796.0 655.0 L 796.0 -13.0 L 877.0 -13.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cz-b"><span class="deg">90.0°</span><span class="lb">口 · 右上角</span></div>
+      </div>
+      <div class="cz">
+        <div class="cz-g">
+          <svg viewBox="330 320 370 360" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 952.0 466.0 L 55.0 466.0 L 55.0 389.0 L 952.0 389.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cz-b"><span class="deg">90.0°</span><span class="lb">十 · 交叉处</span></div>
+      </div>
+      <div class="cz">
+        <div class="cz-g">
+          <svg viewBox="150 640 350 330" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0,880) scale(1,-1)"><path d="M 543.0 17.0 L 543.0 634.0 L 463.0 634.0 L 463.0 18.0 C 463.0 2.0 458.0 -3.0 441.0 -4.0 C 424.0 -5.0 364.0 -5.0 304.0 -2.0 C 315.0 -23.0 327.0 -57.0 331.0 -78.0 C 415.0 -78.0 469.0 -77.0 502.0 -65.0 C 535.0 -52.0 546.0 -29.0 546.0 18.0 Z"/></g>
+          </svg>
+        </div>
+        <div class="cz-b"><span class="deg">90.0°</span><span class="lb">永 · 钩转角</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="note"><span class="h">End faces</span>
+      笔末端面一律<b>垂直于笔画方向</b>，不做斜切、不留斜角。横笔收尾平齐，竖笔落地干净。</div>
+    <div class="note"><span class="h">Corners</span>
+      转折处<b>精确 90°</b>，内外角都是直角。不是视觉上的「差不多」，是几何上的真直角。</div>
+    <div class="note"><span class="h">Tapers</span>
+      撇捺<b>由根到尾自然收细</b>，尾端留一点平口，有书写手感，又不至于变成宋体的锐锋。</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>WDesign Sans 字体样本</title>
+<meta name="dsh-design" content="poster 1080x1350">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  html,body{ width:1080px; height:1350px; overflow:hidden; }
+  .sheet{ position:relative; width:1080px; height:1350px; background:var(--paper); overflow:hidden; }
+  .sheet::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image: repeating-linear-gradient(0deg, rgba(22,19,15,.026) 0 1px, transparent 1px 4px);
+  }
+
+  /* 主视觉：米字格内一个「永」 */
+  .hero{ position:absolute; left:64px; top:76px; width:672px; height:672px; }
+  .hero svg{ display:block; width:100%; height:100%; }
+  .hero .g{ fill:var(--ink); }
+  .hero .grid line{ stroke:var(--line-2); stroke-width:2; opacity:.5; }
+  .hero .grid line.mid{ stroke:var(--accent); stroke-width:2.4; opacity:.62; }
+  .hero .box{ fill:none; stroke:var(--line-2); stroke-width:2.2; }
+
+  /* 右侧信息柱 */
+  .rail{
+    position:absolute; right:var(--safe); top:82px; width:262px;
+    text-align:right; font-family:var(--f-label);
+  }
+  .rail .mark{
+    width:36px; height:36px; border:1.5px solid var(--accent); border-radius:50%;
+    margin-left:auto; margin-bottom:26px; display:flex; align-items:center; justify-content:center;
+  }
+  .rail .mark i{ width:14px; height:14px; background:var(--accent); border-radius:50%; display:block; }
+  .rail .fmt{
+    font-size:12px; letter-spacing:.2em; line-height:2.1; color:var(--ink-4);
+    margin:0 0 40px;
+  }
+  .rail .rule{ height:1px; background:var(--line); margin:0 0 26px; }
+  .metric{ margin:0 0 26px; }
+  .metric .n{
+    font-family:var(--f-latin); font-weight:600; font-size:var(--t-25);
+    letter-spacing:-.02em; color:var(--accent); line-height:1; display:block;
+  }
+  .metric .l{
+    font-size:12px; letter-spacing:.14em; color:var(--ink-4);
+    display:block; margin-top:7px;
+  }
+
+  /* 文字块 */
+  .head{ position:absolute; left:var(--safe); top:800px; width:936px; }
+  .kicker{
+    font-family:var(--f-label); font-size:12px; letter-spacing:.44em;
+    text-transform:uppercase; color:var(--ink-4); margin:0 0 20px;
+  }
+  h1{
+    font-family:var(--f-latin); font-weight:700; font-size:118px;
+    line-height:.9; letter-spacing:-.038em; margin:0; color:var(--ink);
+  }
+  h1 em{ font-style:normal; font-weight:300; color:var(--ink-3); }
+  .cn{
+    font-family:var(--f-cjk); font-weight:500; font-size:var(--t-31);
+    letter-spacing:.3em; color:var(--ink-2); margin:22px 0 0;
+  }
+  .lede{
+    font-size:var(--t-16); line-height:1.78; color:var(--ink-3);
+    margin:28px 0 0; max-width:700px; letter-spacing:.012em;
+  }
+  .lede b{ color:var(--ink); font-weight:600; }
+
+  /* 底部规格带 */
+  .spec{
+    position:absolute; left:0; right:0; bottom:0; height:128px;
+    background:var(--ink); color:var(--night-text);
+    display:flex; align-items:center; padding:0 var(--safe);
+  }
+  .spec .cell{ display:flex; flex-direction:column; gap:6px; }
+  .spec .v{
+    font-family:var(--f-latin); font-weight:600; font-size:var(--t-25);
+    letter-spacing:-.02em; line-height:1;
+  }
+  .spec .k{
+    font-family:var(--f-label); font-size:12px; letter-spacing:.16em;
+    color:var(--night-muted); text-transform:uppercase;
+  }
+  .spec .sep{ width:1px; height:36px; background:var(--night-line); margin:0 40px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="hero">
+    <svg viewBox="-8 -8 1016 1016" aria-label="永 字，叠加米字格">
+      <g class="grid">
+        <line x1="0" y1="0" x2="1000" y2="0"/>
+        <line x1="0" y1="1000" x2="1000" y2="1000"/>
+        <line x1="0" y1="0" x2="0" y2="1000"/>
+        <line x1="1000" y1="0" x2="1000" y2="1000"/>
+        <line x1="500" y1="0" x2="500" y2="1000" class="mid"/>
+        <line x1="0" y1="500" x2="1000" y2="500" class="mid"/>
+      </g>
+      <g transform="translate(0,880) scale(1,-1)"><path class="g" d="M377 440H56V369H377ZM543 634H186V562H543ZM535 588 472 574C546 297 684 84 913 -15C925 5 949 35 966 50C743 134 603 337 537 588ZM932 513 865 561C796 486 667 367 597 326L647 285C735 342 858 459 929 514ZM543 17V634H463V18C463 2 458 -3 441 -4C424 -5 364 -5 304 -2C315 -23 327 -57 331 -78C415 -78 469 -77 502 -65C535 -52 546 -29 546 18ZM318 840 282 780C407 746 592 684 651 642L687 708C603 755 405 810 316 839ZM329 440H313V425C270 252 162 114 37 41C55 29 84 0 96 -17C224 66 340 216 377 369Z"/></g>
+    </svg>
+  </div>
+
+  <div class="rail">
+    <div class="mark"><i></i></div>
+    <p class="fmt">WOFF2&nbsp;·&nbsp;OTF<br>VARIABLE&nbsp;·&nbsp;2026</p>
+    <div class="rule"></div>
+    <div class="metric"><span class="n">0.499</span><span class="l">重心</span></div>
+    <div class="metric"><span class="n">43.2%</span><span class="l">中宫</span></div>
+    <div class="metric"><span class="n">90.0°</span><span class="l">折角</span></div>
+  </div>
+
+  <div class="head">
+    <p class="kicker">Typeface &nbsp;/&nbsp; 中文黑体</p>
+    <h1>WDesign<em>&nbsp;Sans</em></h1>
+    <p class="cn">无限字重 · 一套统一</p>
+    <p class="lede">
+      以开源黑体为骨架，按国内主流手机系统字体的比例重做：
+      <b>横竖等粗、折角归正、撇捺收锋、行气贯通</b>。
+      20,992 个汉字与拉丁共用同一套笔干粗细，中英混排不断裂。
+    </p>
+  </div>
+
+  <div class="spec">
+    <div class="cell"><span class="v">9</span><span class="k">字重 250–900</span></div>
+    <div class="sep"></div>
+    <div class="cell"><span class="v">20,992</span><span class="k">汉字</span></div>
+    <div class="sep"></div>
+    <div class="cell"><span class="v">45,012</span><span class="k">字符</span></div>
+    <div class="sep"></div>
+    <div class="cell"><span class="v">23</span><span class="k">OpenType 特性</span></div>
+    <div class="sep"></div>
+    <div class="cell"><span class="v">OFL</span><span class="k">SIL 1.1</span></div>
+  </div>
+
+</div>
+</body>
+</html>

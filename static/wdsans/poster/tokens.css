@@ -1,0 +1,77 @@
+/* WDesign Sans — 海报视觉规范
+   气质：印刷品 / 字体样本册。墨黑 + 纸白 + 一点朱砂。
+   不要渐变、不要玻璃、不要圆角卡片堆叠。
+*/
+:root{
+  /* 纸与墨 —— 中性色带一点暖调，避免纯灰发青 */
+  --paper:      #f4f1ea;
+  --paper-2:    #ebe6db;
+  --paper-3:    #ded7c8;
+  --ink:        #16130f;
+  --ink-2:      #2e2820;
+  --ink-3:      #5c5245;
+  --ink-4:      #6b6152;
+  --line:       #cfc6b4;
+  --line-2:     #b8ac95;
+
+  /* 点睛色：朱砂。只用在小面积 */
+  --accent:     #c8321e;
+  --accent-2:   #e05b3a;
+  --accent-soft:#f0d8d0;
+
+  /* 深底版本 */
+  --night:      #12100d;
+  --night-2:    #1e1a15;
+  --night-3:    #2b2620;
+  --night-line: #3a332a;
+  --night-text: #efeade;
+  --night-muted:#b3a999;
+
+  /* 字号阶梯 1.25 */
+  --t-12: 12px;  --t-13: 13px;  --t-16: 16px;
+  --t-20: 20px;  --t-25: 25px;  --t-31: 31px;
+  --t-39: 39px;  --t-49: 49px;  --t-61: 61px;
+
+  /* 海报专用超大字号 */
+  --d-96:  96px;
+  --d-120: 120px;
+  --d-168: 168px;
+  --d-220: 220px;
+
+  /* 间距 4/8 倍数 */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-6: 24px; --s-8: 32px; --s-10: 48px; --s-12: 64px;
+  --s-16: 96px;
+
+  /* 安全区 */
+  --safe: 72px;
+
+  /* 字体 */
+  --f-cjk: "WDesignSans", "PingFang SC", system-ui, sans-serif;
+  --f-latin: "WDesignSans", "Inter", -apple-system, system-ui, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  --f-label: "Inter", -apple-system, system-ui, sans-serif;
+}
+
+*,*::before,*::after{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-cjk);
+  -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+}
+
+@font-face{
+  font-family:"WDesignSans";
+  src:url("wd-vf.woff2?v=202611181949") format("woff2");
+  font-weight:250 900;
+  font-display:block;
+}
+@font-face{
+  font-family:"WDesignFlat";
+  src:url("wd-flat.woff2?v=202611182002") format("woff2");
+  font-weight:400;
+  font-display:block;
+}

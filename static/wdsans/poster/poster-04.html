@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>风格 · 量化对齐</title>
+<meta name="dsh-design" content="poster 1080x1350">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  html,body{ width:1080px; height:1350px; overflow:hidden; }
+  .sheet{ position:relative; width:1080px; height:1350px; background:var(--paper); overflow:hidden; }
+  .sheet::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image: repeating-linear-gradient(0deg, rgba(22,19,15,.024) 0 1px, transparent 1px 5px);
+  }
+
+  .top{ position:absolute; left:var(--safe); top:70px; width:820px; }
+  .kicker{ font-family:var(--f-label); font-size:12px; letter-spacing:.44em;
+    text-transform:uppercase; color:var(--ink-4); margin:0 0 22px; }
+  h2{ font-family:var(--f-cjk); font-weight:600; font-size:62px;
+    letter-spacing:.015em; line-height:1.16; margin:0; color:var(--ink); }
+  h2 em{ font-style:normal; color:var(--accent); }
+  .sub{ font-size:15px; line-height:1.85; color:var(--ink-3);
+    margin:20px 0 0; max-width:660px; }
+  .sub b{ color:var(--ink); font-weight:600; }
+
+  /* 指标条 */
+  .metrics{ position:absolute; left:var(--safe); top:364px; width:600px; }
+  .mh{ display:flex; align-items:baseline; gap:12px; margin-bottom:16px; }
+  .mh .t{ font-size:15px; font-weight:600; color:var(--ink); letter-spacing:.04em; }
+  .mh .e{ font-family:var(--f-label); font-size:12px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--ink-4); }
+  .mrow{ display:flex; align-items:center; gap:16px; padding:11px 0;
+    border-bottom:1px solid var(--line); }
+  .mname{ width:132px; flex-shrink:0; display:flex; flex-direction:column; gap:3px; }
+  .mname .k{ font-size:14px; font-weight:500; color:var(--ink-2); letter-spacing:.04em; }
+  .mname .e{ font-family:var(--f-label); font-size:12px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink-4); }
+  .mbar{ flex:1; height:6px; background:var(--paper-3); position:relative; }
+  .mbar .fill{ position:absolute; left:0; top:0; bottom:0; background:var(--ink); }
+  .mval{ width:104px; text-align:right; font-family:var(--f-latin);
+    font-size:16px; font-weight:600; color:var(--accent); letter-spacing:-.01em; }
+
+  /* 右侧：平顶对比 */
+  .apex{
+    position:absolute; right:var(--safe); top:364px; width:300px;
+  }
+  .apex .t{ font-size:15px; font-weight:600; color:var(--ink); letter-spacing:.04em; margin:0 0 4px; }
+  .apex .e{ font-family:var(--f-label); font-size:12px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--ink-4); margin:0 0 16px; }
+  .ap-block{ margin-bottom:20px; }
+  .ap-lbl{ font-family:var(--f-label); font-size:12px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--ink-4); margin-bottom:6px; display:block; }
+  .ap-ch{ font-family:"WDesignFlat"; font-size:36px; line-height:1.2;
+    color:var(--ink); letter-spacing:.02em; }
+  .ap-ch.vf{ font-family:"WDesignSans"; font-weight:400; }
+  .ap-note{ font-size:12px; line-height:1.7; color:var(--ink-3); margin:10px 0 0; }
+  .ap-note b{ color:var(--accent); font-weight:600; }
+
+  /* 底带 */
+  .band{
+    position:absolute; left:0; right:0; bottom:0; height:150px;
+    background:var(--ink); color:var(--night-text);
+    display:flex; align-items:center; gap:56px; padding:0 var(--safe);
+  }
+  .band .item{ display:flex; flex-direction:column; gap:8px; }
+  .band .v{ font-family:var(--f-latin); font-size:var(--t-25); font-weight:600;
+    letter-spacing:-.02em; line-height:1.2; display:block; }
+  .band .k{ font-family:var(--f-label); font-size:12px; letter-spacing:.16em;
+    color:var(--night-muted); text-transform:uppercase; }
+  .band .sep{ width:1px; height:40px; background:var(--night-line); }
+
+  /* 混排样张 */
+  .mixed{ position:absolute; left:var(--safe); right:var(--safe); top:796px;
+    border-top:1px solid var(--line); padding-top:26px; }
+  .mixed .h{ font-family:var(--f-label); font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--ink-4); margin:0 0 14px; }
+  .mixed .en{ font-family:var(--f-latin); font-size:40px; line-height:1.3;
+    color:var(--ink); letter-spacing:-.015em; margin:0 0 12px; }
+  .mixed .cn{ font-family:var(--f-cjk); font-size:27px; line-height:1.72;
+    color:var(--ink-2); letter-spacing:.04em; margin:0; }
+  .mixed .cn b{ color:var(--accent); font-weight:600; }
+  .mixed .note{ margin-top:22px; font-size:13px; line-height:1.8; color:var(--ink-3);
+    max-width:920px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="top">
+    <p class="kicker">Style Metrics &nbsp;/&nbsp; 风格量化</p>
+    <h2>不靠眼睛估<br><em>六个数字定下来</em></h2>
+    <p class="sub">
+      重心、中宫、字面比例、撇捺展开、折角、笔画等粗——这六项决定一款黑体「看起来像谁」。
+      每一项都量到小数点后三位，再对着主流手机系统字体调到位。
+    </p>
+  </div>
+
+  <div class="metrics">
+    <div class="mh"><span class="t">设计指标</span><span class="e">Measured &amp; aligned</span></div>
+    
+      <div class="mrow">
+        <div class="mname"><span class="k">重心</span><span class="e">Gravity</span></div>
+        <div class="mbar"><span class="fill" style="width:62%"></span></div>
+        <div class="mval">0.499</div>
+      </div>
+      <div class="mrow">
+        <div class="mname"><span class="k">中宫</span><span class="e">Counter</span></div>
+        <div class="mbar"><span class="fill" style="width:58%"></span></div>
+        <div class="mval">43.2%</div>
+      </div>
+      <div class="mrow">
+        <div class="mname"><span class="k">字面比例</span><span class="e">Proportion</span></div>
+        <div class="mbar"><span class="fill" style="width:70%"></span></div>
+        <div class="mval">915/911</div>
+      </div>
+      <div class="mrow">
+        <div class="mname"><span class="k">撇捺展开</span><span class="e">Spread</span></div>
+        <div class="mbar"><span class="fill" style="width:45%"></span></div>
+        <div class="mval">0.524</div>
+      </div>
+      <div class="mrow">
+        <div class="mname"><span class="k">折角</span><span class="e">Corner</span></div>
+        <div class="mbar"><span class="fill" style="width:100%"></span></div>
+        <div class="mval">90.0°</div>
+      </div>
+      <div class="mrow">
+        <div class="mname"><span class="k">笔画等粗</span><span class="e">Stem ratio</span></div>
+        <div class="mbar"><span class="fill" style="width:95%"></span></div>
+        <div class="mval">0.951</div>
+      </div>
+  </div>
+
+  <div class="apex">
+    <p class="t">顶点形态</p>
+    <p class="e">Apex treatment</p>
+    <div class="ap-block">
+      <span class="ap-lbl">可变版 · 尖角</span>
+      <div class="ap-ch vf">今合会含令</div>
+    </div>
+    <div class="ap-block">
+      <span class="ap-lbl">静态版 · 平顶</span>
+      <div class="ap-ch">今合会含令</div>
+    </div>
+    <p class="ap-note">
+      「今合会」这类人字头，静态版把顶部<b>从尖角改成截平</b>，
+      平顶宽 79 em（参考区间 68–84 em）。
+      可变版保留尖角，因为平顶需要改拓扑，与多档插值不兼容。
+    </p>
+  </div>
+
+
+  <div class="mixed">
+    <p class="h">Mixed typesetting &nbsp;/&nbsp; 中英混排</p>
+    <p class="en">Hamburgefonstiv — 0123456789 · WDesign Sans</p>
+    <p class="cn">两万余汉字，Latin 与 CJK <b>共用同一套笔干粗细</b>。混排时不会出现「西文细、汉字粗」的断裂感。</p>
+    <p class="note">
+      拉丁字形取自开源无衬线体，按汉字笔干重新校准过；中英文之间的字距、标点宽度、行高都由同一套度量决定。
+    </p>
+  </div>
+  <div class="band">
+    <div class="item"><span class="v">0.499</span><span class="k">重心 Gravity</span></div>
+    <div class="sep"></div>
+    <div class="item"><span class="v">43.2%</span><span class="k">中宫 Counter</span></div>
+    <div class="sep"></div>
+    <div class="item"><span class="v">90.0°</span><span class="k">折角 Corner</span></div>
+    <div class="sep"></div>
+    <div class="item"><span class="v">0.951</span><span class="k">笔画等粗 Stem</span></div>
+    <div class="sep"></div>
+    <div class="item"><span class="v">20,992</span><span class="k">汉字 CJK</span></div>
+  </div>
+
+</div>
+</body>
+</html>

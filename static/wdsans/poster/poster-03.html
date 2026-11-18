@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>字重 · 无限级</title>
+<meta name="dsh-design" content="poster 1080x1350">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  html,body{ width:1080px; height:1350px; overflow:hidden; }
+  .sheet{ position:relative; width:1080px; height:1350px; background:var(--paper); overflow:hidden; }
+  .sheet::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image: repeating-linear-gradient(0deg, rgba(22,19,15,.024) 0 1px, transparent 1px 5px);
+  }
+
+  .top{ position:absolute; left:var(--safe); top:70px; width:840px; }
+  .kicker{ font-family:var(--f-label); font-size:12px; letter-spacing:.44em;
+    text-transform:uppercase; color:var(--ink-4); margin:0 0 22px; }
+  h2{ font-family:var(--f-cjk); font-weight:600; font-size:64px;
+    letter-spacing:.015em; line-height:1.15; margin:0; color:var(--ink); }
+  h2 em{ font-style:normal; color:var(--accent); }
+  .sub{ font-size:15px; line-height:1.85; color:var(--ink-3);
+    margin:20px 0 0; max-width:640px; }
+  .sub b{ color:var(--ink); font-weight:600; }
+
+  /* 右上角大数字 */
+  .bigw{
+    position:absolute; right:var(--safe); top:52px; text-align:right;
+  }
+  .bigw .n{
+    font-family:var(--f-latin); font-weight:700; font-size:var(--d-96);
+    letter-spacing:-.05em; line-height:1; color:var(--ink); display:block;
+    margin:0 0 4px; padding-bottom:6px;
+  }
+  .bigw .u{
+    font-family:var(--f-label); font-size:12px; letter-spacing:.24em;
+    color:var(--ink-4); text-transform:uppercase; display:block; margin-top:10px;
+  }
+  .bigw .rng{
+    font-family:var(--f-latin); font-size:var(--t-20); font-weight:500;
+    color:var(--accent); letter-spacing:-.01em; display:block; margin-top:6px;
+  }
+
+  /* 字重阶梯 */
+  .ladder{
+    position:absolute; left:var(--safe); width:936px; top:424px;
+    border-top:1px solid var(--line);
+  }
+  .wrow{
+    display:flex; align-items:center; gap:20px;
+    padding:9px 0; border-bottom:1px solid var(--line);
+  }
+  .wmeta{ width:88px; display:flex; align-items:baseline; gap:9px; flex-shrink:0; }
+  .wn{ font-family:var(--f-latin); font-size:15px; font-weight:600;
+    color:var(--ink); letter-spacing:-.01em; }
+  .wl{ font-size:12px; color:var(--ink-4); letter-spacing:.1em; }
+  .wsample{
+    flex:1; font-family:var(--f-cjk); font-size:26px; line-height:1.25;
+    color:var(--ink); letter-spacing:.02em; white-space:nowrap;
+  }
+  .wlat{
+    font-family:var(--f-latin); font-size:26px; line-height:1.2;
+    color:var(--ink-3); letter-spacing:-.01em; width:96px; text-align:right;
+    flex-shrink:0;
+  }
+
+  /* 右侧说明 */
+  .aside{
+    position:absolute; left:var(--safe); right:var(--safe); top:966px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:44px;
+    border-top:2px solid var(--accent); padding-top:22px;
+  }
+  .aside p{ margin:0; font-size:13px; line-height:1.8; color:var(--ink-3); }
+  .aside p b{ color:var(--accent); font-weight:600; display:block; margin-bottom:8px;
+    font-family:var(--f-label); font-size:12px; letter-spacing:.18em;
+    text-transform:uppercase; }
+
+  /* 底带 */
+  .foot{
+    position:absolute; left:0; right:0; bottom:0; height:104px;
+    background:var(--ink); color:var(--night-text);
+    display:flex; align-items:center; padding:0 var(--safe);
+  }
+  .foot .txt{
+    font-size:14px; line-height:1.6; color:var(--night-muted);
+    max-width:560px;
+  }
+  .foot .txt b{ color:var(--night-text); font-weight:600; }
+  .foot .seal{
+    margin-left:auto; font-family:var(--f-label); font-size:12px;
+    letter-spacing:.22em; text-transform:uppercase;
+    color:var(--night-muted); text-align:right; line-height:2;
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="bigw">
+    <span class="n">9</span>
+    <span class="u">Named Weights</span>
+    <span class="rng">250 — 900</span>
+  </div>
+
+  <div class="top">
+    <p class="kicker">Weight Axis &nbsp;/&nbsp; 字重</p>
+    <h2>从极细到最粗<br><em>一条轴走完</em></h2>
+    <p class="sub">
+      可变字重不是一个字重一个文件，而是<b>一条连续的轴</b>。
+      9 个命名实例只是刻度，中间任意数值都成立——做界面时不必在「细了」和「粗了」之间妥协。
+    </p>
+  </div>
+
+  <div class="ladder">
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">250</span>
+          <span class="wl">极细</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 250">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 250">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">300</span>
+          <span class="wl">细</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 300">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 300">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">350</span>
+          <span class="wl">准</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 350">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 350">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">400</span>
+          <span class="wl">常规</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 400">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 400">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">500</span>
+          <span class="wl">中</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 500">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 500">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">600</span>
+          <span class="wl">中粗</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 600">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 600">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">700</span>
+          <span class="wl">粗</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 700">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 700">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">800</span>
+          <span class="wl">特粗</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 800">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 800">Aa</div>
+      </div>
+      <div class="wrow">
+        <div class="wmeta">
+          <span class="wn">900</span>
+          <span class="wl">黑</span>
+        </div>
+        <div class="wsample" style="font-variation-settings:'wght' 900">永国字体设计</div>
+        <div class="wlat" style="font-variation-settings:'wght' 900">Aa</div>
+      </div>
+  </div>
+
+  <div class="aside">
+    <p><b>Consistent</b>笔画粗细随字重同步变化，不会出现「汉字粗、拉丁细」。</p>
+    <p><b>Continuous</b>细到粗之间可取任意值，例如 437、512 都能直接用。</p>
+    <p><b>Hinted</b>小字号下笔画不糊，笔画之间的空隙保留得住。</p>
+  </div>
+
+  <div class="foot">
+    <div class="txt">
+      同一份文件里，<b>250 到 900 全部可用</b>。改一个字重数值，整段文字一起变——不用重新排版。
+    </div>
+    <div class="seal">Variable Font<br>wght · 250–900</div>
+  </div>
+
+</div>
+</body>
+</html>
