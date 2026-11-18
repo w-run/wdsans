@@ -209,4 +209,5 @@ def main():
         f.close()
 
 
-main()
+if __name__ == "__main__":
+    main()

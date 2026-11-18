@@ -189,6 +189,7 @@ def process(tag):
     f.close()
 
 
-for t in TAGS:
-    process(t)
-print('完成')
+if __name__ == "__main__":
+    for t in TAGS:
+        process(t)
+    print('完成')

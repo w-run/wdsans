@@ -84,4 +84,5 @@ def main():
     print('完成 -> %s' % OUTD)
 
 
-main()
+if __name__ == "__main__":
+    main()

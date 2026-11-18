@@ -135,4 +135,5 @@ def main():
         print('  %s: saved' % tag, flush=True)
 
 
-main()
+if __name__ == "__main__":
+    main()

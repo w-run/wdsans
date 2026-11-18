@@ -166,4 +166,5 @@ def main():
     print('保存 -> %s/%s' % (OUTD, FN))
 
 
-main()
+if __name__ == "__main__":
+    main()

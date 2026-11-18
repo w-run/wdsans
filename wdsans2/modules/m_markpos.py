@@ -247,4 +247,5 @@ def main():
         print('  %s: mark lookup#%d, mkmk lookup#%s' % (tag, idx_mb, idx_mm), flush=True)
 
 
-main()
+if __name__ == "__main__":
+    main()

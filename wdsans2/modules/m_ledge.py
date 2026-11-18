@@ -206,4 +206,5 @@ def main():
     print('签名不一致: %d 字 %s' % (len(bad), bad[:6]), flush=True)
 
 
-main()
+if __name__ == "__main__":
+    main()

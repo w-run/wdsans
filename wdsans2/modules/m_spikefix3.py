@@ -141,6 +141,7 @@ def process(tag):
     f.close()
 
 
-for t in ['400', '250', '900']:
-    process(t)
-print("done")
+if __name__ == "__main__":
+    for t in ['400', '250', '900']:
+        process(t)
+    print("done")

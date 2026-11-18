@@ -155,4 +155,5 @@ def main():
         print('latinext %s: 补入 %d 字符' % (tag, n_ok), flush=True)
 
 
-main()
+if __name__ == "__main__":
+    main()
