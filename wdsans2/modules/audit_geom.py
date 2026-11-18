@@ -17,6 +17,7 @@ import uharfbuzz as hb
 from fontTools.ttLib import TTFont
 from fontTools.pens.recordingPen import RecordingPen
 from fontTools.pens.boundsPen import BoundsPen
+from canonpen3 import contours_from_pen
 
 VF = '/workspace/static/wdsans/WDesignSans-VF.otf'
 RES = []
@@ -45,6 +46,48 @@ print('=== 几何模块 ===')
 #   v1 1182 chars / v2 2636 chars / v3 1511 chars but damaged 1456 glyphs
 #   root cause: cannot distinguish whole-glyph top bar from left-radical bar
 rec('ledge', 'SKIP', 'deprecated: m_ledge damaged 1456 glyphs, removed in R29')
+
+
+# seam: 闭合轮廓的首末点必须重合（防舍入残留）
+#   判据: area/gap > 1000 表示该轮廓本应闭合
+#   对照: 口/十/一 的比值 81~916，正确跳过
+def _endp(s):
+    return np.array(s[1][-1], float) if s[0] == 'QM' else np.array(s[-1], float)
+
+def _poly(c):
+    P = [np.array(c['start'], float)]
+    for s in c['segs']:
+        if s[0] == 'QM':
+            for q in s[1]: P.append(np.array(q, float))
+        elif s[0] == 'C':
+            P.extend([np.array(s[1],float), np.array(s[2],float), np.array(s[3],float)])
+        elif s[0] == 'Q':
+            P.extend([np.array(s[1],float), np.array(s[2],float)])
+        else:
+            P.append(np.array(s[1], float))
+    return np.array(P)
+
+def _area(P):
+    x = P[:,0]; y = P[:,1]
+    return 0.5*abs(float(np.dot(x, np.roll(y,1)) - np.dot(y, np.roll(x,1))))
+
+_seam_n = 0
+for _cp in [c for c in cm if 0x4E00 <= c <= 0x9FFF][:4000]:
+    _rp = RecordingPen()
+    try:
+        gs[cm[_cp]].draw(_rp)
+    except Exception:
+        continue
+    _C = contours_from_pen(_rp.value)
+    for _c in _C:
+        if len(_c['segs']) < 3:
+            continue
+        _st = np.array(_c['start'], float)
+        _gap = float(np.hypot(*(_endp(_c['segs'][-1]) - _st)))
+        if 0.8 < _gap < 12 and _area(_poly(_c))/max(_gap,1e-6) > 1000:
+            _seam_n += 1
+rec('seam', 'PASS' if _seam_n == 0 else 'FAIL',
+    '闭合轮廓首末点残留缝隙 %d 处 (sample 4000 字)' % _seam_n)
 
 # m_latinext: Latin Ext-A 覆盖
 exta = sum(1 for cp in cm if 0x0100 <= cp <= 0x017F)
