@@ -186,6 +186,21 @@ else:
     skip("平顶字数", "页面无此宣称")
 
 # ---------- 汇总 ----------
+# ---------- 6. DELIVERY.md ----------
+print()
+print("=== 6. DELIVERY.md ===")
+DELIV = "/workspace/wdsans/docs/DELIVERY.md"
+if os.path.exists(DELIV):
+    doc = open(DELIV, encoding="utf-8").read()
+    for st in ["2,636", "3,886", "40 MB", "4.0 MB"]:
+        check("DELIVERY 无过时数字 " + st, st not in doc, "出现" if st in doc else "-")
+    check("DELIVERY 含未实现项章节", "## 六、未实现项" in doc, "-")
+    check("DELIVERY 标注横折出头未实现", "横折出头" in doc, "-")
+    check("DELIVERY cmap 数字", "45,012" in doc, "-")
+    check("DELIVERY CJK 数字", "20,992" in doc, "-")
+else:
+    skip("DELIVERY.md", "文件不存在")
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))

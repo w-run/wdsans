@@ -1,0 +1,6 @@
+4187cc65ac72007c928be65a0d608e0b  WDesignSans-FlatApex-Regular.otf
+3f777facc95dafecca7cfe97ed613749  WDesignSans-VF.otf
+3e6dd7b5478c05df73e45329a0095a21  wd-preview.woff2
+053abca2f93c4e100f63d867815b589f  masters/master-ExtraLight-250.otf
+dd2455c2253b5fbeb6aab2bda4f64410  masters/master-Heavy-900.otf
+10b8a33cec89695366ece2970044627a  masters/master-Regular-400.otf
