@@ -242,11 +242,10 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     <tr><td>撇捺展开 60/70/80%</td><td>0.524/0.535/0.610</td><td>0.530/0.554/0.626</td><td>0.538/0.553/0.645</td><td class="ok">一致</td></tr>
     <tr><td>折角角度（纯 L）</td><td>90.0°</td><td>90.0°</td><td>90.0°</td><td class="ok">完全一致</td></tr>
     <tr><td>笔末切角</td><td>垂直</td><td>垂直</td><td>垂直</td><td class="ok">一致</td></tr>
-    <tr><td>横折出头（顶部横笔）</td><td>右余 90</td><td>右余 122</td><td>右余 0</td><td class="ok">已对齐</td></tr>
     <tr><td>顶点平顶（人字形）</td><td>79 em</td><td>68 em</td><td>76 em</td><td class="ok">已实现</td></tr>
   </table>
   <p class="note">
-    撇捺展开为下半区 60/70/80% 高度处的墨迹跨度。顶点平顶见下方专项对比。
+    撇捺展开为下半区 60/70/80% 高度处的墨迹跨度。顶点平顶见下方专项对比。<br>尚未实现：横折出头（顶部横笔右端延伸）。三轮自动判据均误伤其他部件，已放弃自动方案，当前继承思源黑体原始形态。
   </p>
 </div>
 
@@ -300,7 +299,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     WDesign Sans 是一款基于思源黑体构建的中文可变字体，目标是在保留完整字形覆盖的前提下，逼近 OPPO Sans 的笔画风格。
   </p>
   <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0 0 12px">
-    笔画风格经过逐项量化：重心、中宫、字面比例、撇捺曲率、折角角度、笔末切角六项均与参考字体对齐；横折出头通过顶部横笔右端延伸修正了 2,636 个字。
+    笔画风格经过逐项量化：重心、中宫、字面比例、撇捺曲率、折角角度、笔末切角六项均与参考字体对齐。
   </p>
   <p class="wd" style="font-size:14px;line-height:1.8;color:#515154;margin:0 0 12px">
     全库 20,992 个 CJK 字形与 45,012 个字符位经过完整性审计，三档字重的段数与操作符签名完全一致。
