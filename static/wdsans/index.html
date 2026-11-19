@@ -20,13 +20,12 @@ body{
 }
 
 /* ===== 字体 ===== */
-@font-face{font-family:'WDesign';src:url('wd-preview.woff2?v=202611191336') format('woff2');
+@font-face{font-family:'WDesign';src:url('wd-preview.woff2?v=202611191543') format('woff2');
   font-weight:250 900;font-style:normal;font-display:block}
 @font-face{font-family:'CmpOPPO';src:url('oppo.woff2?v=202611172113') format('woff2');
   font-weight:250 900;font-style:normal;font-display:swap}
 @font-face{font-family:'CmpSHS';src:url('shs-master.woff2?v=202611172113') format('woff2');
   font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:'WDesignFlat';src:url('WDesignSans-FlatApex-Regular.otf?v=202611191336') format('opentype');font-weight:400;font-display:swap}
 @font-face{font-family:'CmpHOS';src:url('hos-compare.woff2?v=202611172113') format('woff2');font-weight:400;font-display:swap}
 
 /* 字重统一由 --w 驱动 */
@@ -165,23 +164,14 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   .metrics{font-size:11.5px}
   .metrics th,.metrics td{padding:6px 4px}
 }
-.apex-cmp{display:flex;flex-direction:column;gap:10px;background:var(--bg2,#fafafa);padding:16px;border-radius:10px}
-.ac-row{display:flex;align-items:baseline;gap:16px}
-.ac-lbl{flex:0 0 132px;font-size:13px;color:#666}
-.ac-wf,.ac-wv,.ac-op,.ac-ho{font-size:44px;line-height:1.15;letter-spacing:.01em}
-.ac-wf{font-family:'WDesignFlat'}
-.ac-wv{font-family:'WDesign';font-weight:400}
-.ac-op{font-family:'CmpOPPO'}
-.ac-ho{font-family:'CmpHOS',system-ui}
-
-</style>
+.ac-wf,.ac-wv,.ac-op,</style>
 </head>
 <body>
 
 <h1>WDesign Sans</h1>
 <p class="sub">
   基于 Source Han Sans 构建的 OPPO 风格中文可变字体 · 65,535 字形 · wght 250–900<br>
-  <a href="WDesignSans-VF.otf?v=202611191336" download>下载完整 OTF（36.7 MB）</a> ·
+  <a href="WDesignSans-VF.otf?v=202611191543" download>下载完整 OTF（39.3 MB）</a> ·
   本页使用 3,903 字 Web 子集（woff2 2.1 MB）实时渲染
 </p>
 
@@ -242,36 +232,10 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     <tr><td>撇捺展开 60/70/80%</td><td>0.524/0.535/0.610</td><td>0.530/0.554/0.626</td><td>0.538/0.553/0.645</td><td class="ok">一致</td></tr>
     <tr><td>折角角度（纯 L）</td><td>90.0°</td><td>90.0°</td><td>90.0°</td><td class="ok">完全一致</td></tr>
     <tr><td>笔末切角</td><td>垂直</td><td>垂直</td><td>垂直</td><td class="ok">一致</td></tr>
-    <tr><td>顶点平顶（人字形）</td><td>79 em</td><td>68 em</td><td>76 em</td><td class="ok">已实现</td></tr>
   </table>
   <p class="note">
-    撇捺展开为下半区 60/70/80% 高度处的墨迹跨度。顶点平顶见下方专项对比。<br>尚未实现：横折出头（顶部横笔右端延伸）。三轮自动判据均误伤其他部件，已放弃自动方案，当前继承思源黑体原始形态。
+    撇捺展开为下半区 60/70/80% 高度处的墨迹跨度。<br>尚未实现：横折出头（顶部横笔右端延伸）。三轮自动判据均误伤其他部件，已放弃自动方案，当前继承思源黑体原始形态。
   </p>
-</div>
-
-<!-- 顶点平顶专项 -->
-<div class="panel">
-  <h2>顶点平顶 <span class="tag g">人字形笔画 · 仅静态版</span></h2>
-  <p class="note" style="margin:0 0 14px">
-    OPPO / HOS 的「今」「合」等字顶部为水平截平（平顶），思源黑体为尖角。
-    多档可变字体的布尔运算会在三档产生不同拓扑，无法插值，
-    因此该特性单独提供 <strong>静态 400 单字重版</strong>。
-  </p>
-  <div class="apex-cmp">
-    <div class="ac-row"><span class="ac-lbl">本字体 · 静态版</span><span class="ac-wf">今合会含令全金余介企</span></div>
-    <div class="ac-row"><span class="ac-lbl">本字体 · 可变版</span><span class="ac-wv">今合会含令全金余介企</span></div>
-    <div class="ac-row"><span class="ac-lbl">OPPO Sans</span><span class="ac-op">今合会含令全金余介企</span></div>
-    <div class="ac-row"><span class="ac-lbl">HOS</span><span class="ac-ho">今合会含令全金余介企</span></div>
-  </div>
-  <table class="metrics" style="margin-top:16px">
-    <tr><th>字</th><th>平顶前</th><th>平顶后</th><th>OPPO</th><th>HOS</th></tr>
-    <tr><td>今</td><td class="na">0</td><td class="ok">79</td><td>68</td><td>76</td></tr>
-    <tr><td>合</td><td class="na">0</td><td class="ok">82</td><td>71</td><td>75</td></tr>
-    <tr><td>令</td><td class="na">0</td><td class="ok">77</td><td>69</td><td>77</td></tr>
-    <tr><td>含</td><td class="na">0</td><td class="ok">78</td><td>66</td><td>76</td></tr>
-    <tr><td>全</td><td class="na">0</td><td class="ok">83</td><td>69</td><td>75</td></tr>
-  </table>
-  <p class="note">覆盖 1,804 字，对照组「口回十中申甲田日国目」零误伤。单位 em。</p>
 </div>
 
 <!-- OpenType 特性 -->
@@ -327,7 +291,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     字形来源：Source Han Sans VF 2.005（SIL OFL 1.1）· 拉丁：Mona Sans（OFL 1.1，RFN 合规）。<br>
     参考字体 OPPO Sans / HarmonyOS Sans / MiSans 仅用于测量与视觉比对，未采样任何字形轮廓。
   </p>
-  <div style="margin-top:14px"><a class="dl" href="WDesignSans-VF.otf?v=202611191336" download>↓ 下载 WDesignSans-VF.otf</a></div>
+  <div style="margin-top:14px"><a class="dl" href="WDesignSans-VF.otf?v=202611191543" download>↓ 下载 WDesignSans-VF.otf</a></div>
 </div>
 
 <script>
