@@ -201,6 +201,70 @@ if os.path.exists(DELIV):
 else:
     skip("DELIVERY.md", "文件不存在")
 
+# ---------- 7. poster 页与 tokens.css ----------
+print()
+print("=== 7. poster 页 ===")
+POSTER = "/workspace/static/wdsans/poster/index.html"
+TOKENS = "/workspace/static/wdsans/poster/tokens.css"
+if os.path.exists(POSTER):
+    pi = open(POSTER, encoding="utf-8").read()
+    check("poster 无「顶横出头」虚报", "顶横出头" not in pi,
+          "出现" if "顶横出头" in pi else "-")
+    check("poster 无「横折出头」虚报", "横折出头" not in pi,
+          "出现" if "横折出头" in pi else "-")
+else:
+    skip("poster/index.html", "不存在")
+
+if os.path.exists(TOKENS):
+    tk = open(TOKENS, encoding="utf-8").read()
+    # 只检查自家产品文件（参考字体 oppo/shs/hos 不变，不应纳入）
+    _LOCAL = ['wd-preview.woff2', 'wd-vf.woff2', 'wd-flat.woff2',
+              'WDesignSans-VF.otf', 'WDesignSans-FlatApex-Regular.otf']
+    _found = {}
+    for _txt in (tk, idx):
+        for _fn in _LOCAL:
+            _st = 0
+            while True:
+                _i = _txt.find(_fn, _st)
+                if _i < 0: break
+                _j = _txt.find(chr(63)+chr(118)+chr(61), _i + len(_fn))
+                if _j >= 0 and _j - (_i + len(_fn)) <= 2:
+                    _k = _j + 3
+                    _n = ''
+                    while _k < len(_txt) and _txt[_k].isdigit():
+                        _n += _txt[_k]; _k += 1
+                    if _n: _found.setdefault(_fn, set()).add(_n)
+                _st = _i + len(_fn)
+    allv = set()
+    for _v in _found.values(): allv |= _v
+    check('产品字体 cache-buster 一致', bool(allv) and len(allv) == 1,
+          str({k: sorted(v) for k, v in _found.items()}) if _found else '未找到')
+else:
+    skip("tokens.css", "不存在")
+
+# ---------- 8. 五个字体文件 advance 一致性 ----------
+print()
+print("=== 8. 中点标点 advance 一致性 ===")
+FILES = ["/workspace/static/wdsans/WDesignSans-VF.otf",
+         "/workspace/static/wdsans/WDesignSans-FlatApex-Regular.otf",
+         "/workspace/static/wdsans/wd-preview.woff2",
+         "/workspace/static/wdsans/poster/wd-vf.woff2",
+         "/workspace/static/wdsans/poster/wd-flat.woff2"]
+advs = {}
+for fp in FILES:
+    if not os.path.exists(fp):
+        continue
+    ff = TTFont(fp, lazy=True)
+    cc = ff.getBestCmap(); hh = ff["hmtx"]
+    if 0x00B7 in cc:
+        advs[os.path.basename(fp)] = hh[cc[0x00B7]][0]
+    ff.close()
+uniq = set(advs.values())
+check("5 个字体文件 ·advance 一致", len(uniq) <= 1,
+      str(advs) if advs else "无数据")
+check("· advance >= 400", all(v >= 400 for v in advs.values()) if advs else False,
+      "最小值 %s" % (min(advs.values()) if advs else "-"))
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))
