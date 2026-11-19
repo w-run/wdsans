@@ -1,0 +1,8 @@
+2e232e017a94f1fdcc61e2b4ad72093f  WDesignSans-VF.otf
+0eaf483502018b5c445801aa3a4ef06a  WDesignSans-FlatApex-Regular.otf
+6ec00be20b49fc5bbb500a7e6903fcbf  wd-preview.woff2
+ea21530b92cbba29886259c26e65d166  wd-poster-vf.woff2
+59926ed1feb844dc8d192c466e223459  wd-poster-flat.woff2
+fc2273a06458fc02c9aad3128c23d8e6  masters/master-ExtraLight-250.otf
+b79f9a2a0225d525e575298bae768ade  masters/master-Heavy-900.otf
+1e64e2d82aac1dfe316183e0d33a54c2  masters/master-Regular-400.otf

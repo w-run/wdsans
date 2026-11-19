@@ -12,8 +12,8 @@
 | 文件 | 大小 | 说明 |
 |---|---|---|
 | WDesignSans-VF.otf | 41,335,432 B (39.4 MB) | 可变字体，wght 250-900，日常使用 |
-| WDesignSans-FlatApex-Regular.otf | 17,915,632 B (17.1 MB) | 静态 400 档，含顶点平顶，1,804 字 |
-| wd-preview.woff2 | 2,247,784 B (2.1 MB) | 预览页子集，3,903 字符 |
+| WDesignSans-FlatApex-Regular.otf | 17,915,460 B (17.1 MB) | 静态 400 档，含顶点平顶，1,804 字 |
+| wd-preview.woff2 | 2,247,204 B (2.1 MB) | 预览页子集，3,903 字符 |
 | poster/wd-vf.woff2 | 249 KB | 海报子集（可变） |
 | poster/wd-flat.woff2 | 132 KB | 海报子集（静态参考） |
 
@@ -135,6 +135,7 @@ cd /workspace/wdsans2 && python modules/audit.py
 
 | 版本 | 链尾 | 大小 | 位置 |
 |---|---|---|---|
+| v261120 | R35（+ m_middotadv）| 111 MB | static/wdsans/archive/v261120/ |
 | v261119 | R34（+ m_radfoot）| 111 MB | static/wdsans/archive/v261119/ |
 | v261118 | R32（+ m_by0align）| 111 MB | static/wdsans/archive/v261118/ |
 
@@ -142,9 +143,13 @@ cd /workspace/wdsans2 && python modules/audit.py
 
 回滚：
 ```bash
-cp archive/v261119/WDesignSans-VF.otf /workspace/static/wdsans/
-cp archive/v261119/wd-preview.woff2  /workspace/static/wdsans/
-cp archive/v261119/masters/*.otf     /workspace/wdsans2/build/masters_R34/
+cd /workspace/static/wdsans
+cp archive/v261120/WDesignSans-VF.otf .
+cp archive/v261120/WDesignSans-FlatApex-Regular.otf .
+cp archive/v261120/wd-preview.woff2 .
+cp archive/v261120/wd-poster-vf.woff2 poster/wd-vf.woff2
+cp archive/v261120/wd-poster-flat.woff2 poster/wd-flat.woff2
+cp archive/v261120/masters/*.otf /workspace/wdsans2/build/masters_R35/
 ```
 
 字体二进制不入 git（体积原因），但 docs/archive/*-README.md 与
