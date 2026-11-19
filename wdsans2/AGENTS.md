@@ -76,7 +76,8 @@ masters_R31  = R30 + m_seamfix3    全库 20,479 字闭合缝隙
 masters_R32  = R31 + m_by0align    326 字 bar/body 接合点 y 跟随本档
 masters_R33  = R32 + m_boxrad     1,040 字 闭口偏旁垂直居中+拉高
 masters_R34  = R33 + m_radfoot       11 字 部首出脚
-masters_R35  = R34 + m_middotadv     1 字形 中点标点advance 已部署 ← 当前链尾
+masters_R35  = R34 + m_middotadv     1 字形 中点标点advance
+masters_R36  = R35 + m_lineheight     三档行高1.35em 已部署 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -742,6 +743,32 @@ vs SHS: 比例-1/-1 中宫-0.2 重心+0.002 撇捺±0.006 折角/切角 完全�
 
 若未来要收紧行高，正确做法是给这几个字建独立 fallback，
 而不是动全局 usWin（那样会连带影响所有字符的行距）。
+```
+### ✅ R36 行高修正 1.45em -> 1.35em（2026-11-19，已部署）
+```
+问题: hhea/win=1448=1.45em，比 OPPO(1.32)/HOS(1.18) 松 10-19%。
+      14px 下 7 行 UI 文本: 我们 142px vs OPPO 129px vs HOS 116px。
+
+为什么不能直接压 hhea/usWin:
+  全库极端值（排除 7 个竖排专用符号）: 最高 1069(U+1EB2) 最低 -281(U+FFE8)
+  实测各 usWinAscent 超界字形数: 1000->20 1050->16 1100->4 1160->4 1325->4
+  压低必然裁切，抬高行高更大 -> 直接改 hhea 是死路
+
+方案: 启用 USE_TYPO_METRICS(fsSelection bit7)
+  usWin 保持 1160/288 -> 竖排符号不裁切
+  typo 设为 1070/-282 -> 1352 = 1.35em
+  🔴 bit7 只在 OS/2 v4+ 定义，我们/SHS 都是 v3
+  v3->v4 实测只改 version 字段，42 字段其余不变，文件大小不变
+
+对比: OPPO/HOS 都是 v4 但都没启用 bit7（直接压 hhea）
+      我们启用 bit7 是 OpenType 标准做法，能同时保住竖排符号
+
+模块 m_lineheight: 三档 OS/2 v3->v4 + typo(1070,-282,0) + fsSel |= 0x80
+效果: 行高 1.45->1.35em，7行 142->132px（OPPO 129px）
+      VF 41.3MB glyphs=65535 cmap=45012 cjk=20992（与 R35 一致）
+
+五个产物全部同步 + cache-buster 202611190836 -> 202611191003
+审计扩到 28 项（新增第9组: OS/2版本/bit7/行高范围/usWin保守值）
 ```
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
