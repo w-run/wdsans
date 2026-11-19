@@ -407,8 +407,8 @@ input 的 feature，mapping 都要叠加 locl_tab（两套 input 都覆盖）。
 
 """### 顶点平顶：VF 不可行 / 已移除（2026-11-19）
 ```
-多档 VF: pathops 布尔运算在三档切出不同拓扑（99.7% 签名不一致）
-         -> VarLibCFFPointTypeMergeError。架构级限制，不要重试。
+多档 VF: pathops 在三档切出不同拓扑（99.7% 签名不一致）
+         -> VarLibCFFPointTypeMergeError。架构级限制。
 单档静态: 曾实现 1804 字，对照组 10/10 零误伤。
 2026-11-19 用户裁定：已删除 FlatApex 与全部相关 UI。
 ```
