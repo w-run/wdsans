@@ -82,7 +82,7 @@ masters_R37  = R36 + m_fbclean        版本号+GDEF mark
      R38 = R37 + m_fbclean2(VF后处理)  STAT/name/zh-CN
      R39 = R38 + chws_tool            GPOS chws/vchw
      R41 = R37 + m_vertend            8579字 撇捺末端垂直平切
-     R42 = R41 + m_vertend(0.90)      补 1040 字（含「人」）
+     R42 = R41 + m_vertend(0.90)      补 1040 字
      R44 = R42 + m_cff2ttf_multi      三档联动转 TTF，产物化 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
@@ -405,7 +405,7 @@ input 的 feature，mapping 都要叠加 locl_tab（两套 input 都覆盖）。
 对照字 口/回/十 被改成 129°/127°/113°（OPPO/HOS 都是 90°）——
 **对照组被改坏就说明方向错了，动手前必须先验证对照组。**
 
-"""### 顶点平顶：VF 不可行 / 静态版也已移除（2026-11-19）
+"""### 顶点平顶：VF 不可行 / 已移除（2026-11-19）
 ```
 多档 VF: pathops 布尔运算在三档切出不同拓扑（99.7% 签名不一致）
          -> VarLibCFFPointTypeMergeError。架构级限制，不要重试。
