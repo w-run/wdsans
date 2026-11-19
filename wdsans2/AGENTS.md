@@ -80,7 +80,10 @@ masters_R35  = R34 + m_middotadv     1 字形 中点标点advance
 masters_R36  = R35 + m_lineheight     三档行高1.35em
 masters_R37  = R36 + m_fbclean        版本号+GDEF mark
      R38 = R37 + m_fbclean2(VF后处理)  STAT/name/zh-CN
-     R39 = R38 + chws_tool            GPOS chws/vchw 已部署 ← 当前链尾
+     R39 = R38 + chws_tool            GPOS chws/vchw
+     R41 = R37 + m_vertend            8579字 撇捺末端垂直平切
+     R42 = R41 + m_vertend(0.90)      补 1040 字（含「人」）
+     R44 = R42 + m_cff2ttf_multi      三档联动转 TTF，产物化 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -406,8 +409,8 @@ input 的 feature，mapping 都要叠加 locl_tab（两套 input 都覆盖）。
 ```
 多档 VF: pathops 布尔运算在三档切出不同拓扑（99.7% 签名不一致）
          -> VarLibCFFPointTypeMergeError。架构级限制，不要重试。
-单档静态: 曾实现 1804 字（今 0/5->79/4，HOS 76/3），对照组 10/10 零误伤。
-2026-11-19 用户裁定：静态版和 VF 都没用，已删除 FlatApex 与全部相关 UI。
+单档静态: 曾实现 1804 字，对照组 10/10 零误伤。
+2026-11-19 用户裁定：已删除 FlatApex 与全部相关 UI。
 ```
 """
 ### ❌ 已彻底废弃: m_ledge / m_ledge2 / m_ledge3
