@@ -375,6 +375,25 @@ if os.path.exists(VF):
 else:
     skip("VF 元数据", "VF 不存在")
 
+# ---------- 13. chws/vchw 东亚间距 ----------
+print()
+print("=== 13. chws/vchw ===")
+if os.path.exists(VF):
+    cw = TTFont(VF, lazy=True)
+    has_gpos = "GPOS" in cw and cw["GPOS"].table.FeatureList
+    gtags = []
+    if has_gpos:
+        gtags = sorted(set(fr.FeatureTag for fr in cw["GPOS"].table.FeatureList.FeatureRecord))
+    check("含 chws 特性", "chws" in gtags, str(gtags))
+    check("含 vchw 特性", "vchw" in gtags, "-")
+    # 原有 GPOS 特性不能被挤掉
+    need_g = ["kern", "mark", "mkmk", "palt"]
+    miss_g = [x for x in need_g if x not in gtags]
+    check("原有 GPOS 特性完好", not miss_g, ("缺 %s" % miss_g) if miss_g else "-")
+    cw.close()
+else:
+    skip("chws 检查", "VF 不存在")
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))
