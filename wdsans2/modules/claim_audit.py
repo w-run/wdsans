@@ -344,6 +344,37 @@ if os.path.exists(VF):
 else:
     skip("fontbakery 报告项", "VF 不存在")
 
+# ---------- 12. VF 元数据 (fvar/STAT/name) ----------
+print()
+print("=== 12. VF 元数据 ===")
+if os.path.exists(VF):
+    vm = TTFont(VF, lazy=True)
+    has_fv = "fvar" in vm
+    if has_fv:
+        fvx = vm["fvar"]
+        n_inst = len(fvx.instances)
+        stat = vm["STAT"].table if "STAT" in vm else None
+        n_av = 0
+        if stat and stat.AxisValueArray:
+            n_av = len(stat.AxisValueArray.AxisValue)
+        check("STAT 条目覆盖 fvar instance", n_av >= n_inst,
+              "STAT=%d instance=%d" % (n_av, n_inst))
+    else:
+        skip("STAT 检查", "无 fvar（静态字体）")
+    # name 平台: 只应有 platform 3
+    plats = sorted(set(r.platformID for r in vm["name"].names))
+    check("name 只用 platform 3（无过时 Mac 记录）", plats == [3], str(plats))
+    # zh-CN 记录
+    zh = sum(1 for r in vm["name"].names if r.langID == 0x804)
+    check("含 zh-CN name 记录", zh >= 3, "%d 条" % zh)
+    # nameID17 必须是 Regular
+    n17 = [str(r) for r in vm["name"].names if r.nameID == 17]
+    check("nameID17 (Subfamily) = Regular", all(x == "Regular" for x in n17) if n17 else False,
+          str(n17))
+    vm.close()
+else:
+    skip("VF 元数据", "VF 不存在")
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))
