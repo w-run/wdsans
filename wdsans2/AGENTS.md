@@ -206,9 +206,7 @@ zerocont: 轮廓面积(鞋带) < 50 em² -> 删除整个轮廓（保证至少留
 ```
 从 Mona VF 按 250/400/900 实例化，注入未映射槽位（21,189 个可用）。
 效果: Latin Ext-A 30 -> 125/128，cmap 44,853 -> 44,948
-
-🔴 必须用 DecomposingRecordingPen：Mona 的多为复合字形，
-   RecordingPen 只返回组件引用拿不到真实轮廓（实测只成功 12/95）。
+🔴 必须用 DecomposingRecordingPen（Mona 多为复合字形，RecordingPen 只拿组件引用）
 ```
 ### 🔴 许可合规：只能从 OFL 源取字形
 ```
@@ -238,11 +236,10 @@ MiSans 版权: Copyright (c) 2020-2025 Beijing Xiaomi Mobile Software Co.,Ltd.
 
 ### m_kerning / m_markpos 判据
 ```
-kerning: 从 Mona 提取 77,294 对, KERN_SCALE=0.65
-  未缩放时 AT/LT/To 过紧; 0.65 时与 Mona 平均偏差 2.44px 最优
-  坑: buildPairPosGlyphs 第1参数是 dict, 返回 subtables list 需自行包 Lookup
-markpos: 22 组合符号 x 442 基字母, 生成 MarkBasePos + MarkMarkPos
-  🔴 Coverage 必须按 glyph id 排序, 按字形名排序会导致三档顺序不同 -> VF 构建报错
+kerning: 从 Mona 提取 77,294 对, KERN_SCALE=0.65（未缩放时 AT/LT/To 过紧）
+  坑: buildPairPosGlyphs 第1参数是 dict，返回 subtables list 需自行包 Lookup
+markpos: 22 组合符号 x 442 基字母 -> MarkBasePos + MarkMarkPos
+  🔴 Coverage 必须按 glyph id 排序，按字形名排序会导致三档顺序不同 -> VF 报错
 ```
 ### 字形比例（最新值见 regress.py）
 ```
@@ -319,13 +316,7 @@ varLib 只保留 master 的 Windows en-US(0x409) 与 Mac(0x0)，zh-CN(0x804) 全
 ```
 [2,3,4,5,6,9,30,31,32,33,34,35,37,38,40,41,46,47,62,70,86]
 
-验证每个位都有字符支撑:
-  bit2   Latin Ext-A      125 字符
-  bit40  Enclosed Alphanum 160 字符
-  bit41  Box Drawing      128 字符
-  bit70  Halfwidth/Full   225 字符
-  bit86  CJK Ideograph  20992 字符
-```
+关键位验证: bit2 Ext-A 125字符 / bit40 160 / bit41 128 / bit70 225 / bit86 CJK 20992
 
 **同时修正 ulCodePageRange**: 新增 bit50(936 简体中文) / bit52(950 繁体中文)。
 
@@ -359,18 +350,12 @@ frac = slash->fraction + zero~nine->*.numr + ChainContext [fraction]numr'->dnom
 cmap 补齐: U+2070-2079 填7个, U+2080-2089 填10个
 
 #### 🔴 同一个 locl 坑（踩了三次）
-locl 先把 zero~nine 换成 glyph63166~63175 (等宽)，所以:
-  lookup input 写 one 匹配不上，要写 glyph63167
-  mapping 必须同时覆盖两套 input
-规律: 任何以数字为 input 的 feature，mapping 都要叠加 locl_tab。
-
-验证(HarfBuzz): 默认123=gid63167(521)  sups=gid43272(241)
-  pnum=gid18(363)  numr=gid61925(217)  frac 1/2=[61925,4744,61927]
-```
+locl 先把 zero~nine 换成 glyph63166~63175(等宽)，所以任何以数字为
+input 的 feature，mapping 都要叠加 locl_tab（两套 input 都覆盖）。
+验证: 默认123=gid63167(521) sups=gid43272(241) frac 1/2=[61925,4744,61927]
 ### ❌ 已废弃: m_curvflat
-**不要使用。** OPPO/HOS 只有 350 条长曲线，我们有 2853 条；
-该指标对参考字体不适用。强行压平使撇捺展开 0.531 -> 0.616~0.629（参考 0.531）。
-详见「重要纠错：m_curvflat 有害」。
+**不要使用。** OPPO/HOS 只有 350 条长曲线，我们有 2853 条，该指标不适用。
+强行压平使撇捺展开 0.531 -> 0.616~0.629（参考 0.531）。详见「m_curvflat 有害」。
 
 ### 🔴 折角与喇叭口的量化结论（2026-11-15，重要纠错）
 
@@ -701,6 +686,27 @@ vs SHS: 比例-1/-1 中宫-0.2 重心+0.002 撇捺±0.006 折角/切角 完全�
    构建前必须 sed 生成指向新链的 designspace，否则构建出旧字。
 ```
 
+### 🔵 U+2022 • 墨迹偏小：裁定不修改
+```
+实测: 我们 118x126 / HOS 231x230 / OPPO 230x229（面积比 0.28）
+
+🔴 但 SHS 原版也是四码位共用一个字形:
+  U+00B7 · / U+2022 • / U+2027 ‧ / U+30FB ・  ->  cid01649（全部共用）
+  我们的 118x126 就是 SHS 的设计（只是换了三次曲线）。
+  OPPO/HOS 拆分是因为它们自己重新设计了整套标点。
+
+判定: 不是缺陷，是与基座一致的设计选择。
+      符合项目原则「骨架继承 SHS，只在具体缺陷上动」。
+
+技术硬约束（尝试过并放弃）:
+  font 已达 65,535 字形上限（maxp.numGlyphs 是 uint16）
+  -> 无法新增槽位；只能覆写未引用槽位（11,724 个候选）
+  -> 但覆写会丢失该槽位原轮廓，若未来特性需要它会拿到错字形
+  -> 代价大于收益，不做。
+
+教训: 三次曲线转换本身可行（Mona bullet 4段QM -> MCCCCCCCCZ，
+      三档签名一致，墨迹尺寸不变 215/227/259）。障碍只是槽位上限。
+```
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
@@ -756,21 +762,12 @@ Mona 仅剩 4 个可补（฿ + 2 笑脸 + 1 PUA）-> 实用性极低，不补�
 ```
 用户：「汉字字体所有曲线怎么都没了？」曲线占比 42.3% -> 32.7%
 
-两个罪魁祸首:
-  1. m_termface (MOD2): C→L 砍掉 8% 曲线。判据「段长0.8~1.5×SW 且弯曲比<0.10」
-     命中范围远超「笔端面」，把大量真实弧线也拉直了。
-  2. m_latinext (MOD6): 硬编码路径 masters_MOD12 导致覆盖 CJK。
-     复用的「未映射槽位」在 R5 中已被 CJK 占用 -> 直接覆盖真实字形。
-     必须用 WDS_SRC / WDS_BASE 读当前基座。
+罪魁: m_termface 的 C→L 把大量真实弧线也拉直了；m_latinext 硬编码路径覆盖 CJK。
+修复: 放弃 termface/taper_v2，从 MOD 重建 R1..R16。
+效果: 曲线 32.7% -> 42.6%（SHS 42.3%），VF +0.9MB 正是曲线数据。
 
-修复: 放弃 termface/termface_v2/taper_v2（都依赖 C→L），从 MOD 重建 R1..R16。
-效果: 曲线 32.7% -> 42.6%（SHS 42.3%）。永: LCCC/LLLCCCCC/LLCCC 回来了。
-      VF 40.4MB -> 41.3MB（+0.9MB 正是曲线数据）
-
-教训:
-  1. 任何 C→L 类模块必须逐字验证，不能只看命中数量。
-  2. 复用「未映射槽位」的模块必须从当前基座读槽位表。
-  3. 门禁加「曲线占比」: 相对 SHS 偏差不超过 2%。
+教训: 1) C→L 类模块必须逐字验证 2) 复用槽位必须读当前基座
+      3) 门禁加「曲线占比」: 相对 SHS 偏差 <= 2%
 ```
 ### 🔴 拉丁宽度与预览子集修复（2026-11-15）
 ```
@@ -988,15 +985,11 @@ OPPO 今: qCurveTo(460,824) -> lineTo(528,824)   平顶宽 68
 
 #### 关键判据（走了 5 版才对）
 ```
-❌ v1-v3 只做 pathops 合并 -> 两个尖点变成一个尖点，顶宽仍 0
-❌ v4   判据缺「顶部轮廓要窄」-> 误伤 甲/田（把横画当顶点）
-❌ v5   MAX_TOPW=300 用「全轮廓 bbox 宽度」-> 人字形两笔各占半字宽(499/532)，全被排除，命中 0
-✅ v6   改用「顶部 3% 高度带内的墨宽」作为判据，正确区分:
-         今  c2 顶宽 1   c3 顶宽 0    <- 双尖点，命中
-         甲  c0 顶宽 79  c1 顶宽 751  <- 竖笔端面+横画，跳过
-         田  c2 顶宽 810 c3 顶宽 76   <- 横画+竖笔端面，跳过
+❌ v1-v3 只做 pathops 合并 -> 顶宽仍 0
+❌ v4 缺「顶部轮廓要窄」-> 误伤 甲/田
+❌ v5 用全轮廓 bbox 宽度 -> 人字形两笔各占半字宽，命中 0
+✅ v6 改用「顶部 3% 高度带内的墨宽」: 双尖点 0~1，横画 700+，竖笔端面 70~80
 ```
-
 #### 🔴 pathops API 三个致命坑
 ```python
 # 坑1: difference 需要「轮廓列表」不是 Path 对象
