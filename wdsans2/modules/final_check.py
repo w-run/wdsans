@@ -1,49 +1,106 @@
 #!/usr/bin/env python3
-# final_check - 用已确认的 SHS 基准表逐字核对 R33
-import sys, json
-sys.path.insert(0, '/workspace/wdsans2/probe')
-sys.path.insert(0, '/workspace/wdsans2/modules')
-import numpy as np
+"""最终验证 VF_R41_final.otf"""
+import sys, os
+sys.path.insert(0,"/workspace/wdsans2/probe")
 from fontTools.ttLib import TTFont
 from fontTools.pens.recordingPen import RecordingPen
 from canonpen3 import contours_from_pen
-import m_boxrad
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from scipy.spatial import ConvexHull
+import uharfbuzz as hb
 
-D="/workspace/wdsans2/build/masters_R33/"
-FN={"250":"master-ExtraLight-250.otf","400":"master-Regular-400.otf","900":"master-Heavy-900.otf"}
-idx=json.load(open(D+"boxrad_index.json"))
+OLD="/workspace/static/wdsans/WDesignSans-VF.otf"
+NEW="/workspace/wdsans2/build/VF_R41_final.otf"
 
-# 已确认的 SHS 400档基准 (来自 shs_bench.py 实测)
-SHS400 = {
-"叫":(79,749),"叨":(86,748),"叩":(96,766),"叽":(88,748),"叮":(88,748),
-"叱":(85,737),"昨":(30,762),"晴":(36,771),"暗":(28,767),"晚":(36,769),
-"旺":(35,767),"昧":(28,767),"昭":(33,765),"昕":(30,767),"晌":(36,771),
-"晖":(36,771),"明":(88,779)}
+def render(path,ch,px=1200):
+    ft=ImageFont.truetype(path,px); W=px*2
+    img=Image.new("L",(W,W),0)
+    ImageDraw.Draw(img).text((px//2,px//4),ch,fill=255,font=ft)
+    a=np.array(img)>128
+    r=np.where(a.any(axis=1))[0]; c=np.where(a.any(axis=0))[0]
+    if not len(r) or not len(c): return None
+    return a[r[0]:r[-1]+1,c[0]:c[-1]+1]
 
-def mine(path, ch, lid):
-    f=TTFont(path,lazy=True); gs=f.getGlyphSet(); cm=f.getBestCmap()
-    if ord(ch) not in cm: f.close(); return None
-    rp=RecordingPen(); gs[cm[ord(ch)]].draw(rp); f.close()
-    C=contours_from_pen(rp.value)
-    ps=[m_boxrad.allpts(c) for c in C]
-    if lid is None or max(lid)>=len(ps): return None
-    y0=min(ps[i][:,1].min() for i in lid); y1=max(ps[i][:,1].max() for i in lid)
-    return y0,y1,y1-y0,(y0+y1)/2
+def convex(m):
+    h,w=m.shape
+    sub=m[int(h*0.55):,int(w*0.50):]
+    pts=np.argwhere(sub)
+    if len(pts)<300: return None
+    cc=pts.mean(axis=0); d=pts-cc
+    cov=d.T.dot(d)/len(pts); ev,evec=np.linalg.eigh(cov)
+    main=evec[:,np.argmax(ev)]
+    if main[0]<0: main=-main
+    t=d.dot(main); tmax=float(t.max()); span=float(t.max()-t.min())
+    sel=pts[t>=tmax-span*0.18]
+    if len(sel)<50: return None
+    try: return float(ConvexHull(sel).volume)/float(len(sel))
+    except Exception: return None
 
-print("R33 vs SHS (400档)")
-print("%-2s | %-22s | %-22s | %s" % ("ch","R33","SHS","判定"))
-print("-"*72)
-ok=0; tot=0
-for ch,(sy0,sy1) in SHS400.items():
-    lid=idx.get(str(ord(ch)))
-    a=mine(D+FN["400"], ch, lid)
-    if not a: continue
-    tot+=1
-    sh=sy1-sy0; sc=(sy0+sy1)/2
-    dh=a[2]-sh; dc=a[3]-sc
-    v = "OK" if abs(dh)<25 and abs(dc)<25 else "!!"
-    if v=="OK": ok+=1
-    print("%-2s | h%3.0f c%3.0f y[%4.0f,%4.0f] | h%3.0f c%3.0f y[%4.0f,%4.0f] | dh%+4.0f dc%+4.0f %s" % (
-        ch, a[2],a[3],a[0],a[1], sh,sc,sy0,sy1, dh,dc,v))
+CH=["大","天","夫","文","父","之","久","义","个","人"]
+print("=== 凸包比 ===")
+print("%-4s %10s %10s %10s" % ("字","旧","新","OPPO"))
+print("-"*38)
+A=[]
+for ch in CH:
+    c0=convex(render(OLD,ch)); c1=convex(render(NEW,ch))
+    c2=convex(render("/workspace/wdsans/ref/ops/ops-400.ttf",ch))
+    print("%-4s %10s %10s %10s" % (ch,
+        "%.3f"%c0 if c0 else "-","%.3f"%c1 if c1 else "-","%.3f"%c2 if c2 else "-"))
+    if c0 and c1 and c2: A.append((c0,c1,c2))
+if A:
+    print("-"*38)
+    print("%-4s %10.3f %10.3f %10.3f" % ("均值",
+        np.mean([x[0] for x in A]),np.mean([x[1] for x in A]),np.mean([x[2] for x in A])))
+
 print()
-print("--> %d/%d 匹配" % (ok,tot))
+print("=== 曲线占比（m_termface 教训门禁）===")
+for lbl,p in (("旧",OLD),("新",NEW),("SHS","/workspace/wdsans/ref/shs/shs-400.otf")):
+    f=TTFont(p,lazy=True); cm=f.getBestCmap(); gs=f.getGlyphSet()
+    tot=0; cur=0
+    for cp in cm:
+        if not (0x4E00<=cp<=0x9FFF): continue
+        rp=RecordingPen()
+        try: gs[cm[cp]].draw(rp)
+        except Exception: continue
+        C=contours_from_pen(rp.value)
+        for c in C:
+            for s in c["segs"]:
+                tot+=1
+                if s[0] in ("C","Q","QM"): cur+=1
+    f.close()
+    print("  %-4s 曲线占比 %.2f%%" % (lbl, 100.0*cur/max(1,tot)))
+
+print()
+print("=== HarfBuzz 排版回归 ===")
+fa=hb.Font(hb.Face(hb.Blob.from_file_path(OLD)))
+fb=hb.Font(hb.Face(hb.Blob.from_file_path(NEW)))
+def shape(font,text,feats=None):
+    buf=hb.Buffer(); buf.add_str(text); buf.guess_segment_properties()
+    if feats: hb.shape(font,buf,feats)
+    else: hb.shape(font,buf)
+    return ([i.codepoint for i in buf.glyph_infos],
+            [(p.x_advance,p.x_offset,p.y_offset) for p in buf.glyph_positions])
+CASES=[("永国字体",None),("设置·消息",None),("0123456789",None),("Hamburgefonstiv",None),
+       ("123",{"sups":True}),("1/2",{"frac":True}),("、。",{"chws":True}),
+       ("b\u0301",None),("12:34",None),("a:b",None)]
+d=0
+for t,f in CASES:
+    if shape(fa,t,f)!=shape(fb,t,f):
+        d+=1; print("  !! %r %s" % (t,f))
+print("  %d 用例，%d 不同 %s" % (len(CASES),d,"OK" if d==0 else "!!"))
+
+print()
+print("=== 元数据 ===")
+a=TTFont(OLD,lazy=True); b=TTFont(NEW,lazy=True)
+print("  表 %d->%d  glyphs %d->%d  cmap %d->%d" % (
+    len(set(a.keys())),len(set(b.keys())),
+    a["maxp"].numGlyphs,b["maxp"].numGlyphs,
+    len(a.getBestCmap()),len(b.getBestCmap())))
+ga=sorted(set(fr.FeatureTag for fr in a["GPOS"].table.FeatureList.FeatureRecord))
+gb=sorted(set(fr.FeatureTag for fr in b["GPOS"].table.FeatureList.FeatureRecord))
+print("  GPOS %d->%d chws=%s vchw=%s" % (len(ga),len(gb),"chws" in gb,"vchw" in gb))
+oa=a["OS/2"]; ob=b["OS/2"]
+print("  OS2 v%d->v%d typo=%.2fem bit7=%s" % (oa.version,ob.version,
+    (ob.sTypoAscender-ob.sTypoDescender)/1000.0,"ON" if ob.fsSelection&0x80 else "off"))
+a.close(); b.close()
