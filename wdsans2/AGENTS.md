@@ -78,7 +78,8 @@ masters_R33  = R32 + m_boxrad     1,040 字 闭口偏旁垂直居中+拉高
 masters_R34  = R33 + m_radfoot       11 字 部首出脚
 masters_R35  = R34 + m_middotadv     1 字形 中点标点advance
 masters_R36  = R35 + m_lineheight     三档行高1.35em
-masters_R37  = R36 + m_fbclean        版本号+GDEF mark 已部署 ← 当前链尾
+masters_R37  = R36 + m_fbclean        版本号+GDEF mark
+     R38 = R37 + m_fbclean2(VF后处理)  STAT/name/zh-CN 已部署 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -816,6 +817,48 @@ R36 报告 3 FAIL + 3 WARN:
 审计扩到 34 项（新增第 11 组固化 fontbakery 报告项）
 五个产物同步 + cache-buster 202611191107
 ```
+### ✅ R38 fontbakery 完整报告驱动的第二批修复（2026-11-19，已部署）
+```
+🔴 工具用法: fontbakery 必须加 --succinct --skip-network 才跑得完全部 127 项。
+   不加参数会卡在第 6 项（CFF2 大文件上部分 check 极慢），只能看到部分结果。
+
+  fontbakery check-universal --succinct --skip-network <font>
+
+R37 完整报告 3 FAIL + 6 WARN，本轮修掉 2 FAIL:
+
+修 1 FAIL inconsistencies_between_fvar_STAT
+  fvar 9 个 instance（250/300/350/400/500/600/700/800/900）
+  STAT 只有 1 个 AxisValue 且 Format=2 无 Value 字段
+  -> 9 个 instance 全无对应条目，应用读 STAT 无法识别字重名称
+  修: 每个 instance 建 Format 1 的 AxisValue，按 AxisIndex+Value 排序
+  结果 STAT 1 -> 10
+
+修 2 FAIL no_mac_entries（我们引入的）
+  name 表 20 条 platformID=1（Mac），SHS 原版只有 platform 3
+  来源: bvf 脚本里写了 [(3,1,0x409),(1,0,0)] —— 自己加的
+  OpenType 建议仅用 platform 3
+  修: 删除所有 platformID=1 -> 50 条降到 30 条
+
+修 3 🔴 zh-CN name 回归（严重）
+  R37 部署版 zh-CN 0 条，SHS 原版 3 条。
+  AGENTS.md 早已记录「VF 构建丢 zh-CN，必须 post_vf_name2 修复」，
+  但 bvf_r37.py 自写的 name 替换没加 0x804 -> 回归。
+  修: 从 master 复制 zh-CN 的 nameID 1/2/4/16/17，
+      nameID17 在 master 里是 ExtraLight，强制改 Regular。zh-CN 0 -> 5 条。
+
+验证: STAT 1->10 / platforms [1,3]->[3] / zh-CN 0->5 / nameID17=Regular
+      不变项 head.rev=1.000 OS/2 v4 mark=30 glyphs=65535 cmap=45012
+      HarfBuzz shaping R37 vs R38（11项）0 项不同
+      fontbakery FAIL 3->1（只剩 file_size）/ WARN 6->5
+
+剩余 fontbakery 提示（全部不可修）:
+  file_size(41MB CJK 必然) / post_table_version(CFF2 必需) /
+  cjk_chws_feature(日文专用) / ligature_carets / mandatory_avar_table /
+  math_signs_width / ots
+
+审计扩到 38 项（新增第 12 组 VF 元数据: STAT覆盖/platform3/zh-CN/nameID17）
+存档 v261122（8 文件 111MB，md5 8/8）
+```
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
@@ -948,63 +991,23 @@ lang=zh-hans (ZHS)          -> sups 123 = gid18(390)     不生效
 另: 三家实测本身不一致（参考厂商有比例有等宽）-> 保持 SHS 原行为即可。
 ```
 ### ✅ 全库系统扫描方法（2026-11-16）
+```
+scan_struct (3.5秒): bbox 偏差>15% 的 0 字；轮廓数比 SHS 多 3 个以上 3059 字
+  -> 3059 是误报: SHS 用 subr 复用，展开后轮廓边界天然不同
+  性能关键: 字体只开一次（每字重开 TTFont 会从 3.5 秒变 5 分钟）
 
-不再凭猜测挑字。已建立两个全库扫描工具，**每次大改后跑一遍**。
+墨量分布扫描（4x4 网格 + L1 距离，3755 常用字）:
+  中位28.03 均值29.12 P90=40.60 最大77.50(叶)
+  -> 全部高偏差但非缺陷，来自部件位置与比例微小差异
 
-#### 1. `modules/scan_struct.py` — 结构异常扫描（3.5 秒）
-```bash
-cd /workspace/wdsans2 && python modules/scan_struct.py
-```
-检查: 轮廓数是否远多于 SHS、bbox 偏差是否 >15%
-**性能关键: 字体只打开一次**（每字重开 TTFont 会从 3.5 秒变成 5 分钟以上）
+🔴 折角测量陷阱: 短臂假折角
+  多 c0: 113.9° 臂长 67/12（短臂仅 12）
+  正确判据: 两侧臂都 >=40 且角度 70~110° 才算真实折角
+  过滤后全部精确 90°，与 OPPO/HOS/SHS 一致
 
-实测结果：
-```
-bbox 偏差 >15%: 0 字          <- 字号比例完全正常
-轮廓数比 SHS 多 3 个以上: 3059 字
-```
-3059 字「轮廓多」是**误报**: SHS 的 CFF CharStrings 用 subr 子程序复用，
-展开成 RecordingPen 后轮廓边界与 SHS 原版天然不同。**不是缺陷。**
-
-#### 2. 墨量分布扫描 — 找视觉差异最大的字
-4x4 网格墨量占比向量 + L1 距离，全库 3755 常用字。
-```
-偏差分布: 中位28.03 均值29.12 P90=40.60 P99=56.20 最大77.50
-最大: 叶 77.50 / 吓 76.29 / 吃 75.13 / 玄 72.90 / 又 72.28
-```
-排查结论：**全部是高偏差但非缺陷**。逐字验证了 叶/叫/吃/又/玄/车 等，
-「口」旁闭合正常，竖直重心偏差仅 0.004（500 字采样）。
-偏差来自**部件位置与比例的微小差异**，属风格范畴。
-
-#### 🔴 折角测量的严重陷阱（重要）
-早期「多」字测出 98°/101° 钝角与 61°/62° 锐角，看起来像缺陷。
-实际是**短臂造成的假折角**：
-```
-我们 多 c0: 113.9° @(298,575) 臂长 67/12   <- 短臂仅 12 单位
-             97.8° @(507,499) 臂长 72/10   <- 短臂仅 10 单位
-```
-
-**正确判据：两侧臂都 >= 40 且角度在 70~110° 才算真实折角。**
-过滤后实测（全部精确 90°，与参考一致）:
-```
-字   我们      OPPO    HOS     SHS
-各   15个@90  11个@90 16个@90 12个@90
-永   11个@90  11个@90  9个@90  6个@90
-亨   18个@90  17个@90 16个@90 14个@90
-口   12个@90   8个@90 12个@90 12个@90
-中   16个@90  12个@90 20个@90 24个@90
-```
-
-#### 方法学总结
-```
-1. 任何「聚合统计指标」都必须先做「对照组验证」：
-   口/回/十/中/申/甲 是天然直角对照组（三家都是精确 90°），
-   如果它们被算成非 90°，说明是测量方法问题，不是字形问题。
-
-2. 视觉缺陷要靠「放大渲染 + 逐行墨段扫描」确认，
-   不能只靠单一数值指标。本轮扫描出的所有高偏差字都是误报。
-
-3. 扫描工具自身要有性能意识：字体只开一次，避免 O(n) 次 IO。
+方法学: 1) 聚合指标必须先做对照组验证（口/回/十/中/申/甲）
+        2) 视觉缺陷要放大渲染+逐行墨段扫描，不能只靠单一数值
+        3) 扫描工具自身要有性能意识
 ```
 
 ### ✅ R34 全库复验（2026-11-19）
@@ -1126,61 +1129,19 @@ VF 重建 320s / 41.3MB
 ```
 
 ### ✅ 全模块效果审计系统（2026-11-16）
-
-**每次重建链 / 每次部署前必须跑一遍。**
-
 ```bash
-cd /workspace/wdsans2 && python modules/audit.py
-# exit 0 = 全部通过；exit 1 = 有 FAIL
+cd /workspace/wdsans2 && python modules/audit.py   # exit 0 = 全部通过
 ```
 
-#### 为什么需要它
-```
-连续两轮出现「重建链漏模块」:
-  第40轮漏 m_curvflat   -> 撇捺被压得过直
-  第41轮漏 m_latinreset -> 拉丁变窄 5.7%
-两者都是纯几何模块: 不改拓扑 -> 三档一致性与 VF 构建都不报错,
-门禁也全通过, 只能靠视觉或指标测量发现。
-```
+为什么需要: 连续两轮「重建链漏模块」（第40轮漏 curvflat，第41轮漏 latinreset）
+两者都是纯几何模块，不改拓扑 -> 三档一致性与 VF 构建都不报错，只能靠测量发现。
 
-#### 审计项（表与特性 17 项 + 几何 13 项）
-```
-表与特性: latin宽 / shortl / zerocont / metrics / nametable(.zh) / os2range
-          numfeats(2) / frac / coloncenter / kerning / markpos
-几何: ledge / latinext / punct五标点 / featlang.* / coloncenter冒号gid
-```
+三组审计: audit_all（表与特性）/ audit_geom（几何与排版）/ claim_audit（交付物）
+详见下方「claim_audit.py」与「R38」章节，当前共 38 项。
 
-#### 审计脚本自身的两个坑（都踩过）
-```python
-# 坑1: Mona 是 VF，必须实例化到 wght=400 才能比
-fm = TTFont(MONA, lazy=True)
-fm = instantiateVariableFont(fm, {'wght': 400}, inplace=True)   # ✅
-# 不实例化会得到 1.082 的假 FAIL
-
-# 坑2: 标点偏差要分别对宽和高算，不能拿高度差去比宽度目标
-dw = abs(w - tw) / tw * 100
-dh = abs(h - th) / th * 100
-# 之前写成 abs(h - tgt)/tgt -> ：124x533 报「偏-330%」的假 FAIL
-```
-
-#### 2026-11-16 实测结果（R25b 部署版）
-```
-表与特性: PASS 17 / FAIL 0 / WARN 0
-几何:     PASS 13 / FAIL 0 / SKIP 1
-全部审计通过
-```
-
-#### 顺带修好的问题：中文 name 记录缺失
-```
-VF 构建会丢弃 zh-CN(0x804) 记录，必须后处理:
-  旧: modules/post_vf_name.py 的 MASTER 硬编码指向 masters_MOD18
-  新: modules/post_vf_name2.py 支持 WDS_MASTER 环境变量，
-      默认指向当前链尾 masters_R25b
-
-🔴 ID17 (Subfamily) 在 master 里是 'ExtraLight'（因为 master 是 250 档），
-   复制到 VF 时必须强制改为 'Regular'。
-
-效果: langIDs ['0x0','0x409'] -> ['0x0','0x409','0x804']
+🔴 审计脚本自身的坑（都踩过）:
+  Mona 是 VF，必须实例化到 wght=400 才能比（否则 1.082 假 FAIL）
+  标点偏差要分别对宽和高算，不能拿高度差比宽度目标（否则 -330% 假 FAIL）
 ```
 
 ### 🔴🔴 事故：m_ledge 误伤 2,033 字（2026-11-17）
