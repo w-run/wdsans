@@ -394,6 +394,37 @@ if os.path.exists(VF):
 else:
     skip("chws 检查", "VF 不存在")
 
+# ---------- 14. Layout 排序 / OTS ----------
+print()
+print("=== 14. Layout 排序 / OTS ===")
+if os.path.exists(VF):
+    lf = TTFont(VF, lazy=True)
+    for tg in ("GSUB", "GPOS"):
+        if tg not in lf:
+            continue
+        tb2 = lf[tg].table
+        if not tb2.FeatureList:
+            continue
+        tgs = [fr.FeatureTag for fr in tb2.FeatureList.FeatureRecord]
+        ok_sorted = tgs == sorted(tgs)
+        check("%s FeatureList 有序" % tg, ok_sorted,
+              "%d 条" % len(tgs))
+    lf.close()
+    # OTS sanitize（浏览器实际用的验证器）
+    try:
+        import ots as _ots
+        _r = _ots.sanitize(VF, check=True, capture_output=True)
+        _err = _r.stderr.decode() if _r.stderr else ""
+        _nw = _err.count("WARNING")
+        check("OTS sanitize 零警告", _nw == 0,
+              "%d 处警告" % _nw if _nw else "通过")
+    except ImportError:
+        skip("OTS 检查", "ots 模块未安装")
+    except Exception as _e:
+        check("OTS sanitize", False, str(_e)[:80])
+else:
+    skip("Layout 排序", "VF 不存在")
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))
