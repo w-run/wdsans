@@ -135,6 +135,7 @@ cd /workspace/wdsans2 && python modules/audit.py
 
 | 版本 | 链尾 | 大小 | 位置 |
 |---|---|---|---|
+| v261121 | R36（+ m_lineheight）| 111 MB | static/wdsans/archive/v261121/ |
 | v261120 | R35（+ m_middotadv）| 111 MB | static/wdsans/archive/v261120/ |
 | v261119 | R34（+ m_radfoot）| 111 MB | static/wdsans/archive/v261119/ |
 | v261118 | R32（+ m_by0align）| 111 MB | static/wdsans/archive/v261118/ |
@@ -144,12 +145,12 @@ cd /workspace/wdsans2 && python modules/audit.py
 回滚：
 ```bash
 cd /workspace/static/wdsans
-cp archive/v261120/WDesignSans-VF.otf .
-cp archive/v261120/WDesignSans-FlatApex-Regular.otf .
-cp archive/v261120/wd-preview.woff2 .
-cp archive/v261120/wd-poster-vf.woff2 poster/wd-vf.woff2
-cp archive/v261120/wd-poster-flat.woff2 poster/wd-flat.woff2
-cp archive/v261120/masters/*.otf /workspace/wdsans2/build/masters_R35/
+cp archive/v261121/WDesignSans-VF.otf .
+cp archive/v261121/WDesignSans-FlatApex-Regular.otf .
+cp archive/v261121/wd-preview.woff2 .
+cp archive/v261121/wd-poster-vf.woff2 poster/wd-vf.woff2
+cp archive/v261121/wd-poster-flat.woff2 poster/wd-flat.woff2
+cp archive/v261121/masters/*.otf /workspace/wdsans2/build/masters_R36/
 ```
 
 字体二进制不入 git（体积原因），但 docs/archive/*-README.md 与
