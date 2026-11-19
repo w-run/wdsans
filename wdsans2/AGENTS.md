@@ -402,12 +402,14 @@ input 的 feature，mapping 都要叠加 locl_tab（两套 input 都覆盖）。
 对照字 口/回/十 被改成 129°/127°/113°（OPPO/HOS 都是 90°）——
 **对照组被改坏就说明方向错了，动手前必须先验证对照组。**
 
-### ⚠️ 顶点平顶: VF 版不可行 / 静态版已实现
-
-多档 VF 下 m_apexmerge 的布尔运算在三档切出不同拓扑（99.7% 签名不一致），
-报 VarLibCFFPointTypeMergeError。**这是架构级限制，不要重试。**
-静态单档版已成功实现，详见「🎉 顶点平顶已在单档静态版实现」。
-
+"""### 顶点平顶：VF 不可行 / 静态版也已移除（2026-11-19）
+```
+多档 VF: pathops 布尔运算在三档切出不同拓扑（99.7% 签名不一致）
+         -> VarLibCFFPointTypeMergeError。架构级限制，不要重试。
+单档静态: 曾实现 1804 字（今 0/5->79/4，HOS 76/3），对照组 10/10 零误伤。
+2026-11-19 用户裁定：静态版和 VF 都没用，已删除 FlatApex 与全部相关 UI。
+```
+"""
 ### ❌ 已彻底废弃: m_ledge / m_ledge2 / m_ledge3
 ```
 三轮全失败，R29 已完全移除:
@@ -904,6 +906,96 @@ fontbakery: R38 FAIL1/WARN6 -> R39 FAIL1/WARN5（cjk_chws 已消除）
 两个字体都加了（VF + FlatApex），子集也保留。
 审计扩到 41 项（新增第 13 组）；存档 v261123。
 ```
+### ✅ R44 TTF 产物化 + 三个致命坑（2026-11-19，已部署）
+```
+用户要求: 最终产物优先 TTF；去掉顶点平顶（静态版和 VF 都没用）。
+
+产物: WDesignSans-VF.ttf  50.1 MB
+      (OTF 39.3MB -> TTF 50.1MB；TTF 更大是因为保留了完整 gvar 插值)
+
+## 🔴 坑 1: TTGlyphPen.qCurveTo 隐式合并点 -> 字重丢失
+```
+现象: 10 个拉丁字形（a b j o p u 0 5 6 9）字重完全不变化
+      用户反馈「部分字形字重丢失」
+
+根因: TTGlyphPen.qCurveTo 源码里 for pt in points[:-1]: _addPoint(pt,0)
+      对「与上一控制点重合」的点做合并
+      -> 同一条逻辑曲线在不同字重下产生不同点数
+      -> w250:53点  w400:51点  w900:53点
+      -> varLib 报 incompatible masters -> 跳过 -> 无 gvar -> 字重失效
+
+✅ 修复: 直接构造 Glyph 数组，绕过 TTGlyphPen
+   g.coordinates = GlyphCoordinates(coords)   # 🔴 必须用 GlyphCoordinates
+   g.flags = bytearray(flags)                  # 1=on-curve 0=off-curve
+   g.endPtsOfContours = endPts
+   g.program = Program()
+   传 list 会报 'list' object has no attribute 'calcIntBounds'
+
+验证: 三档点数一致 a:53 b:53 0:58 H:12
+      varLib incompatible 警告 36,495 -> 0
+```
+
+## 🔴 坑 2: curves_to_quadratic 的参数与返回值
+```
+签名: curves_to_quadratic(curves, max_errors)
+      一次传三档同一条曲线 -> 保证点数一致（这是关键）
+
+输入必须是 4 点 (start, c1, c2, end)
+  传 3 点 -> calc_intersect() missing 1 required positional argument: 'd'
+
+返回值是 [start, ctrl1, ctrl2, ..., end]
+  qCurveTo 需要 [ctrl1, ..., end] -> 必须去掉首点
+  不去首点 -> 'a' 墨差 74.51%；去掉 -> 1.52%
+```
+
+## 🔴 坑 3: designspace 必须有 <instances>
+```
+没有 <instances> -> fvar.instances = 0 -> STAT 无法生成 -> 只有 1 个 AxisValue
+
+且 fontTools DesignSpaceDocument 的 SourceDescriptor:
+  s.location={...} 和 s.designLocation={...} 都写不进 XML
+  -> varLib 报 'More than one base master found'
+✅ 可靠做法: 手写 designspace XML
+   <location><dimension name="Weight" xvalue="400"/></location>
+```
+
+## 其它 TTF 转换要点
+```
+静态 OTF->TTF 三个必备修正（m_cff2ttf.py）:
+  1. loca 必须用 table__l_o_c_a 实例（glyf.compile 调它的 set()）
+     newTable('loca') 没有 set() -> 表被丢弃 -> PIL 报 SFNT missing
+  2. sfntVersion 必须改 '\x00\x01\x00\x00'
+     OTF 是 'OTTO'(0x4F54544F)，PIL/浏览器拒绝加载
+  3. maxp.tableVersion 必须 0x00010000
+
+TTF 反而修正了 OTF 的 lsb 不一致:
+  OTF 87% 字形 lsb != bbox.xmin（CFF 允许任意）
+  TTF  0.5% （TrueType 要求 lsb == bbox.xmin）
+```
+
+## 验收方法（血泪）
+```
+🔴 「所有字形都有 gvar」不代表 gvar 有效！
+   gvar.variations 有 65,535 个键，其中 36,495 个是空的
+   必须用 HarfBuzz 实测各字重宽度变化，不能只看键是否存在
+
+🔴 验证样本必须覆盖: 大写/小写/数字/标点/中文
+   之前只测「永国字体」+ 拉丁串，恰好漏掉 a/0/5/6/9
+
+🔴 段落渲染对比必须用同一原点/基线
+   两次渲染不同原点会误判「字间距变宽」
+```
+
+## 顶点平顶已移除
+```
+删除: WDesignSans-FlatApex-Regular.otf (17.9MB)
+      @font-face WDesignFlat（index.html + poster/tokens.css）
+      指标表「顶点平顶（人字形）」行
+      「顶点平顶专项」panel
+      孤儿 CSS: .apex-cmp/.ac-row/.ac-lbl/.ac-wf/.ac-wv/.ac-op/.ac-ho
+      poster/wd-flat.woff2
+poster_subset2.py 改为只从 TTF 生成 wd-vf.woff2
+```
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
@@ -1058,47 +1150,6 @@ scan_struct (3.5秒): bbox 偏差>15% 的 0 字；轮廓数比 SHS 多 3 个以�
         3) 扫描工具自身要有性能意识
 ```
 
-### ✅ R34 全库复验（2026-11-19）
-
-#### 改动爆炸半径
-```
-R32 -> R34 改动的字: 1,051  （= 1,040 boxrad + 11 radfoot，无意外波及）
-  其中拓扑改变(签名不同): 0    <- 全部是安全的点移动
-```
-
-#### 六项风格指标（与上文「六项指标完整对照」一致，无回归）
-```
-我们 915/911 43.0 0.499 0.524/0.535/0.610 90.0
-SHS  915/912 40.5 0.479 0.526/0.549/0.611 90.0
--> m_boxrad 改 1,040 字后无风格回归
-```
-#### VF 插值（详见「VF 插值与子集完整性验证」）
-```
-Hamburgefonstiv / minimum / 0123456789 全部单调 OK
--> m_boxrad 按字重缩放 BOTTOM_EXTEND(35/80/152) 未造成插值异常
-```
-#### boxrad 抽样 + feature_scan 结论
-```
-随机 12 字左偏旁高度增量: +79 ~ +80（12/12 精确落在预期区间，无漏改过改）
-
-feature_scan vs OPPO（508 常用字）: 差异 top-10 儿5.84 兵5.28 且5.25 友4.98
-  分布: 中位 2.14 均值 2.28。逐字核对: 「儿」与 SHS 完全同构（10段
-  LLLCCCCCCC，控制点差 1~2 单位）；「且」四家几乎一致。
--> 墨量偏差属风格范畴，不是缺陷。不要重复排查。
-```
-### ✅ VF 插值与子集完整性验证（2026-11-16）
-```
-1. 字重插值必须用拉丁测（CJK advance 恒定 1000 测不出）:
-   Hamburgefonstiv 250=7875 -> 400=8074 -> 900=8690 单调 OK
-   CJK advance 应恒定: 永 [1000x4] 永国字体 [4000x4]
-
-2. CJK 映射: SHS 把汉字与康熙部首共用一个字形（uni2F00），
-   OPPO/HOS 不共用。两种都正确，渲染一致。
-
-3. 子集: HarfBuzz 不能直接读 woff2（返回 gid 0）-> 先解压再用。
-   常用3500缺失0 / 竖排9/9有替换 / sups subs frac pnum 全在
-```
-
 ### 🎉 顶点平顶已在单档静态版实现（2026-11-16）
 ```
 为什么单档可以、多档 VF 不行:
@@ -1142,40 +1193,6 @@ scan_frag: 96px 位图连通块数。3755 字: 中位0.0 均值-0.07
 且约半数为正（我们更饱满）。最大 -2.2%（嘴）/ 最小 +0.1%（爵）。
 -> 所谓「缝隙」是轮廓拆分方式不同导致的测量假象，不是真实笔画断裂。
 ```
-### 🔴 事故：重建链又一次漏掉 latinreset（2026-11-16）
-
-**用户反馈**: 「拉丁字体怎么又变窄了？」
-
-#### 实测
-```
-阶段              H     A     M     W
-R16 (latinreset前) 550   597   687   858
-R24a              550   597   687   858
-R25 (旧)          550   597   687   858   <- 与 R16 完全相同
-Mona @400         544   587   648   867
-```
-H = 550 而应为 583，比值 550/583 = 0.943 = m_latinmat 的 SCALE。
-**这说明 latinreset 没有生效。**
-
-#### 根因
-```
-R25 = R24a + featlang
-R24a = R16 + punctscale
--> 第41轮从 R16 出发重建时，漏掉了 R18 的 m_latinreset
-```
-**与第40轮漏掉 m_curvflat 完全同类的错误：**
-重建链时凭记忆挑模块，没有对照「原链已部署模块清单」逐项核对。
-两者都是纯几何模块，不改拓扑，三档一致性与 VF 构建都不会报错，
-只能靠视觉或指标测量发现。
-
-#### 修复
-```
-masters_R25b = R25 + m_latinreset  (486字形 × 3档)
-效果: H 550 -> 583, A 597 -> 635, M 687 -> 728, W 858 -> 910
-VF 重建 320s / 41.3MB
-预览子集重建 2.21MB / 7600 字形 / GSUB 缺失 0
-```
-
 ### ✅ 全模块效果审计系统（2026-11-16）
 ```bash
 cd /workspace/wdsans2 && python modules/audit.py   # exit 0 = 全部通过
@@ -1277,20 +1294,13 @@ wd-vf 121KB -> 229KB,  wd-flat 63KB -> 118KB
 5. **不要对短边做「根部收窄」** —— 试过 25%/30%/35%/60%/85%，全部不如 ratio=0。
 6. **删除段必须真删，不能退化成零长度** —— varLib 会静默丢弃零长度段，导致三档段数不一致。
 
-### 3.2b m_taper 的三条硬约束
+"""### 3.2b m_taper 三条硬约束
 ```
-1. 必须 400 档检测，三档套用同一 (ci,k,j) 三元组
-   索引要存全三元组；只存 [ci,k] 会让 apply 静默无效（实测只应用 56 字）
-   各档独立检测会让 900 档 SW=150 把段长判据变成 [82.5,217.5]，
-   三档改动 17380/17405/11823 严重不一致。
-
-2. 不可重复运行（判据不收敛）
-   NARROW=0.95 只让端点各收 5%，段长 84.0 -> 79.8 仍在判据内，
-   每跑一次继续削细 1.5~2 单位。一条链上只能跑一次。
-
-3. 依赖 m_termface 的 C→L 才有目标
-   现链已跳过 termface，故 m_taper 在 R 系列命中很少。
+1. 400 档检测，三档套用同一 (ci,k,j) 三元组（索引必须存全三元组）
+2. 不可重复运行：NARROW=0.95 只收 5%，段长仍在判据内，每跑一次继续削细
+3. 依赖 m_termface 的 C->L 才有目标（现链已跳过 termface，命中很少）
 ```
+"""
 ### 3.3 工作方法
 7. **基座必须是原始状态**。用已改过的文件当基座推导判据，会让判据只在「已修」状态成立。
    > 实测：拿 T7（`永` 已改）当基座，判据 `|E.x − bar.right| ≤ 0.15SW` 对原版 `永`（dx=52）完全不成立。
