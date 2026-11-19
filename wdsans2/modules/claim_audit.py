@@ -265,6 +265,27 @@ check("5 个字体文件 ·advance 一致", len(uniq) <= 1,
 check("· advance >= 400", all(v >= 400 for v in advs.values()) if advs else False,
       "最小值 %s" % (min(advs.values()) if advs else "-"))
 
+# ---------- 9. 行高度量 ----------
+print()
+print("=== 9. 行高度量 ===")
+if os.path.exists(VF):
+    ff = TTFont(VF, lazy=True)
+    oo = ff["OS/2"]
+    typo = oo.sTypoAscender - oo.sTypoDescender + oo.sTypoLineGap
+    win = oo.usWinAscent + oo.usWinDescent
+    b7 = bool(oo.fsSelection & 0x80)
+    ff.close()
+    check("OS/2 版本 >= 4 (bit7 需要)", oo.version >= 4,
+          "v%d" % oo.version)
+    check("USE_TYPO_METRICS 已启用", b7, "ON" if b7 else "off")
+    lh = typo if b7 else win
+    check("行高在 1.25~1.42em", 1250 <= lh <= 1420,
+          "%.2fem (typo=%d win=%d)" % (lh/1000.0, typo, win))
+    check("usWin 保持保守值(不裁切竖排)", win >= 1440,
+          "%d" % win)
+else:
+    skip("行高度量", "VF 不存在")
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))
