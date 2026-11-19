@@ -77,7 +77,8 @@ masters_R32  = R31 + m_by0align    326 字 bar/body 接合点 y 跟随本档
 masters_R33  = R32 + m_boxrad     1,040 字 闭口偏旁垂直居中+拉高
 masters_R34  = R33 + m_radfoot       11 字 部首出脚
 masters_R35  = R34 + m_middotadv     1 字形 中点标点advance
-masters_R36  = R35 + m_lineheight     三档行高1.35em 已部署 ← 当前链尾
+masters_R36  = R35 + m_lineheight     三档行高1.35em
+masters_R37  = R36 + m_fbclean        版本号+GDEF mark 已部署 ← 当前链尾
 ```
 - 任何修改**必须从 T6 出发**，不得从 T3/T4/T5/T7 等中间产物出发。
 - **T7 已污染**（含被改坏的 `永`），禁止作为基座。
@@ -770,6 +771,51 @@ vs SHS: 比例-1/-1 中宫-0.2 重心+0.002 撇捺±0.006 折角/切角 完全�
 五个产物全部同步 + cache-buster 202611190836 -> 202611191003
 审计扩到 28 项（新增第9组: OS/2版本/bit7/行高范围/usWin保守值）
 ```
+### ✅ R37 fontbakery 驱动的质量修复（2026-11-19，已部署）
+```
+方法转变: 前几轮都是自写脚本测量。本轮改用 fontbakery 1.1.0（Google Fonts 官方
+检查器，127 项检查），让专业工具指出问题 —— 避免「自己写工具又自己评判」。
+
+  /workspace/wdsans/venv/bin/fontbakery check-universal <font>
+  已装: fontbakery 1.1.0 / uharfbuzz 0.57 / blackrenderer 0.6 / booleanOperations 0.1
+
+R36 报告 3 FAIL + 3 WARN:
+  FAIL opentype/font_version   head=2.00499 vs name=Version 1.000
+  FAIL base_has_width          uni20DD/uni20DE advance=0
+  FAIL file_size               39.4Mb > 9Mb（CJK 必然，不修）
+  WARN gdef_mark_chars         20+ 组合符号未在 mark class
+  WARN post_table_version      format 3 小众问题（CFF2 必需）
+  WARN cjk_chws_feature        缺 chws/vchw（日文专用）
+
+修 1 版本号不一致（真缺陷，我们引入）:
+  m_nametable 只改了 name ID5，漏改 head.fontRevision（仍是 SHS 的 2.00499）
+  -> head.fontRevision = 1.000
+
+修 2 GDEF mark class 几乎为空（SHS 继承缺陷，只有 4 个）:
+  这导致 base_has_width 误报: uni20DD 是 COMBINING ENCLOSING CIRCLE,
+  advance 本来就该 0，但不在 mark class -> 被当基底字符检查
+  修: 按 unicodedata.category 补全 -> mark 4 -> 30
+
+🔴 迭代: 初版按 Mn/Mc/Me 全标 -> mark=32，fontbakery 立刻报 2 个新 WARN
+  gdef_non_mark_chars / gdef_spacing_marks 都指向 U+302E/U+302F
+  它们 category=Mc（间距型组合标记）adv=250，SHS 原版也未分类
+  修正: 只标 Mn(28个) + Me(2个)，排除 Mc(2个) -> mark=30 -> WARN 消失
+
+效果: FAIL 3->1（只剩 file_size）/ WARN 3->2
+      font_version / base_has_width / gdef_mark_chars /
+      gdef_non_mark_chars / gdef_spacing_marks 全部通过
+
+🔴 必验证: GDEF 改动不能影响既有 mark 定位。用 uharfbuzz 对比 R36/R37
+  （选无预组合字符的组合，强制走 mark 定位）:
+    b+acute     R36(-588,364)  R37(-588,364)    完全一致
+    d+acute     R36(-612,363)  R37(-612,363)
+    g+tilde     R36(-513,-224) R37(-513,-224)
+    k+diaeresis R36(-429,-4)   R37(-429,-4)
+  中文/数字不受影响: 永国字体 4000 / 0123456789 5740
+
+审计扩到 34 项（新增第 11 组固化 fontbakery 报告项）
+五个产物同步 + cache-buster 202611191107
+```
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
@@ -1003,95 +1049,28 @@ feature_scan vs OPPO（508 常用字）: 差异 top-10 儿5.84 兵5.28 且5.25 �
 ```
 
 ### 🎉 顶点平顶已在单档静态版实现（2026-11-16）
-
-**这是 6 项笔画风格指标中唯一未达成项的突破。**
-
-#### 为什么单档可以、多档 VF 不行
 ```
-多档 VF: pathops 布尔运算在三档切出不同拓扑（99.7% 签名不一致）
-         -> VarLibCFFPointTypeMergeError，无解
-单档静态: 没有插值约束，可以做
-```
+为什么单档可以、多档 VF 不行:
+  多档 VF: pathops 布尔运算在三档切出不同拓扑(99.7%签名不一致)
+           -> VarLibCFFPointTypeMergeError，无解
+  单档静态: 没有插值约束，可以做
 
-#### 参考字体的做法
-```
-HOS  今: qCurveTo(464,839) -> lineTo(540,839)   平顶宽 76
-OPPO 今: qCurveTo(460,824) -> lineTo(528,824)   平顶宽 68
-我们 今: 两个独立尖点，顶宽 0
-```
+参考值: HOS 今 平顶宽 76 / OPPO 今 68 / 我们 0（两个独立尖点）
 
-#### 关键判据（走了 5 版才对）
-```
-❌ v1-v3 只做 pathops 合并 -> 顶宽仍 0
-❌ v4 缺「顶部轮廓要窄」-> 误伤 甲/田
-❌ v5 用全轮廓 bbox 宽度 -> 人字形两笔各占半字宽，命中 0
-✅ v6 改用「顶部 3% 高度带内的墨宽」: 双尖点 0~1，横画 700+，竖笔端面 70~80
-```
-#### 🔴 pathops API 三个致命坑
-```python
-# 坑1: difference 需要「轮廓列表」不是 Path 对象
-pathops.difference(merged, cutter, out.getPen())        # ❌ 'tuple' has no attribute 'draw'
-pathops.difference(list(merged.contours), list(cutter.contours), out.getPen())  # ✅
+关键判据（5 版才对）:
+  v1-v3 只做 pathops 合并 -> 顶宽仍 0
+  v4 缺「顶部轮廓要窄」-> 误伤 甲/田
+  v5 用全轮廓 bbox 宽度 -> 人字形两笔各占半字宽，命中 0
+  ✅ v6 用「顶部 3% 高度带内的墨宽」: 双尖点 0~1 / 横画 700+ / 竖笔端面 70~80
 
-# 坑2: path.contours 是生成器，必须 list() 转换
-len(merged.contours)   # ❌ generator has no len()
-list(merged.contours)  # ✅
+pathops 三个坑:
+  difference 需要「轮廓列表」不是 Path 对象，且要 list() 转换生成器
+  difference(subject, clip, outpen) 三个位置参数
 
-# 坑3: difference 是三个位置参数 (subject, clip, outpen)
-pathops.difference([pa, pb], out.getPen())   # ❌ _do() missing 'outpen'
-```
-
-#### 实现（`modules/m_apexflat.py`）
-```python
-APEX_WIN   = 70     # 顶部窗口
-FLAT_DEPTH = 28     # 截平深度（决定平顶宽度）
-MAX_TOPW   = 40     # 顶部墨宽上限（区分尖点与横画）
-
-# 1. 找顶部 70 单位内、顶宽都 <40 的两个轮廓
-# 2. pathops.union 合并
-# 3. 构造顶部切刀矩形（y > gmax - FLAT_DEPTH）
-# 4. pathops.difference(合并轮廓, 切刀) 得到平顶
-```
-
-#### 效果（400 档，`FLAT_DEPTH=28`）
-```
-字   改前    改后    HOS    OPPO
-今   0/5 →  79/4    76/3   68/3   ✓
-合   0/5 →  82/4    75/4   71/4   ✓
-会   0/7 →  91/6    77/3   66/5
-含   0/7 →  78/6    76/4   66/5   ✓
-令   0/6 →  77/5    77/3   69/4   ✓ 精确命中
-全   0/6 →  83/6    75/1   69/5
-金   0/8 →  89/7    76/4   66/7
-余   0/7 →  81/6    84/4   74/6   ✓
-介   0/4 →  58/3    76/3   67/3
-企   0/6 →  84/5    76/2   67/5
-
-规模: 1804 字，跳过 0
-对照组 10/10 零误伤: 口回十中申甲田日国目
-```
-
-#### 部署
-```
-静态版: /workspace/static/wdsans/WDesignSans-FlatApex-Regular.otf  (17.8 MB)
-name:   WDesign Sans FlatApex Regular
-VF 版保留不变（平顶与多档插值不兼容）
-```
-
-两个版本并存: 日常使用 VF（250-900 全字重），需要平顶风格时用静态版。
-
-### 平顶静态版的完整验证（2026-11-16）
-```
-特性(HarfBuzz): 默认123=[63167,63168,63169] sups=[43272,61877,61878]
-  subs=[61910,61911,61914] frac 1/2=[61927,3265,61928] pnum=[18,19,20]
-  zh-hans sups 同样生效（ZHS LangSys 已注册）
-  calt 12:34=[63167,63168,3346,63169,63170]（3346 居中冒号）
-  calt a:b=[66,27,67]（27 基线冒号，不替换）
-
-表: FlatApex 17 表 / VF 20 表（多 HVAR fvar VVAR，静态版无需）
-位图 400px: 今36 合34 会38 含36 令36 全33 金37 余32 介27 企34
-  可控版全部 5-8（无平顶）
-对照组 10/10 零误伤: 口299 回334 十31 中30 申31 甲299 田323 日262 国330 目271
+m_apexflat: APEX_WIN=70 FLAT_DEPTH=28 MAX_TOPW=40
+效果: 1811 字，对照组 10/10 零误伤(口回十中申甲田日国目)
+  今 0/5->79/4 (HOS 76/3) 令 0/6->77/5 (HOS 77/3) 精确命中
+部署: WDesignSans-FlatApex-Regular.otf（VF 版保留，平顶与多档插值不兼容）
 ```
 
 ### ✅ 全库缝隙与碎裂检测（2026-11-16）
