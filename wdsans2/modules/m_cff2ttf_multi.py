@@ -19,8 +19,8 @@ import numpy as np
 from cu2qu import curves_to_quadratic, curve_to_quadratic
 
 BASE="/workspace/wdsans2/build"
-SRC_DIR=os.path.join(BASE,"masters_R42")
-OUT_DIR=os.path.join(BASE,"ttf_masters_multi")
+SRC_DIR=os.path.join(BASE,os.environ.get("WDS_SRC_DIR","masters_R42"))
+OUT_DIR=os.path.join(BASE,os.environ.get("WDS_OUT_DIR","ttf_masters_multi"))
 MASTERS=[("master-ExtraLight-250.otf",250),
          ("master-Regular-400.otf",400),
          ("master-Heavy-900.otf",900)]
@@ -209,6 +209,27 @@ def convert_all():
         f["head"].glyphDataFormat=0; f["head"].indexToLocFormat=1
         f["post"].formatType=3.0; f["post"].glyphOrder=None
         f.sfntVersion="\x00\x01\x00\x00"
+
+        # 🔴 关键: TrueType 要求 hmtx.lsb == glyf.xMin。
+        #    CFF 里 lsb 不参与渲染定位，所以原始 lsb 往往 != xmin（本字体 87% 如此）。
+        #    若不动 lsb，fontTools 保存时会自动平移坐标去凑 lsb
+        #    -> 每个字位移量不同（lsb - xmin）-> 整体字距错乱、数字 1 偏右。
+        #    ✅ 正确做法: 坐标保持不动，把 lsb 改成实际的 xMin。
+        hm=f["hmtx"]
+        fixed=0
+        for gn2 in order:
+            g2=glyphs_per[m].get(gn2)
+            if g2 is None: continue
+            if g2.numberOfContours == 0:
+                continue
+            g2.recalcBounds(glyf)
+            xmin=g2.xMin
+            adv,lsb=hm[gn2]
+            if lsb != xmin:
+                hm[gn2]=(adv,xmin)
+                fixed+=1
+        print("    lsb 校正 %d 个字形" % fixed)
+
         out=os.path.join(OUT_DIR,"master-%d.ttf"%w)
         f.save(out); f.close()
         print("  [%d] -> %s (%.1fMB)" % (w,out,os.path.getsize(out)/1e6))
