@@ -7,8 +7,7 @@ from fontTools import subset
 from fontTools.pens.svgPathPen import SVGPathPen
 
 DIR = '/workspace/static/wdsans/poster'
-VF = '/workspace/static/wdsans/WDesignSans-VF.otf'
-FA = '/workspace/static/wdsans/WDesignSans-FlatApex-Regular.otf'
+VF = '/workspace/static/wdsans/WDesignSans-VF.ttf'
 
 # 1) 扫描所有 HTML 的可见文字
 chars = set()
@@ -53,11 +52,9 @@ def make(src, dst, flavor="woff2"):
 
 n1, m1 = make(VF, DIR + '/wd-vf.woff2')
 print('  wd-vf.woff2  %d 字  %.0f KB' % (n1, os.path.getsize(DIR+'/wd-vf.woff2')/1024))
-n2, m2 = make(FA, DIR + '/wd-flat.woff2')
-print('  wd-flat.woff2 %d 字  %.0f KB' % (n2, os.path.getsize(DIR+'/wd-flat.woff2')/1024))
 
-if m2:
-    print('  ⚠ 缺字: %s' % ''.join(m2))
+if m1:
+    print('  ⚠ 缺字: %s' % ''.join(m1))
 else:
     print('  ✓ 无缺字')
 
@@ -78,7 +75,6 @@ def paths(path, chs):
     return out
 
 glyphs = paths(VF, chars)
-flat_chars = '今合会含令全金余介企'
-data = {"glyphs": glyphs, "flat": {"vf": paths(VF, flat_chars), "fa": paths(FA, flat_chars)}}
+data = {"glyphs": glyphs}
 json.dump(data, open(DIR + '/glyphdata.json','w'), ensure_ascii=False)
 print('  glyphdata.json  %d 字形' % len(glyphs))

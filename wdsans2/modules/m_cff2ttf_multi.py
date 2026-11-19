@@ -104,21 +104,44 @@ def contours_to_quadratic(all_contours):
 
 
 def build_glyph(quad_contours):
-    """quad_contours -> TTGlyphPen glyph"""
-    from fontTools.pens.ttGlyphPen import TTGlyphPen
-    pen=TTGlyphPen(None)
+    """quad_contours -> Glyph（直接构造数组，不做任何点合并）
+
+    🔴 为什么不用 TTGlyphPen:
+       qCurveTo 内部会对「与上一控制点重合」的点做合并，
+       导致同一条逻辑曲线在不同字重下产生不同点数 ->
+       varLib 报 incompatible masters -> 该字形无 gvar 插值 -> 字重失效。
+       实测受影响字形: a b j o p u 0 5 6 9（10 个）
+       直接构造 coordinates/flags/endPts 可保证三档严格一致。
+    """
+    from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphCoordinates
+    from fontTools.ttLib.tables.ttProgram import Program
+    ON=1; OFF=0
+    coords=[]; flags=[]; endPts=[]
     for c in quad_contours:
-        pen.moveTo(c["start"])
+        st=c["start"]
+        coords.append((int(round(st[0])), int(round(st[1]))))
+        flags.append(ON)
         for op in c["ops"]:
             if op[0]=="L":
-                pen.lineTo(op[1])
+                p=op[1]
+                coords.append((int(round(p[0])), int(round(p[1]))))
+                flags.append(ON)
             elif op[0]=="Q":
-                # curves_to_quadratic 返回 [start, ctrl1, ctrl2, ..., end]
-                # qCurveTo 需要 [ctrl1, ctrl2, ..., end]，即去掉首点
-                pts=op[1][1:]
-                pen.qCurveTo(*pts)
-        pen.closePath()
-    return pen.glyph()
+                sp=op[1]              # [start, ctrl1, ..., end]
+                for p in sp[1:-1]:    # 控制点
+                    coords.append((int(round(p[0])), int(round(p[1]))))
+                    flags.append(OFF)
+                e=sp[-1]              # 终点
+                coords.append((int(round(e[0])), int(round(e[1]))))
+                flags.append(ON)
+        endPts.append(len(coords)-1)
+    g=Glyph()
+    g.numberOfContours=len(quad_contours)
+    g.coordinates=GlyphCoordinates(coords)
+    g.flags=bytearray(flags)
+    g.endPtsOfContours=endPts
+    g.program=Program()
+    return g
 
 
 def convert_all():
