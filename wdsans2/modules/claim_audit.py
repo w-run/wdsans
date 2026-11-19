@@ -312,6 +312,38 @@ if os.path.exists(DEL):
 else:
     skip("DELIVERY.md", "不存在")
 
+# ---------- 11. fontbakery 报告项（固化）----------
+print()
+print("=== 11. fontbakery 报告项 ===")
+if os.path.exists(VF):
+    fb = TTFont(VF, lazy=True)
+    # 版本号一致性 (opentype/font_version)
+    hr = fb["head"].fontRevision
+    n5 = fb["name"].getDebugName(5) or ""
+    import re as _re3
+    m5 = _re3.search(r"([0-9]+\.?[0-9]*)", n5)
+    nv = float(m5.group(1)) if m5 else -1
+    check("head.fontRevision 与 name ID5 一致", abs(hr - nv) < 0.01,
+          "head=%.3f name=%s" % (hr, n5))
+    # GDEF mark class (gdef_mark_chars / base_has_width)
+    gdc = fb["GDEF"].table.GlyphClassDef
+    cdd = gdc.classDefs if gdc else {}
+    nmk = sum(1 for v in cdd.values() if v == 3)
+    check("GDEF mark class >= 20", nmk >= 20, "mark=%d" % nmk)
+    # 零宽基底字符 (base_has_width)
+    fcm = fb.getBestCmap(); fh = fb["hmtx"]
+    bad_zero = []
+    for cp in (0x20DD, 0x20DE):
+        if cp in fcm:
+            gname = fcm[cp]
+            if fh[gname][0] == 0 and cdd.get(gname) != 3:
+                bad_zero.append(hex(cp))
+    check("零宽字符都在 GDEF mark class", not bad_zero,
+          ("问题: %s" % bad_zero) if bad_zero else "-")
+    fb.close()
+else:
+    skip("fontbakery 报告项", "VF 不存在")
+
 print()
 print("=" * 56)
 print("交付物核对: PASS %d / FAIL %d / SKIP %d" % (ok, fail, n_skip))
