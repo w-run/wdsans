@@ -707,6 +707,42 @@ vs SHS: 比例-1/-1 中宫-0.2 重心+0.002 撇捺±0.006 折角/切角 完全�
 教训: 三次曲线转换本身可行（Mona bullet 4段QM -> MCCCCCCCCZ，
       三档签名一致，墨迹尺寸不变 215/227/259）。障碍只是槽位上限。
 ```
+### 🔵 行高 1.45em 偏大：裁定不修改
+```
+实测（四字体，同一 100px 字号三行文本）:
+  字体   line_h  行高/字号  3行墨迹总高
+  我们     145     1.45em      384 px
+  SHS      145     1.45em      384 px   <- 同源
+  OPPO     132     1.32em      359 px   -9%
+  HOS      118     1.18em      329 px   -19%
+
+根因: usWinAscent=1160, usWinDescent=288（SHS 原版值）。
+      CJK 墨迹实际最高只到 860，富余 300 单位留给注音/上标。
+
+🔴 但抬高/压低都不行（实测超界字形数）:
+  usWinAscent   超界字形数
+     1000          20
+     1050          16
+     1100           4   <- 已是全局最优
+     1160           4   <- SHS 现值
+     1325           4   （但行高变 1.62em，更高）
+
+1160 是「超界字形最少 + 行高不过分」的折中。
+
+那 4 个超界字形是什么:
+  U+302A 〪  IDEOGRAPHIC LEVEL TONE MARK        （注音专用）
+  U+302D 〭  IDEOGRAPHIC ENTERING TONE MARK     （注音专用）
+  U+3031 〱  VERTICAL KANA REPEAT MARK           （日文竖排专用）
+  U+3032 〲  VERTICAL KANA REPEAT WITH VOICED    （日文竖排专用）
+  我们与 SHS 数值几乎相同（-303~-118 / -549~1323）
+  在中文横排正文中出现概率接近 0。
+
+裁定: 不是缺陷，是 SHS 基座的合理取舍。符合项目原则
+      「骨架继承 SHS，只在具体缺陷上动」。
+
+若未来要收紧行高，正确做法是给这几个字建独立 fallback，
+而不是动全局 usWin（那样会连带影响所有字符的行距）。
+```
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
@@ -927,44 +963,18 @@ feature_scan vs OPPO（508 常用字）: 差异 top-10 儿5.84 兵5.28 且5.25 �
 -> 墨量偏差属风格范畴，不是缺陷。不要重复排查。
 ```
 ### ✅ VF 插值与子集完整性验证（2026-11-16）
-
-三个必查项，`modules/vi*.py` 系列脚本可复用。
-
-#### 1. 字重插值：必须用拉丁字测，不能用 CJK
 ```
-🔴 陷阱: CJK 是等宽设计，advance 在所有档位都是 1000 单位恒定。
-   用 CJK 测「字宽是否随字重变化」会得到「完全无变化」的错误结论。
+1. 字重插值必须用拉丁测（CJK advance 恒定 1000 测不出）:
+   Hamburgefonstiv 250=7875 -> 400=8074 -> 900=8690 单调 OK
+   CJK advance 应恒定: 永 [1000x4] 永国字体 [4000x4]
 
-正确做法: 用拉丁字与符号测。
-  Hamburgefonstiv  250=7875 → 400=8074 → 700=8443 → 900=8690  ✓ 单调递增
-  minimum          250=4246 → 400=4390 → 700=4583 → 900=4713  ✓
-  0123456789       250=5210 → 400=5550 → 700=5870 → 900=6090  ✓
-  —                250= 638 → 400= 663 → 700= 704 → 900= 732  ✓
+2. CJK 映射: SHS 把汉字与康熙部首共用一个字形（uni2F00），
+   OPPO/HOS 不共用。两种都正确，渲染一致。
 
-CJK advance（应恒定）:
-  永 [1000,1000,1000,1000]  永国字体 [4000×4]  永国字体设计的书 [8000×4]  ✓
+3. 子集: HarfBuzz 不能直接读 woff2（返回 gid 0）-> 先解压再用。
+   常用3500缺失0 / 竖排9/9有替换 / sups subs frac pnum 全在
 ```
 
-#### 2. CJK 字形映射：康熙部首共用是正确设计
-```
-抽查发现「一」映射到 uni2F00（康熙部首名）而非 uni4E00：
-  U+4E00(一) -> uni2F00  gid=9506
-  U+2F00(⼀) -> uni2F00  gid=9506   <- 同一字形
-
-SHS 把汉字与对应康熙部首共用一个字形（以部首名命名），节省槽位。
-OPPO/HOS 用 uni4E00 命名但不共用。**两种都正确，渲染完全一致。**
-抽查 10 个基本字（一人儿入八口日月木水）全部如此。
-```
-
-#### 3. 子集完整性
-```
-🔴 HarfBuzz 不能直接读 woff2（会全部返回 gid 0 静默失败）:
-  f = TTFont(W); f.flavor = None; buf = io.BytesIO(); f.save(buf)  # 用解压数据
-实测: 常用3500缺失0 / 竖排9/9有替换 / sups subs frac pnum 全在
-  calt 12:34 -> 居中冒号，a:b -> 基线（不替换）
-子集丢失 5 种特性（hist ljmo ruby tjmo vjmo）——韩文 Jamo 与注音专用，
-fontTools 丢弃「目标字形不存在」的特性，前提页无影响。
-```
 ### 🎉 顶点平顶已在单档静态版实现（2026-11-16）
 
 **这是 6 项笔画风格指标中唯一未达成项的突破。**
@@ -1044,45 +1054,17 @@ VF 版保留不变（平顶与多档插值不兼容）
 两个版本并存: 日常使用 VF（250-900 全字重），需要平顶风格时用静态版。
 
 ### 平顶静态版的完整验证（2026-11-16）
+```
+特性(HarfBuzz): 默认123=[63167,63168,63169] sups=[43272,61877,61878]
+  subs=[61910,61911,61914] frac 1/2=[61927,3265,61928] pnum=[18,19,20]
+  zh-hans sups 同样生效（ZHS LangSys 已注册）
+  calt 12:34=[63167,63168,3346,63169,63170]（3346 居中冒号）
+  calt a:b=[66,27,67]（27 基线冒号，不替换）
 
-部署后必须验证特性真的生效，不能只看 glyphs/cmap 数量。
-
-#### 特性验证（HarfBuzz，全部通过）
-```
-默认 123 : [63167, 63168, 63169]   (等宽，locl 生效)
-sups 123 : [43272, 61877, 61878]
-subs 123 : [61910, 61911, 61914]
-frac 1/2 : [61927, 3265, 61928]
-numr 123 : [61927, 61928, 61931]
-dnom 123 : [61941, 61942, 61943]
-pnum 123 : [18, 19, 20]
-
-zh-hans sups 123: [43272, 61877, 61878]   <- ZHS LangSys 已注册 ✓
-calt 12:34 = [63167,63168,3346,63169,63170]  3346 是居中冒号 ✓
-calt a:b   = [66, 27, 67]                    27 是基线冒号 ✓
-竖排 9/9 有替换，中文字宽恒定 1000/字
-```
-
-#### 表完整性
-```
-FlatApex 17 表: BASE CFF2 GDEF GPOS GSUB OS/2 STAT VORG cmap head hhea
-                hmtx maxp name post vhea vmtx
-VF       20 表: 上述 + HVAR fvar VVAR
--> 静态版少 HVAR/fvar/VVAR 是对的（静态无变体轴）
-```
-
-#### 位图复验（400px）
-```
-今36 合34 会38 含36 令36 全33 金37 余32 介27 企34（静态版）
-可变版全部 5-8（无平顶）。对照组 10/10 零误伤:
-口299 回334 十31 中30 申31 甲299 田323 日262 国330 目271
--> 几何与位图双重验证一致，平顶真实生效。
-```
-#### 预览页新增「顶点平顶」面板
-```
-四行对比: 本字体静态版 / 本字体可变版 / OPPO Sans / HOS
-需新增 hos-compare.woff2（12.3 KB，285 字形子集）供 CmpHOS 使用
-指标表同步更新为 R25 实测值（重心 0.499 / 中宫 43.2% / 撇捺展开 0.524/0.535/0.610）
+表: FlatApex 17 表 / VF 20 表（多 HVAR fvar VVAR，静态版无需）
+位图 400px: 今36 合34 会38 含36 令36 全33 金37 余32 介27 企34
+  可控版全部 5-8（无平顶）
+对照组 10/10 零误伤: 口299 回334 十31 中30 申31 甲299 田323 日262 国330 目271
 ```
 
 ### ✅ 全库缝隙与碎裂检测（2026-11-16）
@@ -1157,28 +1139,9 @@ cd /workspace/wdsans2 && python modules/audit.py
 
 #### 审计项（表与特性 17 项 + 几何 13 项）
 ```
-表与特性 (audit_all.py):
-  latin 宽        与 Mona@400 比应为 1.000 (阈 ±1.5%)  <- 抓 latinreset 遗漏
-  shortl          全库无 C-L-C 短段残留
-  zerocont        无零面积轮廓
-  metrics         fsSelection = 0x0040
-  nametable       nameID 1/2 = WDesign Sans / Regular
-  nametable.zh    langIDs 含 0x804  <- 抓 post_vf_name 遗漏
-  os2range        ulUnicodeRange1 位已置
-  numfeats        sups/subs/sinf 在 GSUB
-  numfeats2       pnum/numr/dnom 在 GSUB
-  frac            frac 在 GSUB
-  coloncenter     calt 在 GSUB
-  kerning         kern 在 GPOS
-  markpos         mark + mkmk 都在 GPOS
-
-几何与排版 (audit_geom.py):
-  ledge           顶部横笔平均右余 <= 130 (目标 90)
-  latinext        Latin Ext-A >= 120/128
-  punct。、，：；  五个句读标点尺寸与目标偏差 < 8%
-  featlang.*      sups/subs/sinf/numr/dnom 在 zh-Hans 下生效
-  featlang.pnum   SKIP —— pnum 被 locl 抵消是已知正确行为
-  coloncenter     12:34 的冒号 gid != a:b 的冒号 gid
+表与特性: latin宽 / shortl / zerocont / metrics / nametable(.zh) / os2range
+          numfeats(2) / frac / coloncenter / kerning / markpos
+几何: ledge / latinext / punct五标点 / featlang.* / coloncenter冒号gid
 ```
 
 #### 审计脚本自身的两个坑（都踩过）
