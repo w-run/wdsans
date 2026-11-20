@@ -59,15 +59,36 @@ def rp_to_C(value):
         elif op == "qCurveTo":
             if cur is None:
                 continue
-            pts = [p for p in a if p is not None]
-            if len(pts) >= 2:
-                # 可能有多个 Q 点: qCurveTo(q1, q2, ..., end)
-                start = prev
-                for i in range(len(pts) - 1):
-                    c1, c2, e = quad_to_cubic(start, pts[i], pts[i + 1])
-                    cur["segs"].append(("C", c1, c2, e))
-                    start = np.array(pts[i + 1], float)
-                prev = start
+            # TrueType 多点 qCurveTo 语义:
+            #   [c1, c2, ..., cn, end]  n>=0
+            #   最后一个是 on-curve 终点，前面全是 off-curve 控制点
+            #   相邻 off-curve 控制点的中点自动成为 on-curve 点
+            pts = list(a)
+            if not pts:
+                continue
+            if pts[-1] is None:
+                # 全 off-curve 的闭合曲线，跳过（本字体不出现）
+                continue
+            end = tuple(pts[-1])
+            ctrls = [tuple(p) for p in pts[:-1]]
+            if not ctrls:
+                # 无控制点 -> 直线
+                cur["segs"].append(("L", end))
+                prev = np.array(end, float)
+                continue
+            start = prev
+            for i in range(len(ctrls)):
+                ctrl = ctrls[i]
+                if i < len(ctrls) - 1:
+                    # 隐式 on-curve 点 = 相邻控制点中点
+                    nxt = ctrls[i + 1]
+                    seg_end = ((ctrl[0] + nxt[0]) / 2.0, (ctrl[1] + nxt[1]) / 2.0)
+                else:
+                    seg_end = end
+                c1, c2, e = quad_to_cubic(start, ctrl, seg_end)
+                cur["segs"].append(("C", c1, c2, e))
+                start = np.array(seg_end, float)
+            prev = np.array(end, float)
         elif op in ("closePath", "endPath"):
             cur = None
     return [c for c in C if c["segs"]]
