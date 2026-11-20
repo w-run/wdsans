@@ -96,10 +96,15 @@ def find(C):
             bx0, bx1, by0, by1 = bb
             if bi == i:
                 continue
-            # 斜边终点须在横笔右下角
+            # 斜边终点 x 须与横笔右端对齐（结构签名：斜边收在横笔右缘）
             if abs(p_e[0] - bx1) > TOL:
                 continue
-            if abs(p_e[1] - by0) > TOL:
+            # 终点 y 不必在底边 —— 这正是要修的偏差
+            # 但偏离过大说明不是同一个角，动态上限 = 3 倍横笔厚度
+            bt = by1 - by0
+            if bt <= 0:
+                continue
+            if abs(p_e[1] - by0) > bt * 3.0:
                 continue
             # start 须在横笔上缘附近
             if abs(st[1] - by1) > TOL:
@@ -107,7 +112,7 @@ def find(C):
             dx = bx1 - st[0]
             if not (MIN_DX <= dx <= MAX_DX):
                 continue
-            out.append((i, float(bx1), float(by1)))
+            out.append((i, float(bx1), float(by0), float(by1)))
             break
     return out
 
@@ -116,22 +121,23 @@ def apply(C, hits):
     NEW = []
     for c in C:
         NEW.append({"start": c["start"], "segs": [list(s) for s in c["segs"]]})
-    for pid, bx1, by1 in hits:
+    for hit in hits:
+        pid, bx1, by0, by1 = hit[0], hit[1], hit[2], hit[3]
         c = NEW[pid]
-        # start 移到横笔右上角（x 对齐右端 => close 线垂直）
+        # ① 上落点: start 移到横笔右上角 => close 线垂直
         c["start"] = (bx1, by1)
-        # s0 终点 y 对齐横笔上缘（修 1 单位错位）
+        # ② s0 终点 y 对齐横笔上缘（修 1 单位缝隙，x 不动保斜边厚度）
         s = list(c["segs"][0])
         s[1] = (s[1][0], by1)
         c["segs"][0] = s
-        # 斜边末段终点 y 对齐横笔下缘（保证与横笔闭合）
+        # ③ 下落点: 斜边末点 y 对齐横笔底边（x 不动）
         last = c["segs"][-1]
         if last[0] == "C":
             nl = list(last)
-            nl[3] = (bx1, nl[3][1])
+            nl[3] = (nl[3][0], by0)
             c["segs"][-1] = nl
         elif last[0] == "L":
             nl = list(last)
-            nl[1] = (bx1, nl[1][1])
+            nl[1] = (nl[1][0], by0)
             c["segs"][-1] = nl
     return NEW
