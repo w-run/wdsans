@@ -1,33 +1,161 @@
-# WDesign Sans (wdsans)
+# WDesign Sans
 
-基于思源黑体 2.005 改造的中文可变字体。中文为主，拉丁取自 Mona Sans。
+**v3.0.261120** · 中文可变字体 · 65,535 字形 · wght 100–900
 
-## 文档（权威顺序）
+基于 Source Han Sans 构建的 OPPO Sans 风格中文无衬线字体。
 
-1. **[docs/DESIGN.md](docs/DESIGN.md)** — 设计宪法：定位、命名、7 档字重、视觉决策的可测参数、许可红线
-2. **[docs/PIPELINE.md](docs/PIPELINE.md)** — 技术管线：VF-first、四算子、QA 闸门、里程碑、风险表
-3. **[docs/PARAMS.md](docs/PARAMS.md)** — 参数体系：旧版诊断、新版目标值、算子实现状态
-4. **[docs/POSTMORTEM-v2025.060.md](docs/POSTMORTEM-v2025.060.md)** — 旧版失败复盘（实测数据）
-
-## 工具
+## 特性
 
 ```
-tools/transforms.py     形变算子（face / spread / gravity / soften / stroke）
-tools/canonical_cff.py  确定性 CFF2 字串编码（保证跨 master 点结构一致）
-tools/raster.py         非零环绕光栅器
-tools/specimen.py       样张渲染
-tools/compare.py        A/B 对比渲染
-tools/p0_pipeline.py    P0 管线：VF → master → 形变 → 重建 VF
+字符数        45,012（CJK 20,992）
+字重轴        100 ~ 900，9 个命名实例
+字形数        65,535
+格式          TTF / WOFF2 / WOFF（可变与静态）
+表            22（含 GSUB 490 特性, GPOS 11 特性, STAT, HVAR, VVAR）
+竖排          支持（vhea / vmtx / vert / vrt2）
 ```
 
-## 铁律
+## 字重体系
 
-1. 只移动节点，不重建轮廓 —— 否则可变字体不成立
-2. 不裁剪 GSUB 白名单，不删 cmap 条目
-3. 一切改动进脚本、进 git，禁止 GUI 手工修补
-4. **数值测量不能代替看图** —— 每轮必须出图并实际看过
+```
+100  Thin
+200  ExtraLight
+300  Light
+400  Regular
+500  Medium
+600  SemiBold
+700  Bold
+800  ExtraBold
+900  Black
+```
 
-## 底座
+## 文件说明
 
-- Source Han Sans 2.005R (OFL 1.1, RFN "Source")
-- Mona Sans (OFL 1.1, RFN "Mona")
+### 可变字体
+
+| 文件 | 大小 | 说明 |
+|---|---|---|
+| `WDesignSans-VF.ttf` | 49.9 MB | 完整可变字体，全部 45,012 字符 |
+| `WDesignSans-VF.woff2` | 5.6 MB | Web 子集，常用 3,500 字 + 拉丁 |
+| `WDesignSans-VF-full.woff2` | 10.1 MB | Web 全字库（GB2312） |
+| `WDesignSans-Latin.woff2` | 0.5 MB | 仅拉丁字母与符号 |
+
+### 静态字体
+
+| 文件 | 大小 | 说明 |
+|---|---|---|
+| `WDesignSans-Thin.ttf` | 21.7 MB | wght=100 全字符 |
+| `WDesignSans-Light.ttf` | 21.7 MB | wght=300 全字符 |
+| `WDesignSans-Regular.ttf` | 21.7 MB | wght=400 全字符 |
+| `WDesignSans-Bold.ttf` | 21.7 MB | wght=700 全字符 |
+| `WDesignSans-Black.ttf` | 21.6 MB | wght=900 全字符 |
+| `WDesignSans-Regular-web.ttf` | 2.5 MB | wght=400 常用子集 |
+
+### 分片 Web 字体（推荐用于网页）
+
+```
+slices/           59 个 woff2 分片，共 33.3 MB
+wdesign-sans.css  59 条 @font-face 声明，含 unicode-range
+```
+
+按 Unicode 码位区间切分，**浏览器只下载页面实际用到的分片**。
+典型中文页面命中 2–4 片，约 1–2 MB（对比全量 5.6 MB，节省 60–80%）。
+
+用法：
+
+```html
+<link rel="stylesheet" href="wdesign-sans.css">
+```
+
+```css
+body { font-family: 'WDesign Sans', sans-serif; }
+h1   { font-weight: 700; }
+```
+
+## 排版特性
+
+```
+frac   分数        1/2 → ½ 形式（分子右上/分母左下）
+sups   上标        0123456789
+subs   下标        0123456789
+numr   分子        numr/dnom 组合
+dnom   分母
+pnum   比例数字    （默认已是比例）
+chws   标点压缩    中日韩标点挤压
+vert   竖排替换
+vrt2   竖排旋转
+kern   字距调整
+mark   组合音标定位
+calt   上下文替换  时间冒号居中
+```
+
+使用示例：
+
+```css
+.fraction { font-feature-settings: 'frac' 1; }
+.sups     { font-feature-settings: 'sups' 1; }
+```
+
+## 许可
+
+SIL Open Font License 1.1（见 `OFL.txt`）
+
+## 基座与致谢
+
+本字体为衍生作品，基于以下开源字体构建：
+
+### Source Han Sans（思源黑体）
+
+```
+Copyright 2014-2021 Adobe (http://www.adobe.com/)
+SIL Open Font License 1.1
+https://github.com/adobe-fonts/source-han-sans
+
+Designers:
+  Ryoko NISHIZUKA 西塚涼子 (kana, bopomofo & ideographs)
+  Paul D. Hunt (Latin, Greek & Cyrillic)
+  Sandoll Communications 산돌커뮤니케이션, Soo-young JANG 장수영 & Joo-yeon KANG 강주연 (hangul)
+  Masataka HATTORI 服部正貴 (production)
+
+Project architect: Dr. Ken Lunde
+```
+
+### Mona Sans
+
+```
+Copyright 2022 GitHub Inc.
+SIL Open Font License 1.1
+https://github.com/github/mona-sans
+```
+
+拉丁字形来自 Mona Sans；中文字形来自 Source Han Sans 并经大幅改造。
+
+## 风格参考（仅参考，未取用字形）
+
+```
+OPPO Sans     笔画风格、字重比例参考
+HarmonyOS Sans 笔画风格、结构参考
+```
+
+按许可条款，未复制上述字体的任何字形轮廓。
+
+## 保留字体名
+
+本字体使用 `WDesign Sans` 作为族名，未占用 `Source` 或 `Mona` 保留名，符合 OFL 1.1 要求。
+
+## 版本
+
+```
+v3.0.261120  2026-11-20
+  字重轴重新标号 250-900 → 100-900（OpenType 标准命名）
+  修复 frac 分母未下移（ChainContext 只覆盖 1 个字形）
+  拉丁全面改用 Mona Sans 字形（i/j/带音标，439 字形）
+  横折拐角垂直过渡 + 落点对齐底边
+```
+
+## 项目
+
+```
+https://w-run.com
+https://github.com/w-run/wdsans
+```
