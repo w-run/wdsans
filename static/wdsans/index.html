@@ -20,10 +20,10 @@ body{
 }
 
 /* ===== 字体 ===== */
-@font-face{font-family:'WDesign';src:url('wd-preview.woff2?v=202611201653') format('woff2');
-  font-weight:250 900;font-style:normal;font-display:block}
+@font-face{font-family:'WDesign';src:url('wd-preview.woff2?v=202611201728') format('woff2');
+  font-weight:100 900;font-style:normal;font-display:block}
 @font-face{font-family:'CmpOPPO';src:url('oppo.woff2?v=202611172113') format('woff2');
-  font-weight:250 900;font-style:normal;font-display:swap}
+  font-weight:100 900;font-style:normal;font-display:swap}
 @font-face{font-family:'CmpSHS';src:url('shs-master.woff2?v=202611172113') format('woff2');
   font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'CmpHOS';src:url('hos-compare.woff2?v=202611172113') format('woff2');font-weight:400;font-display:swap}
@@ -170,8 +170,8 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
 
 <h1>WDesign Sans</h1>
 <p class="sub">
-  基于 Source Han Sans 构建的 OPPO 风格中文可变字体 · 65,535 字形 · wght 250–900<br>
-  <a href="WDesignSans-VF.ttf?v=202611201653" download>下载完整 TTF（39.4 MB）</a> ·
+  基于 Source Han Sans 构建的 OPPO 风格中文可变字体 · 65,535 字形 · wght 100–900<br>
+  <a href="WDesignSans-VF.ttf?v=202611201728" download>下载完整 TTF（39.4 MB）</a> ·
   本页使用 4,250 字 Web 子集（woff2 2.9 MB）实时渲染
 </p>
 
@@ -184,7 +184,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
       <span class="wlabel">字重</span>
       <span class="wval"><span id="wv">400</span><small id="wn">Regular</small></span>
     </div>
-    <input type="range" id="wg" min="250" max="900" step="5" value="400" aria-label="字重">
+    <input type="range" id="wg" min="100" max="900" step="5" value="400" aria-label="字重">
     <div class="presets" id="presets"></div>
   </div>
 
@@ -282,7 +282,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     <div><div class="k2">cmap 字符位</div><div class="v">45,012</div></div>
     <div><div class="k2">CJK 汉字</div><div class="v">20,992</div></div>
     <div><div class="k2">OpenType 特性</div><div class="v">23</div></div>
-    <div><div class="k2">字重轴</div><div class="v">250 – 900</div></div>
+    <div><div class="k2">字重轴</div><div class="v">100 – 900</div></div>
     <div><div class="k2">命名实例</div><div class="v">9</div></div>
     <div><div class="k2">格式</div><div class="v">CFF2 VF</div></div>
     <div><div class="k2">文件大小</div><div class="v">39.4 MB</div></div>
@@ -291,7 +291,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     字形来源：Source Han Sans VF 2.005（SIL OFL 1.1）· 拉丁：Mona Sans（OFL 1.1，RFN 合规）。<br>
     参考字体 OPPO Sans / HarmonyOS Sans / MiSans 仅用于测量与视觉比对，未采样任何字形轮廓。
   </p>
-  <div style="margin-top:14px"><a class="dl" href="WDesignSans-VF.ttf?v=202611201653" download>↓ 下载 WDesignSans-VF.ttf</a></div>
+  <div style="margin-top:14px"><a class="dl" href="WDesignSans-VF.ttf?v=202611201728" download>↓ 下载 WDesignSans-VF.ttf</a></div>
 </div>
 
 <script>
@@ -299,8 +299,8 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
   'use strict';
 
   var PRESETS = [
-    [250,'ExtraLight'],[300,'Light'],[350,'Normal'],[400,'Regular'],
-    [500,'Medium'],[600,'SemiBold'],[700,'Bold'],[800,'ExtraBold'],[900,'Heavy']
+    [100,'Thin'],[200,'ExtraLight'],[300,'Light'],[400,'Regular'],
+    [500,'Medium'],[600,'SemiBold'],[700,'Bold'],[800,'ExtraBold'],[900,'Black']
   ];
   var TEXT = '永国字体设计 WDesign 2026';
   var CMPTEXT = '永国字体设计 边这 Transform';
@@ -346,7 +346,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue);outline-offset:4px
     document.documentElement.style.setProperty('--w', w);
     wv.textContent = w;
     wn.textContent = nameOf(w);
-    var pct = (w - 250) / (900 - 250) * 100;
+    var pct = (w - 100) / (900 - 100) * 100;
     wg.style.setProperty('--fill', pct.toFixed(1) + '%');
     var btns = pbox.querySelectorAll('button');
     for (var i=0;i<btns.length;i++){
