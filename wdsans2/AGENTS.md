@@ -734,163 +734,17 @@ vs SHS: 比例-1/-1 中宫-0.2 重心+0.002 撇捺±0.006 折角/切角 完全�
 若未来要收紧行高，正确做法是给这几个字建独立 fallback，
 而不是动全局 usWin（那样会连带影响所有字符的行距）。
 ```
-### ✅ R36 行高修正 1.45em -> 1.35em（2026-11-19，已部署）
+### ✅ R36–R39 历史修复（已部署，细节从简）
+
 ```
-问题: hhea/win=1448=1.45em，比 OPPO(1.32)/HOS(1.18) 松 10-19%。
-      14px 下 7 行 UI 文本: 我们 142px vs OPPO 129px vs HOS 116px。
-
-为什么不能直接压 hhea/usWin:
-  全库极端值（排除 7 个竖排专用符号）: 最高 1069(U+1EB2) 最低 -281(U+FFE8)
-  实测各 usWinAscent 超界字形数: 1000->20 1050->16 1100->4 1160->4 1325->4
-  压低必然裁切，抬高行高更大 -> 直接改 hhea 是死路
-
-方案: 启用 USE_TYPO_METRICS(fsSelection bit7)
-  usWin 保持 1160/288 -> 竖排符号不裁切
-  typo 设为 1070/-282 -> 1352 = 1.35em
-  🔴 bit7 只在 OS/2 v4+ 定义，我们/SHS 都是 v3
-  v3->v4 实测只改 version 字段，42 字段其余不变，文件大小不变
-
-对比: OPPO/HOS 都是 v4 但都没启用 bit7（直接压 hhea）
-      我们启用 bit7 是 OpenType 标准做法，能同时保住竖排符号
-
-模块 m_lineheight: 三档 OS/2 v3->v4 + typo(1070,-282,0) + fsSel |= 0x80
-效果: 行高 1.45->1.35em，7行 142->132px（OPPO 129px）
-      VF 41.3MB glyphs=65535 cmap=45012 cjk=20992（与 R35 一致）
-
-五个产物全部同步 + cache-buster 202611190836 -> 202611191003
-审计扩到 28 项（新增第9组: OS/2版本/bit7/行高范围/usWin保守值）
+R36 行高 1.45em -> 1.35em（与 OPPO 一致）
+R37 fontbakery 驱动修复
+R38 fontbakery 第二批
+R39 chws/vchw 东亚标点压缩
+R47 日/目旁内横错位（m_boxrad2，格位比 0.78 -> 0.97）
+R48 横笔右端缺口（m_barend）—— 已回滚，见下
 ```
-### ✅ R37 fontbakery 驱动的质量修复（2026-11-19，已部署）
-```
-方法转变: 前几轮都是自写脚本测量。本轮改用 fontbakery 1.1.0（Google Fonts 官方
-检查器，127 项检查），让专业工具指出问题 —— 避免「自己写工具又自己评判」。
 
-  /workspace/wdsans/venv/bin/fontbakery check-universal <font>
-  已装: fontbakery 1.1.0 / uharfbuzz 0.57 / blackrenderer 0.6 / booleanOperations 0.1
-
-R36 报告 3 FAIL + 3 WARN:
-  FAIL opentype/font_version   head=2.00499 vs name=Version 1.000
-  FAIL base_has_width          uni20DD/uni20DE advance=0
-  FAIL file_size               39.4Mb > 9Mb（CJK 必然，不修）
-  WARN gdef_mark_chars         20+ 组合符号未在 mark class
-  WARN post_table_version      format 3 小众问题（CFF2 必需）
-  WARN cjk_chws_feature        缺 chws/vchw（日文专用）
-
-修 1 版本号不一致（真缺陷，我们引入）:
-  m_nametable 只改了 name ID5，漏改 head.fontRevision（仍是 SHS 的 2.00499）
-  -> head.fontRevision = 1.000
-
-修 2 GDEF mark class 几乎为空（SHS 继承缺陷，只有 4 个）:
-  这导致 base_has_width 误报: uni20DD 是 COMBINING ENCLOSING CIRCLE,
-  advance 本来就该 0，但不在 mark class -> 被当基底字符检查
-  修: 按 unicodedata.category 补全 -> mark 4 -> 30
-
-🔴 迭代: 初版按 Mn/Mc/Me 全标 -> mark=32，fontbakery 立刻报 2 个新 WARN
-  gdef_non_mark_chars / gdef_spacing_marks 都指向 U+302E/U+302F
-  它们 category=Mc（间距型组合标记）adv=250，SHS 原版也未分类
-  修正: 只标 Mn(28个) + Me(2个)，排除 Mc(2个) -> mark=30 -> WARN 消失
-
-效果: FAIL 3->1（只剩 file_size）/ WARN 3->2
-      font_version / base_has_width / gdef_mark_chars /
-      gdef_non_mark_chars / gdef_spacing_marks 全部通过
-
-🔴 必验证: GDEF 改动不能影响既有 mark 定位。用 uharfbuzz 对比 R36/R37
-  （选无预组合字符的组合，强制走 mark 定位）:
-    b+acute     R36(-588,364)  R37(-588,364)    完全一致
-    d+acute     R36(-612,363)  R37(-612,363)
-    g+tilde     R36(-513,-224) R37(-513,-224)
-    k+diaeresis R36(-429,-4)   R37(-429,-4)
-  中文/数字不受影响: 永国字体 4000 / 0123456789 5740
-
-审计扩到 34 项（新增第 11 组固化 fontbakery 报告项）
-五个产物同步 + cache-buster 202611191107
-```
-### ✅ R38 fontbakery 完整报告驱动的第二批修复（2026-11-19，已部署）
-```
-🔴 工具用法: fontbakery 必须加 --succinct --skip-network 才跑得完全部 127 项。
-   不加参数会卡在第 6 项（CFF2 大文件上部分 check 极慢），只能看到部分结果。
-
-  fontbakery check-universal --succinct --skip-network <font>
-
-R37 完整报告 3 FAIL + 6 WARN，本轮修掉 2 FAIL:
-
-修 1 FAIL inconsistencies_between_fvar_STAT
-  fvar 9 个 instance（250/300/350/400/500/600/700/800/900）
-  STAT 只有 1 个 AxisValue 且 Format=2 无 Value 字段
-  -> 9 个 instance 全无对应条目，应用读 STAT 无法识别字重名称
-  修: 每个 instance 建 Format 1 的 AxisValue，按 AxisIndex+Value 排序
-  结果 STAT 1 -> 10
-
-修 2 FAIL no_mac_entries（我们引入的）
-  name 表 20 条 platformID=1（Mac），SHS 原版只有 platform 3
-  来源: bvf 脚本里写了 [(3,1,0x409),(1,0,0)] —— 自己加的
-  OpenType 建议仅用 platform 3
-  修: 删除所有 platformID=1 -> 50 条降到 30 条
-
-修 3 🔴 zh-CN name 回归（严重）
-  R37 部署版 zh-CN 0 条，SHS 原版 3 条。
-  AGENTS.md 早已记录「VF 构建丢 zh-CN，必须 post_vf_name2 修复」，
-  但 bvf_r37.py 自写的 name 替换没加 0x804 -> 回归。
-  修: 从 master 复制 zh-CN 的 nameID 1/2/4/16/17，
-      nameID17 在 master 里是 ExtraLight，强制改 Regular。zh-CN 0 -> 5 条。
-
-验证: STAT 1->10 / platforms [1,3]->[3] / zh-CN 0->5 / nameID17=Regular
-      不变项 head.rev=1.000 OS/2 v4 mark=30 glyphs=65535 cmap=45012
-      HarfBuzz shaping R37 vs R38（11项）0 项不同
-      fontbakery FAIL 3->1（只剩 file_size）/ WARN 6->5
-
-剩余 fontbakery 提示（全部不可修）:
-  file_size(41MB CJK 必然) / post_table_version(CFF2 必需) /
-  cjk_chws_feature(日文专用) / ligature_carets / mandatory_avar_table /
-  math_signs_width / ots
-
-审计扩到 38 项（新增第 12 组 VF 元数据: STAT覆盖/platform3/zh-CN/nameID17）
-存档 v261122（8 文件 111MB，md5 8/8）
-```
-### ✅ R39 新增 chws/vchw 东亚标点压缩（2026-11-19，已部署）
-```
-来源: fontbakery WARN cjk_chws_feature [missing-chws-feature, missing-vchw-feature]
-
-chws = Contextual Half Widths（东亚标点行首/行尾自动压缩半角）
-vchw = 竖排版本。符合 JLREQ 与中文标点挤压规范。
-
-工具: chws_tool 1.4.5（Google Fonts 官方推荐）
-  pip install chws-tool
-  add-chws -o <输出> <输入>
-  运行 41 秒，文件 +672 字节
-
-🔴 关键陷阱: chws 加在 GPOS 不是 GSUB
-  第一次检查找的是 GSUB -> 特性完全相同、chws 仍为 False，差点误判工具没生效。
-  实际逐表对比字节: GPOS 262,178 -> 262,852 (+674)，其他 20 张表完全不变。
-  原因: chws 是字距调整（调整标点 advance），不换字形。
-
-实际改动:
-  GPOS 特性 9 -> 11（+chws +vchw）  lookups 14 -> 20
-  注册到全部脚本（DFLT/cyrl/grek/hang/hani/kana/latn），
-  每个含 Default + JAN/KOR/ZHH/ZHS/ZHT -> 中文环境已挂载
-
-效果:
-  、。，「」  无chws [1000,1000,1000,1000,1000]
-              有chws [ 500, 500, 500,1000,1000]
-  竖排 、。   y_advance -1000 -> -500
-
-安全性（chws 是 opt-in，不启用时排版不变）:
-  22 个用例零差异（常规文本/中点/数字/拉丁/liga/时间冒号/
-  sups subs numr dnom frac pnum/组合符号/CJK/中文标点 + 5 语言）
-  表格结构 21->21 无增删
-  元数据 rev=1.000 OS2v=4 typo=1.35em STAT=10 zh=5 mark=30 全不变
-
-🔵 重要判断: 三家参考字体（SHS/OPPO/HOS）都没有 chws/vchw。
-  所以这不是「缺失的应有功能」，而是可选的现代排版增强。
-  加它是「多做正确的事」，不是修补缺陷 —— 与 U+2022/行高 的裁定标准一致。
-
-fontbakery: R38 FAIL1/WARN6 -> R39 FAIL1/WARN5（cjk_chws 已消除）
-剩余 6 项全部不可修: file_size / post_table_version / ligature_carets /
-                     mandatory_avar_table / math_signs_width / ots
-
-两个字体都加了（VF + FlatApex），子集也保留。
-审计扩到 41 项（新增第 13 组）；存档 v261123。
-```
 ### ✅ R47/R48 日旁内横 + 横笔收口（2026-11-19，已部署）
 ```
 两个用户反馈的笔画缺陷，根因都是「轮廓拆分后子轮廓未同步调整」。
@@ -1038,6 +892,158 @@ TTF 反而修正了 OTF 的 lsb 不一致:
       poster/wd-flat.woff2
 poster_subset2.py 改为只从 TTF 生成 wd-vf.woff2
 ```
+### ✅ R55–R58 横折拐角 + 拉丁全面改用 Mona（2026-11-20，已部署）
+
+#### R55: 横折拐角一体化（m_vertcorner3 扩展版）
+
+用户：「上面的应该再右一些、横折突出拐角改 OPPO 那种垂直过渡」
+     「下面圈出来的点，y 应与横线底边平齐」
+
+```
+「多」实测三档:
+        上落点 c1.start        横笔右上角        下落点 c5末点y  横笔底边
+250     (743,736)             (770,737)            332          373  外露-41
+400     (734,752)             (770,752)            332          332  平齐 0（目标）
+900     (719,776)             (770,777)            332          268  藏进+64
+```
+
+修法（一个 hit 产出三处修正）:
+```python
+c["start"] = (bx1, by1)   # 上落点: x 对齐横笔右端 -> close 线垂直
+s0.y = by1                # s0 对齐上缘（x 不动保斜边厚度）
+tail.y = by0              # 下落点: 对齐横笔底边
+```
+
+🔴 **关键教训：复用已有锚点，不要重新找**
+```
+m_vertcorner3.find() 原来有一行:
+  if abs(p_e[1] - by0) > TOL: continue    # 终点不在横笔底边 -> 跳过
+
+要修的正是这个偏差，判据却把它当不合格跳过了！
+被迫另起判据重找，6 轮容差调整全部无法收敛:
+  上落点单独: 250=372  400=4206  900=878   （档间差 11 倍）
+  上+下落点:  250=13397 400=13136 900=14877
+  收紧到5%:   250=107  400=4109  900=230
+
+正解: find() 已匹配到 (斜边P, 横笔bar) 这一对，
+      bar 的 by0/by1 就在同一上下文，直接取用即可。
+      放宽为动态上限（3倍横笔厚度），返回全部四个值。
+```
+
+规模：250=6601 / 400=6531 / 900=5745，对照组 0 命中。
+
+#### R56: i 竖笔加宽（m_istem）
+
+用户：「250字宽看ij的线条窄了太多了」
+
+```
+竖笔宽度（每字最窄轮廓的 x 跨度）:
+  字母   Mona250  我们250  差
+  i        52       36    -16  <- 细 31%
+  j        83       72    -11
+  l        52       51     -1  正常
+  I        53       53      0  正常
+  H        52       51     -1  正常
+```
+
+#### R57/R58: 拉丁全面改用 Mona（m_latinfix）
+
+用户：「ōéǎì这些呢？」「不只是粗细，是用的shs还是mona的」
+
+**根因：Mona 拉丁字形多为复合字形（addComponent）**
+```
+Mona 里 i j à á â ì ō ǎ é ê ... 全是 addComponent=2。
+当年 m_latinext/m_latinmat 用 RecordingPen 注入，拆解失败，
+这些字形退回 SHS 版本。
+
+必须用 DecomposingRecordingPen（同类坑见 m_digitnine）
+```
+
+来源统计（318 个带音标字符）: =Mona 40 / =SHS 170 / ? 108
+
+档位映射（250档用更细的 Mona 200，解决 lat/cjk 失衡）:
+```
+我们 250 -> Mona 200     我们 400 -> Mona 400
+我们 900 -> Mona 850
+替换范围 0x0020-0x007F + 0x00A0-0x024F + 0x1E00-0x1EFF
+每档 439 个字形
+```
+
+效果:
+```
+i/j/l 三档完全一致      lat/cjk
+  250:  30 / 30 / 30      250: 1.52 -> 1.11
+  400:  72 / 71 / 72      400: 0.99（无回归）
+  900: 142 / 142 / 142    900: 0.87
+```
+
+#### 🔴🔴 事故: qCurveTo 多点语义导致拉丁曲线被拉直（R57）
+
+用户：「拉丁字体曲线被拉直」—— D/e/s/g 全部变成多边形折角。
+
+**根因：TrueType 的 qCurveTo 支持多个连续 off-curve 点**
+```
+Mona D: qCurveTo((464,729), (609,640), (686,475), (686,364))
+
+正确语义:
+  前 N-1 个是 off-curve 控制点，最后一个是 on-curve 终点
+  相邻控制点的中点自动成为隐式 on-curve 点
+  Q1: P0(364,729) --ctrl(464,729)--> mid(536.5, 684.5)
+  Q2: (536.5,684.5) --ctrl(609,640)--> mid(647.5, 557.5)
+  Q3: (647.5,557.5) --ctrl(686,475)--> (686, 364)
+```
+
+❌ 我的第一版（错误）:
+```
+把 (464,729) 当控制点、(609,640) 当终点，然后继续循环
+结果 C431 729 513 699 610 640 -> 下段起点又是 610,640（重复点=折角）
+```
+
+✅ 正确:
+```
+结果 C431 729 489 714 537 684 -> 终点落在隐式中点 (536.5,684.5)
+
+pts = list(a)
+end = tuple(pts[-1])
+ctrls = [tuple(p) for p in pts[:-1]]
+for i in range(len(ctrls)):
+    ctrl = ctrls[i]
+    if i < len(ctrls) - 1:
+        nxt = ctrls[i + 1]
+        seg_end = ((ctrl[0]+nxt[0])/2.0, (ctrl[1]+nxt[1])/2.0)  # 隐式中点
+    else:
+        seg_end = end
+    c1, c2, e = quad_to_cubic(start, ctrl, seg_end)
+    cur["segs"].append(("C", c1, c2, e))
+    start = np.array(seg_end, float)
+```
+
+🔴 **验证陷阱：只看段数完全看不出问题**
+```
+错误版和正确版都是 12 个 C 段。必须用 SVGPathPen 输出路径字符串，
+检查终点坐标是否落在「相邻控制点中点」上。
+```
+
+二次转三次公式: `C1 = P0 + 2/3*(Q - P0)` / `C2 = P2 + 2/3*(Q - P2)`
+
+#### 🔴 测量陷阱：带弧线字母不能用固定高度扫描测粗细
+```
+é š ō 这类字母，固定 y 扫描线会穿过横杠/弧线，
+测到的是横向跨度而非笔画厚度（é 测出 233 的假值）。
+应测竖笔型字母（À i l）或用轮廓法向距离。
+```
+
+#### 链
+```
+R47 = R37 + m_boxrad2          日旁内横         已部署
+R55 = R47 + m_vertcorner3      横折拐角（上+下落点）
+R56 = R55 + m_istem            i 竖笔加宽
+R57 = R56 + m_latinfix         拉丁Mona（曲线坏，产物已删）
+R58 = R56 + m_latinfix(修复)   拉丁Mona         <- 线上
+```
+
+---
+
 ### ✅ 字形覆盖已达合规上限（2026-11-19）
 ```
 cmap: 我们 45,012 / SHS 44,853 / OPPO 28,441 / HOS 29,063
